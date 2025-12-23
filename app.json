@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "Reserva Pádel",
+    "slug": "app-reserva-padel-urbanizacion",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.urbanizacion.reservapadel",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Necesitamos acceso a tu galería para cambiar tu foto de perfil",
+        "NSCameraUsageDescription": "Necesitamos acceso a la cámara para tomar una foto de perfil"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.urbanizacion.reservapadel",
+      "permissions": [
+        "NOTIFICATIONS",
+        "READ_CALENDAR",
+        "WRITE_CALENDAR"
+      ]
+    },
+    "web": {
+      "name": "Reserva Pádel Urbanización",
+      "shortName": "Reserva Pádel",
+      "description": "Gestiona tus reservas de pistas de pádel en la urbanización",
+      "themeColor": "#2e7d32",
+      "backgroundColor": "#ffffff",
+      "display": "standalone",
+      "startUrl": "/",
+      "orientation": "portrait",
+      "scope": "/",
+      "preferRelatedApplications": false,
+      "lang": "es-ES",
+      "dir": "ltr",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-calendar",
+      "expo-notifications"
+    ]
+  }
+}

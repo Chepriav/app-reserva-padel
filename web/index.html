@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- PWA Primary Meta Tags -->
+    <title>Reserva Pádel</title>
+    <meta name="title" content="Reserva Pádel Urbanización" />
+    <meta name="description" content="Gestiona tus reservas de pistas de pádel en la urbanización" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5, viewport-fit=cover" />
+
+    <!-- PWA Mobile Specific Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Reserva Pádel" />
+
+    <!-- Theme Colors -->
+    <meta name="theme-color" content="#2e7d32" />
+    <meta name="msapplication-TileColor" content="#2e7d32" />
+    <meta name="msapplication-navbutton-color" content="#2e7d32" />
+
+    <!-- Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/icon-192.svg" />
+    <link rel="apple-touch-icon" href="/icon-192.svg" />
+
+    <style>
+      /**
+       * Disable body scrolling on web.
+       */
+      body {
+        background-color: #ffffff;
+      }
+      /* Loading screen */
+      #root {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+      html, body, #root {
+        width: 100%;
+        height: 100%;
+        -webkit-overflow-scrolling: touch;
+      }
+      html {
+        height: 100%;
+        overflow: hidden;
+      }
+      body {
+        margin: 0;
+        overflow: hidden;
+        overscroll-behavior-y: none;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        -ms-overflow-style: scrollbar;
+      }
+      /* Loading animation */
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

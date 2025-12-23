@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.esAdmin == true;
+    }
+
+    function isApproved() {
+      let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      // Acepta tanto boolean true como string 'aprobado'
+      return isAuthenticated() &&
+             (userData.estadoAprobacion == true || userData.estadoAprobacion == 'aprobado');
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Cualquiera puede leer su propio perfil
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // Solo admins pueden leer todos los usuarios (list incluye query)
+      allow list: if isAdmin();
+
+      // IMPORTANTE: Permitir creación de perfil durante registro
+      // Se valida que el usuario esté autenticado y sea el dueño del documento
+      allow create: if request.auth != null &&
+                      request.auth.uid == userId &&
+                      request.resource.data.esAdmin == false &&
+                      request.resource.data.estadoAprobacion == 'pendiente';
+
+      // Usuarios pueden actualizar su perfil (excepto esAdmin y estadoAprobacion)
+      allow update: if request.auth != null &&
+                      request.auth.uid == userId &&
+                      !request.resource.data.diff(resource.data).affectedKeys().hasAny(['esAdmin', 'estadoAprobacion']);
+
+      // Solo admins pueden aprobar/rechazar usuarios
+      allow update: if isAdmin() &&
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estadoAprobacion', 'updatedAt']);
+    }
+
+    // Pistas collection
+    match /pistas/{pistaId} {
+      // Usuarios autenticados pueden leer las pistas (necesario para ver disponibilidad)
+      allow read: if isAuthenticated();
+
+      // Solo admins pueden listar todas las pistas
+      allow list: if isAuthenticated();
+
+      // Solo admins pueden crear/actualizar/eliminar pistas
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Reservas collection
+    match /reservas/{reservaId} {
+      // Usuarios aprobados pueden leer sus propias reservas
+      allow read: if isApproved() &&
+                     (resource.data.usuarioId == request.auth.uid || isAdmin());
+
+      // Usuarios aprobados pueden listar reservas (necesario para ver disponibilidad)
+      // Permite query de reservas por fecha y pista para verificar disponibilidad
+      allow list: if isApproved();
+
+      // Usuarios aprobados pueden crear reservas
+      allow create: if isApproved() &&
+                      request.resource.data.usuarioId == request.auth.uid &&
+                      request.resource.data.estado == 'confirmada';
+
+      // Solo el dueño puede cancelar
+      allow update: if isApproved() &&
+                      isOwner(resource.data.usuarioId) &&
+                      request.resource.data.estado == 'cancelada' &&
+                      resource.data.estado == 'confirmada';
+
+      // Nadie puede eliminar (solo cancelar)
+      allow delete: if false;
+    }
+  }
+}

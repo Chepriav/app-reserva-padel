@@ -1,0 +1,109 @@
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { authService } from '../services/authService.firebase';
+
+const AuthContext = createContext(null);
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Observer de cambios de autenticación de Firebase
+  useEffect(() => {
+    const unsubscribe = authService.onAuthChange((userData) => {
+      if (userData) {
+        setUser(userData);
+        setIsAuthenticated(true);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+      setLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
+
+  const login = async (email, password) => {
+    try {
+      const response = await authService.login(email, password);
+      if (response.success) {
+        // El observer actualizará el estado automáticamente
+        return { success: true };
+      }
+      return { success: false, error: response.error };
+    } catch (error) {
+      return { success: false, error: 'Error al iniciar sesión' };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      const response = await authService.logout();
+      if (response.success) {
+        return { success: true };
+      }
+      return { success: false, error: response.error };
+    } catch (error) {
+      return { success: false, error: 'Error al cerrar sesión' };
+    }
+  };
+
+  const register = async (userData) => {
+    try {
+      const response = await authService.register(userData);
+      if (response.success) {
+        // No establecer usuario porque Firebase cierra sesión después del registro
+        // El usuario debe ser aprobado primero
+        return { success: true, message: response.message };
+      }
+      return { success: false, error: response.error };
+    } catch (error) {
+      return { success: false, error: 'Error al registrarse' };
+    }
+  };
+
+  const updateProfile = async (updates) => {
+    try {
+      const response = await authService.updateProfile(user.id, updates);
+      if (response.success) {
+        setUser(response.data);
+        return { success: true };
+      }
+      return { success: false, error: response.error };
+    } catch (error) {
+      return { success: false, error: 'Error al actualizar perfil' };
+    }
+  };
+
+  const resetPassword = async (email) => {
+    try {
+      const response = await authService.resetPassword(email);
+      return response;
+    } catch (error) {
+      return { success: false, error: 'Error al enviar correo de recuperación' };
+    }
+  };
+
+  const value = {
+    user,
+    loading,
+    isAuthenticated,
+    login,
+    logout,
+    register,
+    updateProfile,
+    resetPassword,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth debe usarse dentro de AuthProvider');
+  }
+  return context;
+};
