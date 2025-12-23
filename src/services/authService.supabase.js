@@ -58,6 +58,7 @@ const mapUserToCamelCase = (data) => {
     nivelJuego: data.nivel_juego,
     fotoPerfil: data.foto_perfil,
     esAdmin: data.es_admin,
+    esManager: data.es_manager,
     estadoAprobacion: data.estado_aprobacion,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
@@ -272,14 +273,81 @@ export const authService = {
   },
 
   /**
+   * Obtiene todos los usuarios aprobados (solo admin)
+   */
+  async getTodosUsuarios() {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('estado_aprobacion', 'aprobado')
+        .order('nombre', { ascending: true });
+
+      if (error) {
+        return { success: false, error: 'Error al obtener usuarios' };
+      }
+
+      return {
+        success: true,
+        data: data.map(mapUserToCamelCase),
+      };
+    } catch (error) {
+      return { success: false, error: 'Error al obtener usuarios' };
+    }
+  },
+
+  /**
+   * Cambia el rol de admin de un usuario (solo admin)
+   */
+  async toggleAdminRole(userId, esAdmin) {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .update({ es_admin: esAdmin })
+        .eq('id', userId)
+        .select();
+
+      if (error) {
+        return { success: false, error: 'Error al cambiar rol de usuario' };
+      }
+
+      return { success: true, data: mapUserToCamelCase(data[0]) };
+    } catch (error) {
+      return { success: false, error: 'Error al cambiar rol de usuario' };
+    }
+  },
+
+  /**
+   * Elimina un usuario (solo admin/manager)
+   */
+  async deleteUser(userId) {
+    try {
+      // Primero eliminar de la tabla users
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
+
+      if (error) {
+        return { success: false, error: 'Error al eliminar usuario' };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Error al eliminar usuario' };
+    }
+  },
+
+  /**
    * Aprueba un usuario pendiente (solo admin)
    */
   async aprobarUsuario(userId) {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .update({ estado_aprobacion: 'aprobado' })
-        .eq('id', userId);
+        .eq('id', userId)
+        .select();
 
       if (error) {
         return { success: false, error: 'Error al aprobar usuario' };
@@ -296,10 +364,11 @@ export const authService = {
    */
   async rechazarUsuario(userId) {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .update({ estado_aprobacion: 'rechazado' })
-        .eq('id', userId);
+        .eq('id', userId)
+        .select();
 
       if (error) {
         return { success: false, error: 'Error al rechazar usuario' };

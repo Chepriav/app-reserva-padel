@@ -527,13 +527,15 @@ export default function HomeScreen({ navigation }) {
                 const estaSeleccionado = bloquesSeleccionados.some(b =>
                   b.fecha === fechaSeleccionada && b.horaInicio === horario.horaInicio
                 );
+                const esMiReserva = horario.reservaExistente?.usuarioId === user?.id;
 
                 return (
                   <TouchableOpacity
                     key={index}
                     style={[
                       styles.horarioChip,
-                      !horario.disponible && styles.horarioChipOcupado,
+                      !horario.disponible && !esMiReserva && styles.horarioChipOcupado,
+                      !horario.disponible && esMiReserva && styles.horarioChipMio,
                       estaSeleccionado && styles.horarioChipSeleccionado,
                     ]}
                     onPress={() =>
@@ -544,7 +546,8 @@ export default function HomeScreen({ navigation }) {
                     <Text
                       style={[
                         styles.horarioChipText,
-                        !horario.disponible && styles.horarioChipTextOcupado,
+                        !horario.disponible && !esMiReserva && styles.horarioChipTextOcupado,
+                        !horario.disponible && esMiReserva && styles.horarioChipTextMio,
                         estaSeleccionado && styles.horarioChipTextSeleccionado,
                       ]}
                     >
@@ -584,13 +587,15 @@ export default function HomeScreen({ navigation }) {
                         const estaSeleccionado = bloquesSeleccionados.some(b =>
                           b.fecha === fecha && b.horaInicio === horario.horaInicio
                         );
+                        const esMiReserva = horario.reservaExistente?.usuarioId === user?.id;
 
                         return (
                           <TouchableOpacity
                             key={index}
                             style={[
                               styles.horarioChip,
-                              !horario.disponible && styles.horarioChipOcupado,
+                              !horario.disponible && !esMiReserva && styles.horarioChipOcupado,
+                              !horario.disponible && esMiReserva && styles.horarioChipMio,
                               estaSeleccionado && styles.horarioChipSeleccionado,
                             ]}
                             onPress={() => {
@@ -603,7 +608,8 @@ export default function HomeScreen({ navigation }) {
                             <Text
                               style={[
                                 styles.horarioChipText,
-                                !horario.disponible && styles.horarioChipTextOcupado,
+                                !horario.disponible && !esMiReserva && styles.horarioChipTextOcupado,
+                                !horario.disponible && esMiReserva && styles.horarioChipTextMio,
                                 estaSeleccionado && styles.horarioChipTextSeleccionado,
                               ]}
                             >
@@ -902,6 +908,9 @@ const styles = StyleSheet.create({
   horarioChipOcupado: {
     backgroundColor: colors.disabled,
   },
+  horarioChipMio: {
+    backgroundColor: colors.accent,
+  },
   horarioChipText: {
     fontSize: 14,
     fontWeight: '600',
@@ -909,6 +918,9 @@ const styles = StyleSheet.create({
   },
   horarioChipTextOcupado: {
     color: colors.textSecondary,
+  },
+  horarioChipTextMio: {
+    color: '#fff',
   },
   emptyText: {
     fontSize: 16,

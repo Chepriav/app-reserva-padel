@@ -96,6 +96,13 @@ export const obtenerFechaHoy = () => {
   return formatearFecha(new Date());
 };
 
+// Formatear hora para mostrar solo HH:MM (sin segundos)
+export const formatearHora = (hora) => {
+  if (!hora) return '';
+  // Si viene con segundos (HH:MM:SS), quitar los segundos
+  return hora.split(':').slice(0, 2).join(':');
+};
+
 // Validar si una fecha está dentro del rango permitido
 export const esFechaValida = (fecha) => {
   const fechaObj = new Date(fecha + 'T00:00:00');

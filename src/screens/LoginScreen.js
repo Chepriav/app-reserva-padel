@@ -23,6 +23,7 @@ export default function LoginScreen({ navigation }) {
   const [resetEmail, setResetEmail] = useState('');
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Estado para CustomAlert
   const [alertConfig, setAlertConfig] = useState({
@@ -121,14 +122,22 @@ export default function LoginScreen({ navigation }) {
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Contraseña</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="••••••"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-            />
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="••••••"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Text style={styles.eyeIcon}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <TouchableOpacity
@@ -291,6 +300,25 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     backgroundColor: colors.surface,
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    backgroundColor: colors.surface,
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 12,
+    fontSize: 16,
+  },
+  eyeButton: {
+    padding: 12,
+  },
+  eyeIcon: {
+    fontSize: 18,
   },
   button: {
     backgroundColor: colors.primary,

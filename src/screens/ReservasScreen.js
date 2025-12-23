@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useReservas } from '../context/ReservasContext';
 import { colors } from '../constants/colors';
-import { formatearFechaLegible } from '../utils/dateHelpers';
+import { formatearFechaLegible, formatearHora } from '../utils/dateHelpers';
 import { puedeCancelar } from '../utils/validators';
 import { CustomAlert } from '../components/CustomAlert';
 
@@ -47,7 +47,7 @@ export default function ReservasScreen() {
       title: 'Cancelar Reserva',
       message: `¿Estás seguro de cancelar tu reserva del ${formatearFechaLegible(
         reserva.fecha
-      )} a las ${reserva.horaInicio}?`,
+      )} a las ${formatearHora(reserva.horaInicio)}?`,
       buttons: [
         { text: 'No', style: 'cancel', onPress: () => {} },
         {
@@ -106,7 +106,7 @@ export default function ReservasScreen() {
             {formatearFechaLegible(reserva.fecha)}
           </Text>
           <Text style={styles.horario}>
-            {reserva.horaInicio} - {reserva.horaFin}
+            {formatearHora(reserva.horaInicio)} - {formatearHora(reserva.horaFin)}
           </Text>
 
           {reserva.jugadores.length > 0 && (
