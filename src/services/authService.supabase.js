@@ -143,19 +143,53 @@ export const authService = {
    */
   async getCurrentUser() {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Leer sesión directamente de localStorage para evitar bloqueos
+      let session = null;
 
-      if (!user) {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        // Buscar la key de Supabase en localStorage
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+            try {
+              const data = JSON.parse(localStorage.getItem(key));
+              if (data?.access_token && data?.user) {
+                session = data;
+                break;
+              }
+            } catch {
+              // Ignorar errores de parsing
+            }
+          }
+        }
+      }
+
+      if (!session?.user) {
         return { success: true, data: null };
       }
 
-      const { data: userData, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      // Usar fetch directo en lugar del cliente Supabase para evitar bloqueos
+      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-      if (error || !userData) {
+      const response = await fetch(
+        `${supabaseUrl}/rest/v1/users?id=eq.${session.user.id}&select=*`,
+        {
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        return { success: true, data: null };
+      }
+
+      const users = await response.json();
+      const userData = users[0];
+
+      if (!userData) {
         return { success: true, data: null };
       }
 

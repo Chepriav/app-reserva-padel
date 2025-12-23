@@ -2,6 +2,8 @@ import { supabase } from './supabaseConfig';
 import { Platform } from 'react-native';
 import { decode } from 'base64-arraybuffer';
 
+const AVATAR_BUCKET = 'Avatar';
+
 /**
  * Servicio de almacenamiento con Supabase Storage
  * Reemplaza Cloudinary para fotos de perfil
@@ -46,7 +48,7 @@ export const storageService = {
 
       // Subir nueva imagen
       const { data, error } = await supabase.storage
-        .from('avatars')
+        .from(AVATAR_BUCKET)
         .upload(fileName, fileData, {
           contentType,
           upsert: true,
@@ -58,7 +60,7 @@ export const storageService = {
 
       // Obtener URL pública
       const { data: urlData } = supabase.storage
-        .from('avatars')
+        .from(AVATAR_BUCKET)
         .getPublicUrl(fileName);
 
       return urlData.publicUrl;
@@ -85,12 +87,12 @@ export const storageService = {
   async deleteOldAvatars(userId) {
     try {
       const { data: files } = await supabase.storage
-        .from('avatars')
+        .from(AVATAR_BUCKET)
         .list(userId);
 
       if (files && files.length > 0) {
         const filesToDelete = files.map((file) => `${userId}/${file.name}`);
-        await supabase.storage.from('avatars').remove(filesToDelete);
+        await supabase.storage.from(AVATAR_BUCKET).remove(filesToDelete);
       }
     } catch {
       // Ignorar errores al eliminar avatares antiguos

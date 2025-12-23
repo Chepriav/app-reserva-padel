@@ -8,28 +8,40 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Observer de cambios de autenticación de Firebase
   useEffect(() => {
-    const unsubscribe = authService.onAuthChange((userData) => {
-      if (userData) {
-        setUser(userData);
-        setIsAuthenticated(true);
-      } else {
-        setUser(null);
-        setIsAuthenticated(false);
-      }
-      setLoading(false);
-    });
+    let isMounted = true;
 
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
+    // Verificar sesión existente al cargar
+    const checkSession = async () => {
+      try {
+        const result = await authService.getCurrentUser();
+        if (isMounted) {
+          if (result.success && result.data) {
+            setUser(result.data);
+            setIsAuthenticated(true);
+          }
+          setLoading(false);
+        }
+      } catch {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    checkSession();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const login = async (email, password) => {
     try {
       const response = await authService.login(email, password);
       if (response.success) {
-        // El observer actualizará el estado automáticamente
+        setUser(response.data);
+        setIsAuthenticated(true);
         return { success: true };
       }
       return { success: false, error: response.error };
@@ -42,6 +54,8 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authService.logout();
       if (response.success) {
+        setUser(null);
+        setIsAuthenticated(false);
         return { success: true };
       }
       return { success: false, error: response.error };

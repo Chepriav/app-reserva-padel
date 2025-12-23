@@ -1,5 +1,5 @@
 // Service Worker básico para PWA
-const CACHE_NAME = 'reserva-padel-v1';
+const CACHE_NAME = 'reserva-padel-v2';
 const urlsToCache = [
   '/',
   '/manifest.json',
@@ -43,6 +43,15 @@ self.addEventListener('activate', (event) => {
 
 // Interceptar peticiones de red
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  // No interceptar peticiones a APIs externas (Supabase, etc.)
+  if (url.hostname.includes('supabase.co') ||
+      url.hostname.includes('supabase.in') ||
+      event.request.method !== 'GET') {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {

@@ -21,13 +21,24 @@ export const formatearFechaLegible = (fecha) => {
 
   let date;
   if (typeof fecha === 'string') {
-    date = new Date(fecha + 'T00:00:00');
+    // Si es un timestamp ISO completo (contiene T o Z), parsearlo directamente
+    if (fecha.includes('T') || fecha.includes('Z')) {
+      date = new Date(fecha);
+    } else {
+      // Si es solo fecha YYYY-MM-DD
+      date = new Date(fecha + 'T00:00:00');
+    }
   } else if (fecha.toDate && typeof fecha.toDate === 'function') {
     // Firebase Timestamp
     date = fecha.toDate();
   } else if (fecha instanceof Date) {
     date = fecha;
   } else {
+    return 'Fecha inválida';
+  }
+
+  // Verificar que la fecha sea válida
+  if (isNaN(date.getTime())) {
     return 'Fecha inválida';
   }
 
