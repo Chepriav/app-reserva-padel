@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { reservasService } from '../services/reservasService.firebase';
+import { reservasService } from '../services/reservasService.supabase';
 import { useAuth } from './AuthContext';
 
 const ReservasContext = createContext(null);

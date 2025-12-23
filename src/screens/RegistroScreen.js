@@ -10,7 +10,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { authService } from '../services/authService.firebase';
+import { authService } from '../services/authService.supabase';
 import { colors } from '../constants/colors';
 import { validarRegistro } from '../utils/validators';
 import { CustomAlert } from '../components/CustomAlert';

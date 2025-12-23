@@ -1,0 +1,391 @@
+import { supabase } from './supabaseConfig';
+import { storageService } from './storageService.supabase';
+
+/**
+ * Mensajes de error traducidos al español
+ */
+const ERROR_MESSAGES = {
+  'Invalid login credentials': 'Email o contraseña incorrectos',
+  'User already registered': 'Este email ya está registrado',
+  'Password should be at least 6 characters': 'La contraseña debe tener al menos 6 caracteres',
+  'Unable to validate email address: invalid format': 'Email no válido',
+  'Email rate limit exceeded': 'Demasiados intentos. Intenta más tarde',
+  default: 'Ha ocurrido un error. Intenta de nuevo',
+};
+
+/**
+ * Obtiene el mensaje de error traducido
+ */
+const getErrorMessage = (error, defaultMessage) => {
+  if (!error) return defaultMessage || ERROR_MESSAGES.default;
+
+  const errorMsg = error.message || error;
+  return ERROR_MESSAGES[errorMsg] || defaultMessage || ERROR_MESSAGES.default;
+};
+
+/**
+ * Verifica el estado de aprobación del usuario
+ */
+const checkApprovalStatus = (estadoAprobacion) => {
+  if (estadoAprobacion === true || estadoAprobacion === 'aprobado') {
+    return { approved: true };
+  }
+
+  if (estadoAprobacion === false || estadoAprobacion === 'rechazado') {
+    return {
+      approved: false,
+      error: 'Tu solicitud de registro fue rechazada. Contacta con el administrador',
+    };
+  }
+
+  return {
+    approved: false,
+    error: 'Tu cuenta está pendiente de aprobación por un administrador',
+  };
+};
+
+/**
+ * Convierte snake_case a camelCase para campos de usuario
+ */
+const mapUserToCamelCase = (data) => {
+  if (!data) return null;
+  return {
+    id: data.id,
+    nombre: data.nombre,
+    email: data.email,
+    telefono: data.telefono,
+    vivienda: data.vivienda,
+    nivelJuego: data.nivel_juego,
+    fotoPerfil: data.foto_perfil,
+    esAdmin: data.es_admin,
+    estadoAprobacion: data.estado_aprobacion,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
+};
+
+/**
+ * Convierte camelCase a snake_case para actualizar usuario
+ */
+const mapUserToSnakeCase = (data) => {
+  const mapped = {};
+  if (data.nombre !== undefined) mapped.nombre = data.nombre;
+  if (data.telefono !== undefined) mapped.telefono = data.telefono;
+  if (data.vivienda !== undefined) mapped.vivienda = data.vivienda;
+  if (data.nivelJuego !== undefined) mapped.nivel_juego = data.nivelJuego;
+  if (data.fotoPerfil !== undefined) mapped.foto_perfil = data.fotoPerfil;
+  return mapped;
+};
+
+/**
+ * Servicio de autenticación con Supabase
+ */
+export const authService = {
+  /**
+   * Inicia sesión con email y contraseña
+   */
+  async login(email, password) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        return { success: false, error: getErrorMessage(error, 'Error al iniciar sesión') };
+      }
+
+      // Obtener datos del perfil
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+
+      if (userError || !userData) {
+        await supabase.auth.signOut();
+        return { success: false, error: 'Usuario no encontrado en la base de datos' };
+      }
+
+      // Verificar aprobación
+      const approvalCheck = checkApprovalStatus(userData.estado_aprobacion);
+      if (!approvalCheck.approved) {
+        await supabase.auth.signOut();
+        return { success: false, error: approvalCheck.error };
+      }
+
+      return {
+        success: true,
+        data: mapUserToCamelCase(userData),
+      };
+    } catch (error) {
+      return { success: false, error: 'Error al iniciar sesión' };
+    }
+  },
+
+  /**
+   * Cierra la sesión del usuario
+   */
+  async logout() {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        return { success: false, error: 'Error al cerrar sesión' };
+      }
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Error al cerrar sesión' };
+    }
+  },
+
+  /**
+   * Obtiene el usuario actualmente autenticado
+   */
+  async getCurrentUser() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        return { success: true, data: null };
+      }
+
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error || !userData) {
+        return { success: true, data: null };
+      }
+
+      return {
+        success: true,
+        data: mapUserToCamelCase(userData),
+      };
+    } catch (error) {
+      return { success: false, error: 'Error al obtener usuario' };
+    }
+  },
+
+  /**
+   * Registra un nuevo usuario (quedará pendiente de aprobación)
+   */
+  async register(userData) {
+    try {
+      // Crear usuario en Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+      });
+
+      if (error) {
+        return { success: false, error: getErrorMessage(error, 'Error al registrarse') };
+      }
+
+      // Crear perfil en tabla users
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert({
+          id: data.user.id,
+          nombre: userData.nombre,
+          email: userData.email,
+          telefono: userData.telefono,
+          vivienda: userData.vivienda,
+          es_admin: false,
+          estado_aprobacion: 'pendiente',
+        });
+
+      if (insertError) {
+        return { success: false, error: 'Error al crear perfil de usuario' };
+      }
+
+      // Cerrar sesión para que espere aprobación
+      await supabase.auth.signOut();
+
+      return {
+        success: true,
+        data: { id: data.user.id },
+        message: 'Registro exitoso. Tu cuenta está pendiente de aprobación por un administrador',
+      };
+    } catch (error) {
+      return { success: false, error: 'Error al registrarse' };
+    }
+  },
+
+  /**
+   * Obtiene usuarios pendientes de aprobación (solo admin)
+   */
+  async getUsuariosPendientes() {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('estado_aprobacion', 'pendiente')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        return { success: false, error: 'Error al obtener usuarios pendientes' };
+      }
+
+      return {
+        success: true,
+        data: data.map(mapUserToCamelCase),
+      };
+    } catch (error) {
+      return { success: false, error: 'Error al obtener usuarios pendientes' };
+    }
+  },
+
+  /**
+   * Aprueba un usuario pendiente (solo admin)
+   */
+  async aprobarUsuario(userId) {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ estado_aprobacion: 'aprobado' })
+        .eq('id', userId);
+
+      if (error) {
+        return { success: false, error: 'Error al aprobar usuario' };
+      }
+
+      return { success: true, data: { id: userId } };
+    } catch (error) {
+      return { success: false, error: 'Error al aprobar usuario' };
+    }
+  },
+
+  /**
+   * Rechaza un usuario pendiente (solo admin)
+   */
+  async rechazarUsuario(userId) {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ estado_aprobacion: 'rechazado' })
+        .eq('id', userId);
+
+      if (error) {
+        return { success: false, error: 'Error al rechazar usuario' };
+      }
+
+      return { success: true, data: { id: userId } };
+    } catch (error) {
+      return { success: false, error: 'Error al rechazar usuario' };
+    }
+  },
+
+  /**
+   * Actualiza el perfil del usuario
+   */
+  async updateProfile(userId, updates) {
+    try {
+      // Filtrar campos protegidos
+      const { esAdmin, estadoAprobacion, ...safeUpdates } = updates;
+
+      // Subir foto si es URI local
+      if (storageService.isLocalImageUri(safeUpdates.fotoPerfil)) {
+        try {
+          safeUpdates.fotoPerfil = await storageService.uploadAvatar(userId, safeUpdates.fotoPerfil);
+        } catch (uploadError) {
+          return {
+            success: false,
+            error: uploadError.message || 'Error al subir la foto de perfil',
+          };
+        }
+      }
+
+      // Convertir a snake_case y actualizar
+      const mappedUpdates = mapUserToSnakeCase(safeUpdates);
+
+      const { error } = await supabase
+        .from('users')
+        .update(mappedUpdates)
+        .eq('id', userId);
+
+      if (error) {
+        return { success: false, error: 'Error al actualizar perfil' };
+      }
+
+      // Obtener datos actualizados
+      const { data: userData } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      return {
+        success: true,
+        data: mapUserToCamelCase(userData),
+      };
+    } catch (error) {
+      return { success: false, error: 'Error al actualizar perfil' };
+    }
+  },
+
+  /**
+   * Verifica si hay un usuario autenticado
+   */
+  async isAuthenticated() {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session !== null;
+  },
+
+  /**
+   * Envía email para recuperar contraseña
+   */
+  async resetPassword(email) {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+
+      if (error) {
+        return {
+          success: false,
+          error: getErrorMessage(error, 'Error al enviar el correo de recuperación'),
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Se ha enviado un correo para restablecer tu contraseña',
+      };
+    } catch (error) {
+      return { success: false, error: 'Error al enviar el correo de recuperación' };
+    }
+  },
+
+  /**
+   * Suscribe a cambios de autenticación
+   * @returns {Function} Función para cancelar la suscripción
+   */
+  onAuthChange(callback) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!session) {
+          callback(null);
+          return;
+        }
+
+        try {
+          const { data: userData } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (userData) {
+            callback(mapUserToCamelCase(userData));
+          } else {
+            callback(null);
+          }
+        } catch {
+          callback(null);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  },
+};

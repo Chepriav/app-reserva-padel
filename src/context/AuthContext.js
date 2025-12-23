@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { authService } from '../services/authService.firebase';
+import { authService } from '../services/authService.supabase';
 
 const AuthContext = createContext(null);
 

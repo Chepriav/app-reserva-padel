@@ -1,23 +1,5 @@
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  addDoc,
-  updateDoc,
-  query,
-  where,
-  orderBy,
-  serverTimestamp,
-} from 'firebase/firestore';
-import { db } from './firebaseConfig';
-import { PISTAS } from '../constants/config';
+import { supabase } from './supabaseConfig';
 import { horasHasta, stringToDate, generarHorariosDisponibles } from '../utils/dateHelpers';
-
-/**
- * Convierte un Timestamp de Firestore a Date
- */
-const toDate = (timestamp) => timestamp?.toDate?.() || timestamp;
 
 /**
  * Convierte tiempo en formato HH:MM a minutos totales
@@ -47,14 +29,66 @@ const LIMITS = {
 };
 
 /**
- * Servicio de reservas con Firebase
+ * Convierte snake_case a camelCase para reservas
+ */
+const mapReservaToCamelCase = (data) => {
+  if (!data) return null;
+  return {
+    id: data.id,
+    pistaId: data.pista_id,
+    pistaNombre: data.pista_nombre,
+    usuarioId: data.usuario_id,
+    usuarioNombre: data.usuario_nombre,
+    fecha: data.fecha,
+    horaInicio: data.hora_inicio,
+    horaFin: data.hora_fin,
+    duracion: data.duracion,
+    estado: data.estado,
+    jugadores: data.jugadores || [],
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
+};
+
+/**
+ * Convierte snake_case a camelCase para pistas
+ */
+const mapPistaToCamelCase = (data) => {
+  if (!data) return null;
+  return {
+    id: data.id,
+    nombre: data.nombre,
+    descripcion: data.descripcion,
+    techada: data.techada,
+    conLuz: data.con_luz,
+    capacidadJugadores: data.capacidad_jugadores,
+  };
+};
+
+/**
+ * Servicio de reservas con Supabase
  */
 export const reservasService = {
   /**
    * Obtiene la lista de pistas disponibles
    */
   async obtenerPistas() {
-    return { success: true, data: PISTAS };
+    try {
+      const { data, error } = await supabase
+        .from('pistas')
+        .select('*');
+
+      if (error) {
+        return { success: false, error: 'Error al obtener pistas' };
+      }
+
+      return {
+        success: true,
+        data: data.map(mapPistaToCamelCase),
+      };
+    } catch (error) {
+      return { success: false, error: 'Error al obtener pistas' };
+    }
   },
 
   /**
@@ -62,27 +96,21 @@ export const reservasService = {
    */
   async obtenerReservasUsuario(userId) {
     try {
-      const q = query(
-        collection(db, 'reservas'),
-        where('usuarioId', '==', userId),
-        orderBy('fecha', 'desc'),
-        orderBy('horaInicio', 'desc')
-      );
+      const { data, error } = await supabase
+        .from('reservas')
+        .select('*')
+        .eq('usuario_id', userId)
+        .order('fecha', { ascending: false })
+        .order('hora_inicio', { ascending: false });
 
-      const querySnapshot = await getDocs(q);
-      const reservas = [];
+      if (error) {
+        return { success: false, error: 'Error al obtener tus reservas' };
+      }
 
-      querySnapshot.forEach((docSnapshot) => {
-        const data = docSnapshot.data();
-        reservas.push({
-          id: docSnapshot.id,
-          ...data,
-          createdAt: toDate(data.createdAt),
-          updatedAt: toDate(data.updatedAt),
-        });
-      });
-
-      return { success: true, data: reservas };
+      return {
+        success: true,
+        data: data.map(mapReservaToCamelCase),
+      };
     } catch (error) {
       return { success: false, error: 'Error al obtener tus reservas' };
     }
@@ -93,26 +121,20 @@ export const reservasService = {
    */
   async obtenerReservasPorFecha(fecha) {
     try {
-      const q = query(
-        collection(db, 'reservas'),
-        where('fecha', '==', fecha),
-        where('estado', '==', 'confirmada')
-      );
+      const { data, error } = await supabase
+        .from('reservas')
+        .select('*')
+        .eq('fecha', fecha)
+        .eq('estado', 'confirmada');
 
-      const querySnapshot = await getDocs(q);
-      const reservas = [];
+      if (error) {
+        return { success: false, error: 'Error al obtener disponibilidad' };
+      }
 
-      querySnapshot.forEach((docSnapshot) => {
-        const data = docSnapshot.data();
-        reservas.push({
-          id: docSnapshot.id,
-          ...data,
-          createdAt: toDate(data.createdAt),
-          updatedAt: toDate(data.updatedAt),
-        });
-      });
-
-      return { success: true, data: reservas };
+      return {
+        success: true,
+        data: data.map(mapReservaToCamelCase),
+      };
     } catch (error) {
       return { success: false, error: 'Error al obtener disponibilidad' };
     }
@@ -123,20 +145,18 @@ export const reservasService = {
    */
   async obtenerDisponibilidad(pistaId, fecha) {
     try {
-      const q = query(
-        collection(db, 'reservas'),
-        where('pistaId', '==', pistaId),
-        where('fecha', '==', fecha),
-        where('estado', '==', 'confirmada')
-      );
+      const { data, error } = await supabase
+        .from('reservas')
+        .select('*')
+        .eq('pista_id', pistaId)
+        .eq('fecha', fecha)
+        .eq('estado', 'confirmada');
 
-      const querySnapshot = await getDocs(q);
-      const reservasExistentes = [];
+      if (error) {
+        return { success: false, error: 'Error al verificar disponibilidad' };
+      }
 
-      querySnapshot.forEach((docSnapshot) => {
-        reservasExistentes.push({ id: docSnapshot.id, ...docSnapshot.data() });
-      });
-
+      const reservasExistentes = data.map(mapReservaToCamelCase);
       const horariosGenerados = generarHorariosDisponibles();
 
       const horariosDisponibles = horariosGenerados.map((horario) => {
@@ -159,13 +179,6 @@ export const reservasService = {
 
       return { success: true, data: horariosDisponibles };
     } catch (error) {
-      if (error.message?.includes('index')) {
-        return {
-          success: false,
-          error: 'Falta crear índices en Firestore. Revisa la consola de Firebase.',
-        };
-      }
-
       return { success: false, error: 'Error al verificar disponibilidad' };
     }
   },
@@ -230,39 +243,47 @@ export const reservasService = {
       }
 
       // Obtener nombre de pista
-      const pista = PISTAS.find((p) => p.id === pistaId);
-      const pistaNombre = pista?.nombre || 'Pista';
+      const { data: pistaData } = await supabase
+        .from('pistas')
+        .select('nombre')
+        .eq('id', pistaId)
+        .single();
+
+      const pistaNombre = pistaData?.nombre || 'Pista';
+
+      // Calcular duración en minutos
+      const duracion = timeToMinutes(horaFin) - timeToMinutes(horaInicio);
 
       // Crear reserva
-      const nuevaReserva = {
-        pistaId,
-        pistaNombre,
-        usuarioId,
-        usuarioNombre,
-        fecha,
-        horaInicio,
-        horaFin,
-        estado: 'confirmada',
-        jugadores: jugadores || [],
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
+      const { data, error } = await supabase
+        .from('reservas')
+        .insert({
+          pista_id: pistaId,
+          pista_nombre: pistaNombre,
+          usuario_id: usuarioId,
+          usuario_nombre: usuarioNombre,
+          fecha,
+          hora_inicio: horaInicio,
+          hora_fin: horaFin,
+          duracion,
+          estado: 'confirmada',
+          jugadores: jugadores || [],
+        })
+        .select()
+        .single();
 
-      const docRef = await addDoc(collection(db, 'reservas'), nuevaReserva);
+      if (error) {
+        if (error.code === '42501') {
+          return { success: false, error: 'No tienes permisos para crear reservas' };
+        }
+        return { success: false, error: 'Error al crear la reserva. Intenta de nuevo' };
+      }
 
       return {
         success: true,
-        data: {
-          id: docRef.id,
-          ...nuevaReserva,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
+        data: mapReservaToCamelCase(data),
       };
     } catch (error) {
-      if (error.code === 'permission-denied') {
-        return { success: false, error: 'No tienes permisos para crear reservas' };
-      }
       return { success: false, error: 'Error al crear la reserva. Intenta de nuevo' };
     }
   },
@@ -272,17 +293,19 @@ export const reservasService = {
    */
   async cancelarReserva(reservaId, usuarioId) {
     try {
-      const docRef = doc(db, 'reservas', reservaId);
-      const docSnap = await getDoc(docRef);
+      // Obtener la reserva
+      const { data: reserva, error: getError } = await supabase
+        .from('reservas')
+        .select('*')
+        .eq('id', reservaId)
+        .single();
 
-      if (!docSnap.exists()) {
+      if (getError || !reserva) {
         return { success: false, error: 'Reserva no encontrada' };
       }
 
-      const reserva = docSnap.data();
-
       // Verificar propiedad
-      if (reserva.usuarioId !== usuarioId) {
+      if (reserva.usuario_id !== usuarioId) {
         return { success: false, error: 'No puedes cancelar una reserva que no es tuya' };
       }
 
@@ -292,7 +315,7 @@ export const reservasService = {
       }
 
       // Verificar tiempo de anticipación
-      const horasAntes = horasHasta(reserva.fecha, reserva.horaInicio);
+      const horasAntes = horasHasta(reserva.fecha, reserva.hora_inicio);
       if (horasAntes < LIMITS.MIN_HOURS_TO_CANCEL) {
         return {
           success: false,
@@ -300,19 +323,24 @@ export const reservasService = {
         };
       }
 
-      await updateDoc(docRef, {
-        estado: 'cancelada',
-        updatedAt: serverTimestamp(),
-      });
+      // Actualizar estado
+      const { error: updateError } = await supabase
+        .from('reservas')
+        .update({ estado: 'cancelada' })
+        .eq('id', reservaId);
+
+      if (updateError) {
+        if (updateError.code === '42501') {
+          return { success: false, error: 'No tienes permisos para cancelar esta reserva' };
+        }
+        return { success: false, error: 'Error al cancelar la reserva' };
+      }
 
       return {
         success: true,
-        data: { id: reservaId, ...reserva, estado: 'cancelada' },
+        data: mapReservaToCamelCase({ ...reserva, estado: 'cancelada' }),
       };
     } catch (error) {
-      if (error.code === 'permission-denied') {
-        return { success: false, error: 'No tienes permisos para cancelar esta reserva' };
-      }
       return { success: false, error: 'Error al cancelar la reserva' };
     }
   },
@@ -322,26 +350,20 @@ export const reservasService = {
    */
   async obtenerTodasReservas() {
     try {
-      const q = query(
-        collection(db, 'reservas'),
-        orderBy('fecha', 'desc'),
-        orderBy('horaInicio', 'desc')
-      );
+      const { data, error } = await supabase
+        .from('reservas')
+        .select('*')
+        .order('fecha', { ascending: false })
+        .order('hora_inicio', { ascending: false });
 
-      const querySnapshot = await getDocs(q);
-      const reservas = [];
+      if (error) {
+        return { success: false, error: 'Error al obtener reservas' };
+      }
 
-      querySnapshot.forEach((docSnapshot) => {
-        const data = docSnapshot.data();
-        reservas.push({
-          id: docSnapshot.id,
-          ...data,
-          createdAt: toDate(data.createdAt),
-          updatedAt: toDate(data.updatedAt),
-        });
-      });
-
-      return { success: true, data: reservas };
+      return {
+        success: true,
+        data: data.map(mapReservaToCamelCase),
+      };
     } catch (error) {
       return { success: false, error: 'Error al obtener reservas' };
     }
@@ -352,14 +374,15 @@ export const reservasService = {
    */
   async obtenerEstadisticas() {
     try {
-      const q = query(collection(db, 'reservas'));
-      const querySnapshot = await getDocs(q);
-      const reservas = [];
+      const { data, error } = await supabase
+        .from('reservas')
+        .select('*');
 
-      querySnapshot.forEach((docSnapshot) => {
-        reservas.push({ id: docSnapshot.id, ...docSnapshot.data() });
-      });
+      if (error) {
+        return { success: false, error: 'Error al obtener estadísticas' };
+      }
 
+      const reservas = data.map(mapReservaToCamelCase);
       const hoy = new Date().toISOString().split('T')[0];
 
       const reservasHoy = reservas.filter((r) => r.fecha === hoy);

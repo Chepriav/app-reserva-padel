@@ -9,7 +9,7 @@ import {
   Platform,
   RefreshControl,
 } from 'react-native';
-import { authService } from '../services/authService.firebase';
+import { authService } from '../services/authService.supabase';
 import { colors } from '../constants/colors';
 import { formatearFechaLegible } from '../utils/dateHelpers';
 import { CustomAlert } from '../components/CustomAlert';
