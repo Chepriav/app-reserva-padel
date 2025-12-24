@@ -52,3 +52,55 @@ export const NIVELES_JUEGO = [
   { value: 'avanzado', label: 'Avanzado' },
   { value: 'profesional', label: 'Profesional' }
 ];
+
+// Configuración de viviendas
+export const VIVIENDA_CONFIG = {
+  escaleras: [1, 2, 3, 4, 5, 6],
+  pisos: [1, 2, 3, 4, 5, 6],
+  puertas: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'],
+};
+
+/**
+ * Formatea una vivienda para mostrar al usuario
+ * @param {string} viviendaStr - Formato almacenado "1-3-B"
+ * @returns {string} Formato legible "Esc. 1, Piso 3, Pta. B"
+ */
+export const formatearVivienda = (viviendaStr) => {
+  if (!viviendaStr) return '';
+  const parsed = parseVivienda(viviendaStr);
+  if (!parsed) return viviendaStr; // Devolver original si no es formato nuevo
+  return `Esc. ${parsed.escalera}, Piso ${parsed.piso}, Pta. ${parsed.puerta}`;
+};
+
+/**
+ * Parsea una vivienda del formato almacenado
+ * @param {string} viviendaStr - Formato "1-3-B"
+ * @returns {object|null} { escalera, piso, puerta } o null si formato inválido
+ */
+export const parseVivienda = (viviendaStr) => {
+  if (!viviendaStr) return null;
+  const match = viviendaStr.match(/^(\d+)-(\d+)-([A-M])$/);
+  if (!match) return null;
+  return {
+    escalera: match[1],
+    piso: match[2],
+    puerta: match[3],
+  };
+};
+
+/**
+ * Combina escalera, piso y puerta en formato almacenado
+ * @returns {string} Formato "1-3-B"
+ */
+export const combinarVivienda = (escalera, piso, puerta) => {
+  return `${escalera}-${piso}-${puerta}`;
+};
+
+/**
+ * Verifica si una vivienda tiene el formato estructurado válido
+ * @param {string} viviendaStr - La vivienda a verificar
+ * @returns {boolean}
+ */
+export const esViviendaValida = (viviendaStr) => {
+  return parseVivienda(viviendaStr) !== null;
+};

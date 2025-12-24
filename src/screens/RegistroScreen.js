@@ -6,20 +6,23 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
 import { authService } from '../services/authService.supabase';
 import { colors } from '../constants/colors';
-import { validarRegistro } from '../utils/validators';
+import { validarRegistro, validarViviendaComponentes } from '../utils/validators';
+import { combinarVivienda } from '../constants/config';
 import { CustomAlert } from '../components/CustomAlert';
+import { ViviendaSelector } from '../components/ViviendaSelector';
 
 export default function RegistroScreen({ navigation }) {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('');
-  const [vivienda, setVivienda] = useState('');
+  const [escalera, setEscalera] = useState('');
+  const [piso, setPiso] = useState('');
+  const [puerta, setPuerta] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,6 +46,22 @@ export default function RegistroScreen({ navigation }) {
       });
       return;
     }
+
+    // Validar vivienda
+    const viviendaValidacion = validarViviendaComponentes(escalera, piso, puerta);
+    if (!viviendaValidacion.valido) {
+      const errores = Object.values(viviendaValidacion.errores).join('\n');
+      setAlertConfig({
+        visible: true,
+        title: 'Error en vivienda',
+        message: errores,
+        buttons: [{ text: 'OK', onPress: () => {} }],
+      });
+      return;
+    }
+
+    // Combinar vivienda
+    const vivienda = combinarVivienda(escalera, piso, puerta);
 
     // Validar datos
     const validacion = validarRegistro({
@@ -97,13 +116,12 @@ export default function RegistroScreen({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <View style={styles.container}>
       <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={true}
       >
         <View style={styles.header}>
           <Text style={styles.title}>Registro de Vecino</Text>
@@ -150,12 +168,13 @@ export default function RegistroScreen({ navigation }) {
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Vivienda *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Casa 42, Piso 3-A, etc."
-              value={vivienda}
-              onChangeText={setVivienda}
-              autoCapitalize="words"
+            <ViviendaSelector
+              escalera={escalera}
+              piso={piso}
+              puerta={puerta}
+              onChangeEscalera={setEscalera}
+              onChangePiso={setPiso}
+              onChangePuerta={setPuerta}
             />
           </View>
 
@@ -230,7 +249,7 @@ export default function RegistroScreen({ navigation }) {
         buttons={alertConfig.buttons}
         onDismiss={() => setAlertConfig({ ...alertConfig, visible: false })}
       />
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -238,12 +257,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+    // En web, asegurar altura completa
+    ...(Platform.OS === 'web' && { minHeight: '100%' }),
+  },
+  scrollView: {
+    flex: 1,
   },
   scrollContent: {
-    flexGrow: 1,
     padding: 20,
-    paddingTop: Platform.OS === 'web' ? 40 : 60,
-    paddingBottom: Platform.OS === 'web' ? 60 : 40,
+    paddingTop: Platform.OS === 'web' ? 40 : 20,
+    paddingBottom: 100,
+    // En web, no usar flexGrow para permitir scroll natural
+    ...(Platform.OS !== 'web' && { flexGrow: 1 }),
   },
   header: {
     marginBottom: 30,

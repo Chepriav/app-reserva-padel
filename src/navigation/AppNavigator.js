@@ -51,7 +51,10 @@ export default function AppNavigator() {
             <Stack.Screen
               name="Registro"
               component={RegistroScreen}
-              options={{ title: 'Registro de Vecino' }}
+              options={{
+                title: 'Registro de Vecino',
+                cardStyle: { flex: 1 },
+              }}
             />
           </>
         )}

@@ -39,6 +39,7 @@ const mapReservaToCamelCase = (data) => {
     pistaNombre: data.pista_nombre,
     usuarioId: data.usuario_id,
     usuarioNombre: data.usuario_nombre,
+    vivienda: data.vivienda,
     fecha: data.fecha,
     horaInicio: data.hora_inicio,
     horaFin: data.hora_fin,
@@ -117,6 +118,31 @@ export const reservasService = {
   },
 
   /**
+   * Obtiene las reservas de una vivienda específica
+   */
+  async obtenerReservasPorVivienda(vivienda) {
+    try {
+      const { data, error } = await supabase
+        .from('reservas')
+        .select('*')
+        .eq('vivienda', vivienda)
+        .order('fecha', { ascending: false })
+        .order('hora_inicio', { ascending: false });
+
+      if (error) {
+        return { success: false, error: 'Error al obtener reservas de la vivienda' };
+      }
+
+      return {
+        success: true,
+        data: data.map(mapReservaToCamelCase),
+      };
+    } catch (error) {
+      return { success: false, error: 'Error al obtener reservas de la vivienda' };
+    }
+  },
+
+  /**
    * Obtiene las reservas confirmadas para una fecha específica
    */
   async obtenerReservasPorFecha(fecha) {
@@ -185,10 +211,19 @@ export const reservasService = {
 
   /**
    * Crea una nueva reserva con validaciones de negocio
+   * El límite de reservas se aplica por vivienda, no por usuario
    */
   async crearReserva(reservaData) {
     try {
-      const { pistaId, usuarioId, usuarioNombre, fecha, horaInicio, horaFin, jugadores = [] } = reservaData;
+      const { pistaId, usuarioId, usuarioNombre, vivienda, fecha, horaInicio, horaFin, jugadores = [] } = reservaData;
+
+      // Validar que la vivienda esté presente
+      if (!vivienda) {
+        return {
+          success: false,
+          error: 'Debes tener una vivienda configurada para hacer reservas',
+        };
+      }
 
       // Validar anticipación mínima
       const horasAntes = horasHasta(fecha, horaInicio);
@@ -219,27 +254,27 @@ export const reservasService = {
         return { success: false, error: 'El horario seleccionado ya no está disponible' };
       }
 
-      // Verificar límite de reservas activas
-      const reservasUsuario = await this.obtenerReservasUsuario(usuarioId);
-      if (!reservasUsuario.success) {
-        return reservasUsuario;
+      // Verificar límite de reservas activas POR VIVIENDA
+      const reservasVivienda = await this.obtenerReservasPorVivienda(vivienda);
+      if (!reservasVivienda.success) {
+        return reservasVivienda;
       }
 
-      const reservasActivas = reservasUsuario.data.filter(
+      const reservasActivas = reservasVivienda.data.filter(
         (r) => r.estado === 'confirmada' && stringToDate(r.fecha, r.horaInicio) > new Date()
       );
 
       if (reservasActivas.length >= LIMITS.MAX_ACTIVE_RESERVATIONS) {
         return {
           success: false,
-          error: `Solo puedes tener ${LIMITS.MAX_ACTIVE_RESERVATIONS} reservas activas simultáneamente`,
+          error: `Tu vivienda ya tiene ${LIMITS.MAX_ACTIVE_RESERVATIONS} reservas activas. El límite es por vivienda.`,
         };
       }
 
-      // Verificar conflicto de horario
+      // Verificar conflicto de horario (de cualquier miembro de la vivienda)
       const conflicto = reservasActivas.find((r) => r.fecha === fecha && r.horaInicio === horaInicio);
       if (conflicto) {
-        return { success: false, error: 'Ya tienes una reserva a esta hora' };
+        return { success: false, error: 'Tu vivienda ya tiene una reserva a esta hora' };
       }
 
       // Obtener nombre de pista
@@ -254,7 +289,7 @@ export const reservasService = {
       // Calcular duración en minutos
       const duracion = timeToMinutes(horaFin) - timeToMinutes(horaInicio);
 
-      // Crear reserva
+      // Crear reserva (incluye vivienda)
       const { data, error } = await supabase
         .from('reservas')
         .insert({
@@ -262,6 +297,7 @@ export const reservasService = {
           pista_nombre: pistaNombre,
           usuario_id: usuarioId,
           usuario_nombre: usuarioNombre,
+          vivienda,
           fecha,
           hora_inicio: horaInicio,
           hora_fin: horaFin,

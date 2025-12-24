@@ -14,8 +14,9 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../constants/colors';
 import { CustomAlert } from '../components/CustomAlert';
-import { NIVELES_JUEGO } from '../constants/config';
-import { validarPerfil } from '../utils/validators';
+import { ViviendaSelector } from '../components/ViviendaSelector';
+import { NIVELES_JUEGO, parseVivienda, combinarVivienda, formatearVivienda, esViviendaValida } from '../constants/config';
+import { validarPerfil, validarViviendaComponentes } from '../utils/validators';
 
 // Importar ImageManipulator solo en plataformas nativas
 let ImageManipulator;
@@ -38,12 +39,19 @@ export default function PerfilScreen() {
   const [editMode, setEditMode] = useState(false);
   const [nombre, setNombre] = useState(user?.nombre || '');
   const [telefono, setTelefono] = useState(user?.telefono || '');
-  const [vivienda, setVivienda] = useState(user?.vivienda || '');
+  // Vivienda estructurada
+  const viviendaParsed = parseVivienda(user?.vivienda);
+  const [escalera, setEscalera] = useState(viviendaParsed?.escalera || '');
+  const [piso, setPiso] = useState(viviendaParsed?.piso || '');
+  const [puerta, setPuerta] = useState(viviendaParsed?.puerta || '');
   const [nivelJuego, setNivelJuego] = useState(user?.nivelJuego || null);
   const [fotoPerfil, setFotoPerfil] = useState(user?.fotoPerfil || null);
   const [saving, setSaving] = useState(false);
   const [showNivelPicker, setShowNivelPicker] = useState(false);
   const [imageError, setImageError] = useState(false);
+
+  // Verificar si necesita actualizar vivienda al nuevo formato
+  const necesitaActualizarVivienda = user?.vivienda && !esViviendaValida(user.vivienda);
 
   // Validar si una URL de imagen es válida
   const isValidImageUrl = (url) => {
@@ -58,7 +66,11 @@ export default function PerfilScreen() {
     if (user && !editMode) {
       setNombre(user.nombre || '');
       setTelefono(user.telefono || '');
-      setVivienda(user.vivienda || '');
+      // Parsear vivienda estructurada
+      const parsed = parseVivienda(user.vivienda);
+      setEscalera(parsed?.escalera || '');
+      setPiso(parsed?.piso || '');
+      setPuerta(parsed?.puerta || '');
       setNivelJuego(user.nivelJuego || null);
       // Solo usar fotoPerfil si es una URL válida
       const fotoValida = isValidImageUrl(user.fotoPerfil) ? user.fotoPerfil : null;
@@ -71,7 +83,10 @@ export default function PerfilScreen() {
   const cancelarEdicion = () => {
     setNombre(user?.nombre || '');
     setTelefono(user?.telefono || '');
-    setVivienda(user?.vivienda || '');
+    const parsed = parseVivienda(user?.vivienda);
+    setEscalera(parsed?.escalera || '');
+    setPiso(parsed?.piso || '');
+    setPuerta(parsed?.puerta || '');
     setNivelJuego(user?.nivelJuego || null);
     setFotoPerfil(user?.fotoPerfil || null);
     setEditMode(false);
@@ -139,6 +154,22 @@ export default function PerfilScreen() {
 
   // Guardar cambios del perfil
   const handleGuardarPerfil = async () => {
+    // Validar vivienda
+    const viviendaValidacion = validarViviendaComponentes(escalera, piso, puerta);
+    if (!viviendaValidacion.valido) {
+      const errores = Object.values(viviendaValidacion.errores).join('\n');
+      setAlertConfig({
+        visible: true,
+        title: 'Error en vivienda',
+        message: errores,
+        buttons: [{ text: 'OK', onPress: () => {} }],
+      });
+      return;
+    }
+
+    // Combinar vivienda
+    const vivienda = combinarVivienda(escalera, piso, puerta);
+
     const validacion = validarPerfil({
       nombre,
       telefono,
@@ -319,19 +350,42 @@ export default function PerfilScreen() {
           <View style={styles.separator} />
 
           {/* Vivienda */}
-          <View style={styles.infoRow}>
+          <View style={styles.infoRowVertical}>
             <Text style={styles.infoLabel}>Vivienda</Text>
             {editMode ? (
-              <TextInput
-                style={styles.infoInput}
-                value={vivienda}
-                onChangeText={setVivienda}
-                autoCapitalize="words"
-              />
+              <View style={styles.viviendaSelectorContainer}>
+                <ViviendaSelector
+                  escalera={escalera}
+                  piso={piso}
+                  puerta={puerta}
+                  onChangeEscalera={setEscalera}
+                  onChangePiso={setPiso}
+                  onChangePuerta={setPuerta}
+                />
+              </View>
             ) : (
-              <Text style={styles.infoValue}>{user?.vivienda}</Text>
+              <Text style={styles.infoValue}>
+                {esViviendaValida(user?.vivienda)
+                  ? formatearVivienda(user?.vivienda)
+                  : user?.vivienda}
+              </Text>
             )}
           </View>
+
+          {/* Aviso de migración de vivienda */}
+          {necesitaActualizarVivienda && !editMode && (
+            <View style={styles.migracionAviso}>
+              <Text style={styles.migracionTexto}>
+                Tu vivienda tiene el formato antiguo. Por favor, actualiza tus datos.
+              </Text>
+              <TouchableOpacity
+                style={styles.migracionBoton}
+                onPress={() => setEditMode(true)}
+              >
+                <Text style={styles.migracionBotonTexto}>Actualizar Vivienda</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <View style={styles.separator} />
 
@@ -730,5 +784,36 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     paddingVertical: 20,
+  },
+  infoRowVertical: {
+    paddingVertical: 12,
+  },
+  viviendaSelectorContainer: {
+    marginTop: 8,
+  },
+  migracionAviso: {
+    backgroundColor: colors.accent + '20',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: colors.accent,
+  },
+  migracionTexto: {
+    fontSize: 14,
+    color: colors.text,
+    marginBottom: 8,
+  },
+  migracionBoton: {
+    backgroundColor: colors.accent,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  migracionBotonTexto: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

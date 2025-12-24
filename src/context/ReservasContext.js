@@ -72,6 +72,7 @@ export const ReservasProvider = ({ children }) => {
         ...reservaData,
         usuarioId: user.id,
         usuarioNombre: user.nombre,
+        vivienda: user.vivienda,
       });
 
       if (response.success) {

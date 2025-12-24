@@ -527,15 +527,16 @@ export default function HomeScreen({ navigation }) {
                 const estaSeleccionado = bloquesSeleccionados.some(b =>
                   b.fecha === fechaSeleccionada && b.horaInicio === horario.horaInicio
                 );
-                const esMiReserva = horario.reservaExistente?.usuarioId === user?.id;
+                // Destacar reservas de mi vivienda (no solo mías personales)
+                const esMiVivienda = horario.reservaExistente?.vivienda === user?.vivienda;
 
                 return (
                   <TouchableOpacity
                     key={index}
                     style={[
                       styles.horarioChip,
-                      !horario.disponible && !esMiReserva && styles.horarioChipOcupado,
-                      !horario.disponible && esMiReserva && styles.horarioChipMio,
+                      !horario.disponible && !esMiVivienda && styles.horarioChipOcupado,
+                      !horario.disponible && esMiVivienda && styles.horarioChipMio,
                       estaSeleccionado && styles.horarioChipSeleccionado,
                     ]}
                     onPress={() =>
@@ -546,8 +547,8 @@ export default function HomeScreen({ navigation }) {
                     <Text
                       style={[
                         styles.horarioChipText,
-                        !horario.disponible && !esMiReserva && styles.horarioChipTextOcupado,
-                        !horario.disponible && esMiReserva && styles.horarioChipTextMio,
+                        !horario.disponible && !esMiVivienda && styles.horarioChipTextOcupado,
+                        !horario.disponible && esMiVivienda && styles.horarioChipTextMio,
                         estaSeleccionado && styles.horarioChipTextSeleccionado,
                       ]}
                     >
@@ -587,15 +588,16 @@ export default function HomeScreen({ navigation }) {
                         const estaSeleccionado = bloquesSeleccionados.some(b =>
                           b.fecha === fecha && b.horaInicio === horario.horaInicio
                         );
-                        const esMiReserva = horario.reservaExistente?.usuarioId === user?.id;
+                        // Destacar reservas de mi vivienda (no solo mías personales)
+                        const esMiVivienda = horario.reservaExistente?.vivienda === user?.vivienda;
 
                         return (
                           <TouchableOpacity
                             key={index}
                             style={[
                               styles.horarioChip,
-                              !horario.disponible && !esMiReserva && styles.horarioChipOcupado,
-                              !horario.disponible && esMiReserva && styles.horarioChipMio,
+                              !horario.disponible && !esMiVivienda && styles.horarioChipOcupado,
+                              !horario.disponible && esMiVivienda && styles.horarioChipMio,
                               estaSeleccionado && styles.horarioChipSeleccionado,
                             ]}
                             onPress={() => {
@@ -608,8 +610,8 @@ export default function HomeScreen({ navigation }) {
                             <Text
                               style={[
                                 styles.horarioChipText,
-                                !horario.disponible && !esMiReserva && styles.horarioChipTextOcupado,
-                                !horario.disponible && esMiReserva && styles.horarioChipTextMio,
+                                !horario.disponible && !esMiVivienda && styles.horarioChipTextOcupado,
+                                !horario.disponible && esMiVivienda && styles.horarioChipTextMio,
                                 estaSeleccionado && styles.horarioChipTextSeleccionado,
                               ]}
                             >

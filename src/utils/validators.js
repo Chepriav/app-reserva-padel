@@ -1,4 +1,4 @@
-import { LIMITES_RESERVA } from '../constants/config';
+import { LIMITES_RESERVA, esViviendaValida, VIVIENDA_CONFIG } from '../constants/config';
 import { horasHasta, esFuturo } from './dateHelpers';
 
 // Validar formato de email
@@ -12,6 +12,34 @@ export const validarTelefono = (telefono) => {
   // Acepta números de 9 dígitos o más
   const soloNumeros = telefono.replace(/\s/g, '').replace(/\+/g, '').replace(/-/g, '');
   return soloNumeros.length >= 9 && /^\d+$/.test(soloNumeros);
+};
+
+// Validar componentes de vivienda (escalera, piso, puerta)
+export const validarViviendaComponentes = (escalera, piso, puerta) => {
+  const errores = {};
+
+  if (!escalera) {
+    errores.escalera = 'Selecciona una escalera';
+  } else if (!VIVIENDA_CONFIG.escaleras.includes(Number(escalera))) {
+    errores.escalera = 'Escalera no válida';
+  }
+
+  if (!piso) {
+    errores.piso = 'Selecciona un piso';
+  } else if (!VIVIENDA_CONFIG.pisos.includes(Number(piso))) {
+    errores.piso = 'Piso no válido';
+  }
+
+  if (!puerta) {
+    errores.puerta = 'Selecciona una puerta';
+  } else if (!VIVIENDA_CONFIG.puertas.includes(puerta)) {
+    errores.puerta = 'Puerta no válida';
+  }
+
+  return {
+    valido: Object.keys(errores).length === 0,
+    errores,
+  };
 };
 
 // Validar si el usuario puede hacer una nueva reserva
@@ -81,8 +109,9 @@ export const validarRegistro = (datos) => {
     errores.telefono = 'Teléfono no válido';
   }
 
-  if (!datos.vivienda || datos.vivienda.trim().length === 0) {
-    errores.vivienda = 'Debes indicar tu vivienda';
+  // Validar vivienda estructurada
+  if (!datos.vivienda || !esViviendaValida(datos.vivienda)) {
+    errores.vivienda = 'Debes seleccionar tu vivienda completa';
   }
 
   if (!datos.password || datos.password.length < 6) {
@@ -107,8 +136,9 @@ export const validarPerfil = (datos) => {
     errores.telefono = 'Teléfono no válido';
   }
 
-  if (!datos.vivienda || datos.vivienda.trim().length === 0) {
-    errores.vivienda = 'Debes indicar tu vivienda';
+  // Validar vivienda estructurada
+  if (!datos.vivienda || !esViviendaValida(datos.vivienda)) {
+    errores.vivienda = 'Debes seleccionar tu vivienda completa';
   }
 
   // nivelJuego is optional, but if provided must be valid
