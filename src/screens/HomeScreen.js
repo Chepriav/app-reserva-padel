@@ -15,12 +15,13 @@ import {
   obtenerFechaHoy,
   formatearFechaLegible,
   esFechaValida,
+  bloqueTerminado,
 } from '../utils/dateHelpers';
 import { puedeReservar } from '../utils/validators';
 import { CustomAlert } from '../components/CustomAlert';
 
 export default function HomeScreen({ navigation }) {
-  const { user } = useAuth();
+  const { user, notificacionesPendientes, marcarNotificacionesLeidas } = useAuth();
   const { pistas, crearReserva, obtenerDisponibilidad, reservas } =
     useReservas();
   const [fechaSeleccionada, setFechaSeleccionada] = useState(obtenerFechaHoy());
@@ -31,6 +32,7 @@ export default function HomeScreen({ navigation }) {
   const [vistaActual, setVistaActual] = useState('dia'); // 'dia' o 'semana'
   const [horariosSemanales, setHorariosSemanales] = useState({}); // { '2025-01-15': [...horarios], ... }
   const [bloquesSeleccionados, setBloquesSeleccionados] = useState([]); // Array de horarios seleccionados
+  const [notificacionMostrada, setNotificacionMostrada] = useState(false);
 
   // Estado para el CustomAlert
   const [alertConfig, setAlertConfig] = useState({
@@ -39,6 +41,27 @@ export default function HomeScreen({ navigation }) {
     message: '',
     buttons: [],
   });
+
+  // Mostrar notificación de desplazamiento al entrar
+  useEffect(() => {
+    if (notificacionesPendientes.length > 0 && !notificacionMostrada) {
+      const notif = notificacionesPendientes[0];
+      setNotificacionMostrada(true);
+      setAlertConfig({
+        visible: true,
+        title: 'Reserva Desplazada',
+        message: `Tu reserva provisional del ${formatearFechaLegible(notif.fechaReserva)} a las ${notif.horaInicio} en ${notif.pistaNombre} fue desplazada por otra vivienda.\n\nPuedes hacer una nueva reserva cuando quieras.`,
+        buttons: [
+          {
+            text: 'Entendido',
+            onPress: () => {
+              marcarNotificacionesLeidas();
+            },
+          },
+        ],
+      });
+    }
+  }, [notificacionesPendientes, notificacionMostrada]);
 
   // Funciones helper para mostrar alerts
   const mostrarAlerta = (title, message) => {
@@ -182,6 +205,56 @@ export default function HomeScreen({ navigation }) {
   // Limpiar selección
   const limpiarSeleccion = () => {
     setBloquesSeleccionados([]);
+  };
+
+  // Manejar selección de horario desplazable (reserva provisional de otro)
+  const handleSeleccionarDesplazable = (horario, fechaReserva = null) => {
+    const fechaAUsar = fechaReserva || fechaSeleccionada;
+
+    setAlertConfig({
+      visible: true,
+      title: 'Reserva Provisional',
+      message: `Este horario tiene una reserva provisional de otra vivienda.\n\nSi reservas aquí, desplazarás esa reserva y la tuya será GARANTIZADA.\n\n¿Deseas continuar?`,
+      buttons: [
+        { text: 'Cancelar', style: 'cancel', onPress: () => {} },
+        {
+          text: 'Desplazar y Reservar',
+          style: 'destructive',
+          onPress: () => confirmarReservaConDesplazamiento(horario, fechaAUsar),
+        },
+      ],
+    });
+  };
+
+  // Confirmar reserva desplazando otra
+  const confirmarReservaConDesplazamiento = async (horario, fechaReserva) => {
+    if (!user || !pistaSeleccionada) return;
+
+    setReservando(true);
+    const result = await crearReserva({
+      pistaId: pistaSeleccionada.id,
+      fecha: fechaReserva,
+      horaInicio: horario.horaInicio,
+      horaFin: horario.horaFin,
+      jugadores: [],
+      forzarDesplazamiento: true,
+    });
+    setReservando(false);
+
+    if (result.success) {
+      mostrarAlerta(
+        '¡Reserva confirmada!',
+        'Tu reserva GARANTIZADA se ha creado correctamente.\nLa reserva provisional anterior ha sido desplazada.'
+      );
+      limpiarSeleccion();
+      if (vistaActual === 'dia') {
+        cargarHorarios();
+      } else {
+        cargarHorariosSemana();
+      }
+    } else {
+      mostrarAlerta('Error', result.error);
+    }
   };
 
   // Función para confirmar la reserva de los bloques seleccionados
@@ -518,6 +591,22 @@ export default function HomeScreen({ navigation }) {
             </View>
           )}
 
+          {/* Leyenda de colores */}
+          <View style={styles.leyendaContainer}>
+            <View style={styles.leyendaItem}>
+              <View style={[styles.leyendaColor, { backgroundColor: colors.primary }]} />
+              <Text style={styles.leyendaText}>Libre</Text>
+            </View>
+            <View style={styles.leyendaItem}>
+              <View style={[styles.leyendaColor, { backgroundColor: colors.reservaGarantizada }]} />
+              <Text style={styles.leyendaText}>Garantizada</Text>
+            </View>
+            <View style={styles.leyendaItem}>
+              <View style={[styles.leyendaColor, { backgroundColor: colors.reservaProvisional }]} />
+              <Text style={styles.leyendaText}>Provisional</Text>
+            </View>
+          </View>
+
           {loadingHorarios ? (
             <ActivityIndicator size="large" color={colors.primary} />
           ) : vistaActual === 'dia' ? (
@@ -527,33 +616,65 @@ export default function HomeScreen({ navigation }) {
                 const estaSeleccionado = bloquesSeleccionados.some(b =>
                   b.fecha === fechaSeleccionada && b.horaInicio === horario.horaInicio
                 );
-                // Destacar reservas de mi vivienda (no solo mías personales)
+                // Detectar si el horario ya terminó (usando hora de fin del bloque)
+                const esPasado = bloqueTerminado(fechaSeleccionada, horario.horaFin);
+                // Detectar si es de mi vivienda
                 const esMiVivienda = horario.reservaExistente?.vivienda === user?.vivienda;
+                // Determinar prioridad (garantizada si es primera O está protegida <24h)
+                const esPrimeraOProtegida = horario.prioridad === 'primera' || horario.estaProtegida;
+                const esSegundaDesplazable = horario.prioridad === 'segunda' && !horario.estaProtegida;
+
+                // Estilos según combinación vivienda + prioridad
+                // Mi vivienda: verde sólido (primera) o dorado sólido (segunda)
+                // Otra vivienda: gris + borde verde (primera) o gris + borde dorado (segunda, desplazable)
+                const esMiGarantizada = !horario.disponible && esMiVivienda && esPrimeraOProtegida;
+                const esMiProvisional = !horario.disponible && esMiVivienda && esSegundaDesplazable;
+                const esOtraGarantizada = !horario.disponible && !esMiVivienda && esPrimeraOProtegida;
+                const esOtraProvisional = !horario.disponible && !esMiVivienda && esSegundaDesplazable;
 
                 return (
                   <TouchableOpacity
                     key={index}
                     style={[
                       styles.horarioChip,
-                      !horario.disponible && !esMiVivienda && styles.horarioChipOcupado,
-                      !horario.disponible && esMiVivienda && styles.horarioChipMio,
+                      // Horario pasado - mostrar como desactivado
+                      esPasado && styles.horarioChipPasado,
+                      // Mi vivienda (solo si no es pasado)
+                      !esPasado && esMiGarantizada && styles.horarioChipMiGarantizada,
+                      !esPasado && esMiProvisional && styles.horarioChipMiProvisional,
+                      // Otra vivienda (solo si no es pasado)
+                      !esPasado && esOtraGarantizada && styles.horarioChipOtraGarantizada,
+                      !esPasado && esOtraProvisional && styles.horarioChipOtraProvisional,
+                      // Seleccionado
                       estaSeleccionado && styles.horarioChipSeleccionado,
                     ]}
-                    onPress={() =>
-                      horario.disponible && toggleBloqueSeleccionado(horario)
-                    }
-                    disabled={!horario.disponible || reservando}
+                    onPress={() => {
+                      if (esPasado) return; // No hacer nada si ya pasó
+                      if (horario.disponible) {
+                        toggleBloqueSeleccionado(horario);
+                      } else if (esOtraProvisional) {
+                        // Solo se puede desplazar provisionales de OTRA vivienda
+                        handleSeleccionarDesplazable(horario);
+                      }
+                    }}
+                    disabled={esPasado || (esOtraGarantizada || esMiVivienda) || reservando}
                   >
                     <Text
                       style={[
                         styles.horarioChipText,
-                        !horario.disponible && !esMiVivienda && styles.horarioChipTextOcupado,
-                        !horario.disponible && esMiVivienda && styles.horarioChipTextMio,
+                        esPasado && styles.horarioChipTextPasado,
+                        !esPasado && (esMiGarantizada || esMiProvisional) && styles.horarioChipTextBlanco,
+                        !esPasado && (esOtraGarantizada || esOtraProvisional) && styles.horarioChipTextOscuro,
                         estaSeleccionado && styles.horarioChipTextSeleccionado,
                       ]}
                     >
                       {horario.horaInicio}
                     </Text>
+                    {!esPasado && esOtraProvisional && (
+                      <View style={styles.iconoDesplazable}>
+                        <Text style={styles.iconoDesplazableText}>!</Text>
+                      </View>
+                    )}
                     {estaSeleccionado && (
                       <View style={styles.checkMark}>
                         <Text style={styles.checkMarkText}>✓</Text>
@@ -568,7 +689,7 @@ export default function HomeScreen({ navigation }) {
             Object.keys(horariosSemanales).length > 0 ? (
               Object.keys(horariosSemanales).map((fecha) => {
                 const horariosDelDia = horariosSemanales[fecha];
-                const disponiblesCount = horariosDelDia.filter(h => h.disponible).length;
+                const disponiblesCount = horariosDelDia.filter(h => h.disponible || h.esDesplazable).length;
 
                 return (
                   <View key={fecha} style={styles.diaCard}>
@@ -588,35 +709,61 @@ export default function HomeScreen({ navigation }) {
                         const estaSeleccionado = bloquesSeleccionados.some(b =>
                           b.fecha === fecha && b.horaInicio === horario.horaInicio
                         );
-                        // Destacar reservas de mi vivienda (no solo mías personales)
+                        // Detectar si el horario ya terminó (usando hora de fin del bloque)
+                        const esPasado = bloqueTerminado(fecha, horario.horaFin);
+                        // Detectar si es de mi vivienda
                         const esMiVivienda = horario.reservaExistente?.vivienda === user?.vivienda;
+                        // Determinar prioridad
+                        const esPrimeraOProtegida = horario.prioridad === 'primera' || horario.estaProtegida;
+                        const esSegundaDesplazable = horario.prioridad === 'segunda' && !horario.estaProtegida;
+
+                        // Estilos según combinación vivienda + prioridad
+                        const esMiGarantizada = !horario.disponible && esMiVivienda && esPrimeraOProtegida;
+                        const esMiProvisional = !horario.disponible && esMiVivienda && esSegundaDesplazable;
+                        const esOtraGarantizada = !horario.disponible && !esMiVivienda && esPrimeraOProtegida;
+                        const esOtraProvisional = !horario.disponible && !esMiVivienda && esSegundaDesplazable;
 
                         return (
                           <TouchableOpacity
                             key={index}
                             style={[
                               styles.horarioChip,
-                              !horario.disponible && !esMiVivienda && styles.horarioChipOcupado,
-                              !horario.disponible && esMiVivienda && styles.horarioChipMio,
+                              // Horario pasado - mostrar como desactivado
+                              esPasado && styles.horarioChipPasado,
+                              // Mi vivienda (solo si no es pasado)
+                              !esPasado && esMiGarantizada && styles.horarioChipMiGarantizada,
+                              !esPasado && esMiProvisional && styles.horarioChipMiProvisional,
+                              // Otra vivienda (solo si no es pasado)
+                              !esPasado && esOtraGarantizada && styles.horarioChipOtraGarantizada,
+                              !esPasado && esOtraProvisional && styles.horarioChipOtraProvisional,
                               estaSeleccionado && styles.horarioChipSeleccionado,
                             ]}
                             onPress={() => {
+                              if (esPasado) return;
                               if (horario.disponible) {
                                 toggleBloqueSeleccionado(horario, fecha);
+                              } else if (esOtraProvisional) {
+                                handleSeleccionarDesplazable(horario, fecha);
                               }
                             }}
-                            disabled={!horario.disponible || reservando}
+                            disabled={esPasado || (esOtraGarantizada || esMiVivienda) || reservando}
                           >
                             <Text
                               style={[
                                 styles.horarioChipText,
-                                !horario.disponible && !esMiVivienda && styles.horarioChipTextOcupado,
-                                !horario.disponible && esMiVivienda && styles.horarioChipTextMio,
+                                esPasado && styles.horarioChipTextPasado,
+                                !esPasado && (esMiGarantizada || esMiProvisional) && styles.horarioChipTextBlanco,
+                                !esPasado && (esOtraGarantizada || esOtraProvisional) && styles.horarioChipTextOscuro,
                                 estaSeleccionado && styles.horarioChipTextSeleccionado,
                               ]}
                             >
                               {horario.horaInicio}
                             </Text>
+                            {!esPasado && esOtraProvisional && (
+                              <View style={styles.iconoDesplazable}>
+                                <Text style={styles.iconoDesplazableText}>!</Text>
+                              </View>
+                            )}
                             {estaSeleccionado && (
                               <Text style={styles.horarioChipCheck}>✓</Text>
                             )}
@@ -783,40 +930,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '500',
   },
-  horarioCard: {
-    backgroundColor: colors.surface,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.primary,
-  },
-  horarioCardOcupado: {
-    backgroundColor: colors.background,
-    borderColor: colors.disabled,
-  },
-  horarioText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  horarioTextOcupado: {
-    color: colors.disabled,
-  },
-  ocupadoBadge: {
-    backgroundColor: colors.disabled,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  ocupadoText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
   loadingOverlay: {
     position: 'absolute',
     top: 0,
@@ -907,21 +1020,9 @@ const styles = StyleSheet.create({
     minWidth: 60,
     alignItems: 'center',
   },
-  horarioChipOcupado: {
-    backgroundColor: colors.disabled,
-  },
-  horarioChipMio: {
-    backgroundColor: colors.accent,
-  },
   horarioChipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
-  },
-  horarioChipTextOcupado: {
-    color: colors.textSecondary,
-  },
-  horarioChipTextMio: {
     color: '#fff',
   },
   emptyText: {
@@ -960,26 +1061,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-  horarioCardSeleccionado: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
-  },
-  horarioTextSeleccionado: {
-    color: '#fff',
-  },
-  seleccionadoBadge: {
-    backgroundColor: '#fff',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  seleccionadoText: {
-    fontSize: 14,
-    color: colors.accent,
-    fontWeight: 'bold',
-  },
   horarioChipSeleccionado: {
     backgroundColor: colors.accent,
   },
@@ -991,10 +1072,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     marginLeft: 4,
-  },
-  botonReservarContainer: {
-    padding: 16,
-    paddingBottom: 20,
   },
   botonReservarContainerFijo: {
     position: 'absolute',
@@ -1043,5 +1120,76 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.accent,
     fontWeight: 'bold',
+  },
+  // Estilos para sistema de prioridades
+  leyendaContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 16,
+    padding: 12,
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+  },
+  leyendaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  leyendaColor: {
+    width: 16,
+    height: 16,
+    borderRadius: 4,
+  },
+  leyendaText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  iconoDesplazable: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: colors.reservaProvisional,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconoDesplazableText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  // Estilos para nuevo sistema de colores por vivienda + prioridad
+  horarioChipMiGarantizada: {
+    backgroundColor: colors.reservaGarantizada, // Verde sólido
+  },
+  horarioChipMiProvisional: {
+    backgroundColor: colors.reservaProvisional, // Dorado sólido
+  },
+  horarioChipOtraGarantizada: {
+    backgroundColor: colors.reservaDesplazable, // Gris
+    borderWidth: 2,
+    borderColor: colors.reservaGarantizada, // Borde verde
+  },
+  horarioChipOtraProvisional: {
+    backgroundColor: colors.reservaDesplazable, // Gris
+    borderWidth: 2,
+    borderColor: colors.reservaProvisional, // Borde dorado
+  },
+  horarioChipTextBlanco: {
+    color: '#fff',
+  },
+  horarioChipTextOscuro: {
+    color: colors.text,
+  },
+  // Estilos para horarios pasados (desactivados)
+  horarioChipPasado: {
+    backgroundColor: colors.disabled,  // Gris
+    opacity: 0.4,
+  },
+  horarioChipTextPasado: {
+    color: colors.textSecondary,
   },
 });

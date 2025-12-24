@@ -83,6 +83,13 @@ export const esFuturo = (fecha, hora) => {
   return fechaHora > new Date();
 };
 
+// Validar si un bloque horario ya terminó (usa la hora de fin)
+// El bloque está activo mientras no haya terminado
+export const bloqueTerminado = (fecha, horaFin) => {
+  const fechaHoraFin = stringToDate(fecha, horaFin);
+  return fechaHoraFin <= new Date();
+};
+
 // Calcular diferencia en horas desde ahora hasta fecha/hora
 export const horasHasta = (fecha, hora) => {
   const fechaHora = stringToDate(fecha, hora);

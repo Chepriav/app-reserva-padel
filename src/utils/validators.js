@@ -1,5 +1,5 @@
 import { LIMITES_RESERVA, esViviendaValida, VIVIENDA_CONFIG } from '../constants/config';
-import { horasHasta, esFuturo } from './dateHelpers';
+import { horasHasta } from './dateHelpers';
 
 // Validar formato de email
 export const validarEmail = (email) => {
@@ -43,6 +43,8 @@ export const validarViviendaComponentes = (escalera, piso, puerta) => {
 };
 
 // Validar si el usuario puede hacer una nueva reserva
+// NOTA: La validación principal de límites se hace en el backend (reservasService)
+// Esta función solo hace validaciones básicas del frontend
 export const puedeReservar = (usuario, nuevaReserva, reservasActuales) => {
   // Verificar que la fecha/hora sea futura
   const horasAnticipacion = horasHasta(nuevaReserva.fecha, nuevaReserva.horaInicio);
@@ -54,19 +56,26 @@ export const puedeReservar = (usuario, nuevaReserva, reservasActuales) => {
     };
   }
 
-  // 2. Verificar límite de reservas activas
-  const reservasActivas = reservasActuales.filter(
-    (r) => r.usuarioId === usuario.id && r.estado === 'confirmada'
-  );
-  if (reservasActivas.length >= LIMITES_RESERVA.maxReservasActivas) {
+  // 2. Verificar límite de reservas activas de la VIVIENDA (solo futuras)
+  const ahora = new Date();
+  const reservasActivasVivienda = reservasActuales.filter((r) => {
+    // Filtrar por vivienda, estado confirmada, y que sea futura
+    const esMismaVivienda = r.vivienda === usuario.vivienda;
+    const esConfirmada = r.estado === 'confirmada';
+    const fechaReserva = new Date(r.fecha + 'T' + r.horaInicio);
+    const esFutura = fechaReserva > ahora;
+    return esMismaVivienda && esConfirmada && esFutura;
+  });
+
+  if (reservasActivasVivienda.length >= LIMITES_RESERVA.maxReservasActivas) {
     return {
       valido: false,
-      error: `Solo puedes tener ${LIMITES_RESERVA.maxReservasActivas} reservas activas`,
+      error: `Tu vivienda ya tiene ${LIMITES_RESERVA.maxReservasActivas} reservas activas`,
     };
   }
 
-  // 3. Verificar que no tenga otra reserva a la misma hora
-  const conflicto = reservasActivas.find(
+  // 3. Verificar que la vivienda no tenga otra reserva a la misma hora
+  const conflicto = reservasActivasVivienda.find(
     (r) =>
       r.fecha === nuevaReserva.fecha &&
       r.horaInicio === nuevaReserva.horaInicio
@@ -74,7 +83,7 @@ export const puedeReservar = (usuario, nuevaReserva, reservasActuales) => {
   if (conflicto) {
     return {
       valido: false,
-      error: 'Ya tienes una reserva a esta hora',
+      error: 'Tu vivienda ya tiene una reserva a esta hora',
     };
   }
 

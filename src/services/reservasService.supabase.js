@@ -1,5 +1,6 @@
 import { supabase } from './supabaseConfig';
 import { horasHasta, stringToDate, generarHorariosDisponibles } from '../utils/dateHelpers';
+import { LIMITES_RESERVA } from '../constants/config';
 
 /**
  * Convierte tiempo en formato HH:MM a minutos totales
@@ -19,13 +20,13 @@ const rangesOverlap = (start1, end1, start2, end2) => {
 };
 
 /**
- * Límites de reserva
+ * Límites de reserva (desde config.js)
  */
 const LIMITS = {
-  MIN_HOURS_ADVANCE: 2,
-  MAX_DAYS_ADVANCE: 7,
-  MAX_ACTIVE_RESERVATIONS: 2,
-  MIN_HOURS_TO_CANCEL: 4,
+  MIN_HOURS_ADVANCE: LIMITES_RESERVA.horasAnticipacionMinima,
+  MAX_DAYS_ADVANCE: LIMITES_RESERVA.diasAnticipacionMaxima,
+  MAX_ACTIVE_RESERVATIONS: LIMITES_RESERVA.maxReservasActivas,
+  MIN_HOURS_TO_CANCEL: LIMITES_RESERVA.horasCancelacionMinima,
 };
 
 /**
@@ -45,7 +46,12 @@ const mapReservaToCamelCase = (data) => {
     horaFin: data.hora_fin,
     duracion: data.duracion,
     estado: data.estado,
+    prioridad: data.prioridad || 'primera', // 'primera' (garantizada) o 'segunda' (provisional)
     jugadores: data.jugadores || [],
+    // Campos de conversión automática P->G
+    conversionTimestamp: data.conversion_timestamp,
+    conversionRule: data.conversion_rule,
+    convertedAt: data.converted_at,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };
@@ -130,6 +136,10 @@ export const reservasService = {
         .order('hora_inicio', { ascending: false });
 
       if (error) {
+        // Si la columna vivienda no existe, devolver array vacío
+        if (error.code === '42703' || error.message?.includes('vivienda')) {
+          return { success: true, data: [] };
+        }
         return { success: false, error: 'Error al obtener reservas de la vivienda' };
       }
 
@@ -138,7 +148,7 @@ export const reservasService = {
         data: data.map(mapReservaToCamelCase),
       };
     } catch (error) {
-      return { success: false, error: 'Error al obtener reservas de la vivienda' };
+      return { success: true, data: [] };
     }
   },
 
@@ -168,6 +178,7 @@ export const reservasService = {
 
   /**
    * Obtiene la disponibilidad de horarios para una pista en una fecha
+   * Incluye información de prioridad para el sistema de reservas primera/segunda
    */
   async obtenerDisponibilidad(pistaId, fecha) {
     try {
@@ -195,11 +206,25 @@ export const reservasService = {
           return rangesOverlap(bloqueInicioMin, bloqueFinMin, reservaInicioMin, reservaFinMin);
         });
 
+        // Calcular si la reserva está protegida (< 24h antes)
+        let estaProtegida = false;
+        let esDesplazable = false;
+        if (reservaConflicto) {
+          const horasRestantes = horasHasta(fecha, horario.horaInicio);
+          estaProtegida = horasRestantes < 24;
+          // Es desplazable si es segunda prioridad Y faltan 24h o más
+          esDesplazable = reservaConflicto.prioridad === 'segunda' && !estaProtegida;
+        }
+
         return {
           horaInicio: horario.horaInicio,
           horaFin: horario.horaFin,
           disponible: !reservaConflicto,
           reservaExistente: reservaConflicto || null,
+          // Nuevos campos para sistema de prioridades
+          prioridad: reservaConflicto?.prioridad || null,
+          esDesplazable,
+          estaProtegida,
         };
       });
 
@@ -210,12 +235,117 @@ export const reservasService = {
   },
 
   /**
+   * Obtiene las reservas activas futuras de una vivienda
+   */
+  async obtenerReservasActivasVivienda(vivienda) {
+    try {
+      const reservasVivienda = await this.obtenerReservasPorVivienda(vivienda);
+
+      if (!reservasVivienda.success) {
+        return [];
+      }
+
+      const ahora = new Date();
+
+      const activas = reservasVivienda.data.filter((r) => {
+        const fechaReserva = stringToDate(r.fecha, r.horaInicio);
+        const esConfirmada = r.estado === 'confirmada';
+        const esFutura = fechaReserva > ahora;
+        return esConfirmada && esFutura;
+      });
+
+      return activas;
+    } catch (error) {
+      return [];
+    }
+  },
+
+  /**
+   * Determina qué prioridad tendrá una nueva reserva
+   * basándose en las reservas activas de la vivienda
+   */
+  async obtenerPrioridadParaNuevaReserva(vivienda) {
+    try {
+      const reservasActivas = await this.obtenerReservasActivasVivienda(vivienda);
+
+      if (reservasActivas.length === 0) {
+        return 'primera'; // Sin reservas = primera garantizada
+      }
+      if (reservasActivas.length === 1) {
+        return 'segunda'; // Ya tiene una = segunda provisional
+      }
+      return null; // Ya tiene 2 = no puede reservar más
+    } catch (error) {
+      // En caso de error, asumir que puede reservar como primera
+      return 'primera';
+    }
+  },
+
+  /**
+   * Desplaza (cancela) una reserva secundaria y crea notificación
+   */
+  async desplazarReserva(reservaADesplazar, viviendaDesplazadora) {
+    try {
+      // 1. Cancelar la reserva existente
+      const { error: cancelError } = await supabase
+        .from('reservas')
+        .update({
+          estado: 'cancelada',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', reservaADesplazar.id);
+
+      if (cancelError) {
+        return { success: false, error: 'Error al desplazar la reserva' };
+      }
+
+      // 2. Crear notificación para el usuario desplazado
+      await supabase
+        .from('notificaciones_desplazamiento')
+        .insert({
+          usuario_id: reservaADesplazar.usuarioId,
+          vivienda: reservaADesplazar.vivienda,
+          fecha_reserva: reservaADesplazar.fecha,
+          hora_inicio: reservaADesplazar.horaInicio,
+          hora_fin: reservaADesplazar.horaFin,
+          pista_nombre: reservaADesplazar.pistaNombre,
+          desplazado_por_vivienda: viviendaDesplazadora,
+        });
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Error al desplazar la reserva' };
+    }
+  },
+
+  /**
    * Crea una nueva reserva con validaciones de negocio
    * El límite de reservas se aplica por vivienda, no por usuario
+   * Soporta desplazamiento de reservas secundarias
+   *
+   * Intenta usar el RPC (crear_reserva_con_prioridad) para manejar
+   * automáticamente la prioridad y conversiones P->G.
+   * Si el RPC no existe, usa el método de fallback.
    */
   async crearReserva(reservaData) {
     try {
-      const { pistaId, usuarioId, usuarioNombre, vivienda, fecha, horaInicio, horaFin, jugadores = [] } = reservaData;
+      const { pistaId, usuarioId, usuarioNombre, vivienda, fecha, horaInicio, horaFin, jugadores = [], forzarDesplazamiento = false } = reservaData;
+
+      // Primero intentar crear con RPC (si no hay desplazamiento pendiente)
+      if (!forzarDesplazamiento) {
+        const rpcResult = await this.crearReservaConRPC(reservaData);
+
+        // Si el RPC funcionó, devolver resultado
+        if (rpcResult.success) {
+          return rpcResult;
+        }
+
+        // Si el RPC no existe, continuar con método fallback
+        // Si hay otro error del RPC, devolverlo
+        if (!rpcResult.rpcNotFound) {
+          return rpcResult;
+        }
+      }
 
       // Validar que la vivienda esté presente
       if (!vivienda) {
@@ -250,28 +380,64 @@ export const reservasService = {
       }
 
       const horarioSeleccionado = disponibilidad.data.find((h) => h.horaInicio === horaInicio);
-      if (!horarioSeleccionado || !horarioSeleccionado.disponible) {
-        return { success: false, error: 'El horario seleccionado ya no está disponible' };
+
+      // Manejar caso de horario ocupado
+      if (horarioSeleccionado && !horarioSeleccionado.disponible) {
+        // Verificar si es desplazable
+        if (!horarioSeleccionado.esDesplazable) {
+          return {
+            success: false,
+            error: 'El horario seleccionado ya no está disponible (reserva garantizada)'
+          };
+        }
+
+        // Es desplazable - verificar que la nueva sería "primera"
+        const prioridadNueva = await this.obtenerPrioridadParaNuevaReserva(vivienda);
+        if (prioridadNueva !== 'primera') {
+          return {
+            success: false,
+            error: 'Solo puedes desplazar reservas provisionales con tu primera reserva',
+          };
+        }
+
+        // Verificar que no sea de la misma vivienda
+        if (horarioSeleccionado.reservaExistente.vivienda === vivienda) {
+          return { success: false, error: 'Tu vivienda ya tiene una reserva a esta hora' };
+        }
+
+        // Desplazar la reserva existente
+        if (forzarDesplazamiento) {
+          const resultadoDesplazamiento = await this.desplazarReserva(
+            horarioSeleccionado.reservaExistente,
+            vivienda
+          );
+
+          if (!resultadoDesplazamiento.success) {
+            return resultadoDesplazamiento;
+          }
+        } else {
+          // Indicar que se necesita confirmación
+          return {
+            success: false,
+            requiereConfirmacion: true,
+            reservaADesplazar: horarioSeleccionado.reservaExistente,
+            error: 'Este horario tiene una reserva provisional que será desplazada',
+          };
+        }
       }
 
-      // Verificar límite de reservas activas POR VIVIENDA
-      const reservasVivienda = await this.obtenerReservasPorVivienda(vivienda);
-      if (!reservasVivienda.success) {
-        return reservasVivienda;
-      }
+      // Determinar prioridad de la nueva reserva
+      const prioridad = await this.obtenerPrioridadParaNuevaReserva(vivienda);
 
-      const reservasActivas = reservasVivienda.data.filter(
-        (r) => r.estado === 'confirmada' && stringToDate(r.fecha, r.horaInicio) > new Date()
-      );
-
-      if (reservasActivas.length >= LIMITS.MAX_ACTIVE_RESERVATIONS) {
+      if (!prioridad) {
         return {
           success: false,
-          error: `Tu vivienda ya tiene ${LIMITS.MAX_ACTIVE_RESERVATIONS} reservas activas. El límite es por vivienda.`,
+          error: `Tu vivienda ya tiene ${LIMITS.MAX_ACTIVE_RESERVATIONS} reservas activas.`,
         };
       }
 
       // Verificar conflicto de horario (de cualquier miembro de la vivienda)
+      const reservasActivas = await this.obtenerReservasActivasVivienda(vivienda);
       const conflicto = reservasActivas.find((r) => r.fecha === fecha && r.horaInicio === horaInicio);
       if (conflicto) {
         return { success: false, error: 'Tu vivienda ya tiene una reserva a esta hora' };
@@ -289,24 +455,41 @@ export const reservasService = {
       // Calcular duración en minutos
       const duracion = timeToMinutes(horaFin) - timeToMinutes(horaInicio);
 
-      // Crear reserva (incluye vivienda)
-      const { data, error } = await supabase
+      // Crear reserva con prioridad
+      // Preparar datos base de la reserva
+      const reservaInsert = {
+        pista_id: pistaId,
+        pista_nombre: pistaNombre,
+        usuario_id: usuarioId,
+        usuario_nombre: usuarioNombre,
+        vivienda,
+        fecha,
+        hora_inicio: horaInicio,
+        hora_fin: horaFin,
+        duracion,
+        estado: 'confirmada',
+        jugadores: jugadores || [],
+      };
+
+      // Intentar con prioridad primero
+      let { data, error } = await supabase
         .from('reservas')
-        .insert({
-          pista_id: pistaId,
-          pista_nombre: pistaNombre,
-          usuario_id: usuarioId,
-          usuario_nombre: usuarioNombre,
-          vivienda,
-          fecha,
-          hora_inicio: horaInicio,
-          hora_fin: horaFin,
-          duracion,
-          estado: 'confirmada',
-          jugadores: jugadores || [],
-        })
+        .insert({ ...reservaInsert, prioridad })
         .select()
         .single();
+
+      // Si falla por la columna prioridad, intentar sin ella
+      if (error) {
+        if (error.message?.includes('prioridad') || error.code === '42703') {
+          const result = await supabase
+            .from('reservas')
+            .insert(reservaInsert)
+            .select()
+            .single();
+          data = result.data;
+          error = result.error;
+        }
+      }
 
       if (error) {
         if (error.code === '42501') {
@@ -441,6 +624,238 @@ export const reservasService = {
       };
     } catch (error) {
       return { success: false, error: 'Error al obtener estadísticas' };
+    }
+  },
+
+  /**
+   * Obtiene notificaciones de desplazamiento no leídas del usuario
+   */
+  async obtenerNotificacionesPendientes(usuarioId) {
+    try {
+      const { data, error } = await supabase
+        .from('notificaciones_desplazamiento')
+        .select('*')
+        .eq('usuario_id', usuarioId)
+        .eq('leida', false)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        // Si la tabla no existe, devolver array vacío sin error
+        if (error.code === 'PGRST205' || error.message?.includes('notificaciones_desplazamiento')) {
+          return { success: true, data: [] };
+        }
+        return { success: false, error: 'Error al obtener notificaciones' };
+      }
+
+      return {
+        success: true,
+        data: data.map(n => ({
+          id: n.id,
+          fechaReserva: n.fecha_reserva,
+          horaInicio: n.hora_inicio,
+          horaFin: n.hora_fin,
+          pistaNombre: n.pista_nombre,
+          desplazadoPorVivienda: n.desplazado_por_vivienda,
+          createdAt: n.created_at,
+        })),
+      };
+    } catch (error) {
+      return { success: true, data: [] }; // Devolver vacío en caso de error
+    }
+  },
+
+  /**
+   * Marca todas las notificaciones del usuario como leídas
+   */
+  async marcarNotificacionesLeidas(usuarioId) {
+    try {
+      const { error } = await supabase
+        .from('notificaciones_desplazamiento')
+        .update({ leida: true })
+        .eq('usuario_id', usuarioId)
+        .eq('leida', false);
+
+      if (error) {
+        // Si la tabla no existe, ignorar
+        if (error.code === 'PGRST205' || error.message?.includes('notificaciones_desplazamiento')) {
+          return { success: true };
+        }
+        return { success: false, error: 'Error al marcar notificaciones' };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: true }; // No fallar por esto
+    }
+  },
+
+  // ============================================================================
+  // MÉTODOS RPC - Sistema de Conversión Automática P->G
+  // ============================================================================
+
+  /**
+   * Crea una reserva usando el RPC que maneja automáticamente:
+   * - Prioridad (primera/segunda)
+   * - Detección de continuidad para conversión inmediata
+   * - Cálculo de tiempo de conversión P->G
+   */
+  async crearReservaConRPC(reservaData) {
+    try {
+      const { pistaId, usuarioId, usuarioNombre, vivienda, fecha, horaInicio, horaFin, jugadores = [] } = reservaData;
+
+      // Calcular duración
+      const duracion = timeToMinutes(horaFin) - timeToMinutes(horaInicio);
+
+      // Llamar al RPC
+      const { data, error } = await supabase.rpc('crear_reserva_con_prioridad', {
+        p_pista_id: pistaId,
+        p_usuario_id: usuarioId,
+        p_usuario_nombre: usuarioNombre,
+        p_vivienda: vivienda,
+        p_fecha: fecha,
+        p_hora_inicio: horaInicio,
+        p_hora_fin: horaFin,
+        p_duracion: duracion,
+        p_jugadores: jugadores,
+      });
+
+      if (error) {
+        // Si el RPC no existe, devolver indicador para usar fallback
+        if (error.code === 'PGRST202' || error.message?.includes('function')) {
+          return { success: false, rpcNotFound: true };
+        }
+        return { success: false, error: error.message || 'Error al crear la reserva' };
+      }
+
+      if (!data.success) {
+        return { success: false, error: data.error };
+      }
+
+      // Obtener la reserva completa
+      const { data: reserva } = await supabase
+        .from('reservas')
+        .select('*')
+        .eq('id', data.reserva_id)
+        .single();
+
+      return {
+        success: true,
+        data: {
+          ...mapReservaToCamelCase(reserva),
+          esContinuidad: data.es_continuidad,
+        },
+      };
+    } catch (error) {
+      return { success: false, error: 'Error al crear la reserva' };
+    }
+  },
+
+  /**
+   * Desplaza una reserva provisional y crea una nueva garantizada de forma atómica
+   * Usa el RPC para garantizar atomicidad y evitar race conditions
+   */
+  async desplazarReservaYCrear(reservaADesplazar, nuevaReservaData) {
+    try {
+      const { pistaId, usuarioId, usuarioNombre, vivienda, fecha, horaInicio, horaFin, jugadores = [] } = nuevaReservaData;
+      const duracion = timeToMinutes(horaFin) - timeToMinutes(horaInicio);
+
+      const { data, error } = await supabase.rpc('desplazar_reserva_y_crear_nueva', {
+        p_reserva_a_desplazar_id: reservaADesplazar.id,
+        p_nueva_pista_id: pistaId,
+        p_nuevo_usuario_id: usuarioId,
+        p_nuevo_usuario_nombre: usuarioNombre,
+        p_nueva_vivienda: vivienda,
+        p_nueva_fecha: fecha,
+        p_nueva_hora_inicio: horaInicio,
+        p_nueva_hora_fin: horaFin,
+        p_nueva_duracion: duracion,
+        p_nuevos_jugadores: jugadores,
+      });
+
+      if (error) {
+        // Si el RPC no existe, usar método de fallback
+        if (error.code === 'PGRST202' || error.message?.includes('function')) {
+          return { success: false, rpcNotFound: true };
+        }
+        return { success: false, error: error.message || 'Error al desplazar la reserva' };
+      }
+
+      if (!data.success) {
+        return { success: false, error: data.error };
+      }
+
+      // Obtener la nueva reserva
+      const { data: reserva } = await supabase
+        .from('reservas')
+        .select('*')
+        .eq('id', data.nueva_reserva_id)
+        .single();
+
+      return {
+        success: true,
+        data: mapReservaToCamelCase(reserva),
+        reservaDesplazadaId: data.reserva_desplazada_id,
+      };
+    } catch (error) {
+      return { success: false, error: 'Error al desplazar la reserva' };
+    }
+  },
+
+  /**
+   * Obtiene información de conversión para una reserva provisional
+   * Útil para mostrar countdown en la UI
+   */
+  async obtenerInfoConversion(reservaId) {
+    try {
+      const { data, error } = await supabase
+        .from('reservas')
+        .select('id, prioridad, conversion_timestamp, conversion_rule, converted_at')
+        .eq('id', reservaId)
+        .single();
+
+      if (error) {
+        return { success: false, error: 'Error al obtener información de conversión' };
+      }
+
+      return {
+        success: true,
+        data: {
+          id: data.id,
+          prioridad: data.prioridad,
+          conversionTimestamp: data.conversion_timestamp,
+          conversionRule: data.conversion_rule,
+          convertedAt: data.converted_at,
+          tiempoRestante: data.conversion_timestamp
+            ? Math.max(0, new Date(data.conversion_timestamp) - new Date())
+            : null,
+        },
+      };
+    } catch (error) {
+      return { success: false, error: 'Error al obtener información de conversión' };
+    }
+  },
+
+  /**
+   * Fuerza el recálculo de conversiones para una vivienda
+   * Útil después de cancelar una reserva G
+   */
+  async recalcularConversionesVivienda(vivienda) {
+    try {
+      const { data, error } = await supabase.rpc('recalculate_vivienda_conversions', {
+        p_vivienda: vivienda,
+      });
+
+      if (error) {
+        // Si el RPC no existe, ignorar silenciosamente
+        if (error.code === 'PGRST202' || error.message?.includes('function')) {
+          return { success: true, data: { updated: 0 } };
+        }
+        return { success: false, error: 'Error al recalcular conversiones' };
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      return { success: true, data: { updated: 0 } };
     }
   },
 };

@@ -31,12 +31,14 @@ export const CustomAlert = ({ visible, title, message, buttons, onDismiss }) => 
                   button.style === 'cancel' && styles.buttonCancel,
                   buttons.length === 1 && styles.buttonSingle,
                 ]}
-                onPress={() => {
-                  if (button.onPress) {
-                    button.onPress();
-                  }
+                onPress={async () => {
+                  // Primero cerrar el alert
                   if (onDismiss) {
                     onDismiss();
+                  }
+                  // Luego ejecutar el callback (permite mostrar otro alert)
+                  if (button.onPress) {
+                    await button.onPress();
                   }
                 }}
               >

@@ -17,6 +17,7 @@ import { CustomAlert } from '../components/CustomAlert';
 import { ViviendaSelector } from '../components/ViviendaSelector';
 import { NIVELES_JUEGO, parseVivienda, combinarVivienda, formatearVivienda, esViviendaValida } from '../constants/config';
 import { validarPerfil, validarViviendaComponentes } from '../utils/validators';
+import { authService } from '../services/authService.supabase';
 
 // Importar ImageManipulator solo en plataformas nativas
 let ImageManipulator;
@@ -239,6 +240,72 @@ export default function PerfilScreen() {
               });
             }
             // Si success = true, el AuthContext observer redirigirá automáticamente
+          },
+        },
+      ],
+    });
+  };
+
+  const [deleting, setDeleting] = useState(false);
+
+  const executeDeleteAccount = async () => {
+    console.log('=== INICIANDO ELIMINACIÓN DE CUENTA ===');
+    console.log('User ID:', user?.id);
+    setDeleting(true);
+
+    try {
+      const result = await authService.deleteOwnAccount(user.id);
+      console.log('Resultado de eliminación:', result);
+
+      if (result.success) {
+        // Forzar logout en el contexto para redirigir a login
+        await logout();
+      } else {
+        setDeleting(false);
+        setAlertConfig({
+          visible: true,
+          title: 'Error',
+          message: result.error || 'No se pudo eliminar la cuenta',
+          buttons: [{ text: 'OK', onPress: () => {} }],
+        });
+      }
+    } catch (error) {
+      console.log('Exception en eliminación:', error);
+      setDeleting(false);
+      setAlertConfig({
+        visible: true,
+        title: 'Error',
+        message: 'Error inesperado al eliminar la cuenta',
+        buttons: [{ text: 'OK', onPress: () => {} }],
+      });
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    setAlertConfig({
+      visible: true,
+      title: 'Eliminar Cuenta',
+      message: '¿Estás seguro de que quieres eliminar tu cuenta? Esta acción es irreversible y se eliminarán todos tus datos.',
+      buttons: [
+        { text: 'Cancelar', style: 'cancel', onPress: () => {} },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: () => {
+            // Segunda confirmación
+            setAlertConfig({
+              visible: true,
+              title: 'Confirmar Eliminación',
+              message: '¿Realmente deseas eliminar tu cuenta? Esta acción NO se puede deshacer.',
+              buttons: [
+                { text: 'Cancelar', style: 'cancel', onPress: () => {} },
+                {
+                  text: 'Sí, Eliminar',
+                  style: 'destructive',
+                  onPress: executeDeleteAccount,
+                },
+              ],
+            });
           },
         },
       ],
@@ -497,6 +564,27 @@ export default function PerfilScreen() {
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
       </TouchableOpacity>
+
+      {/* Zona de Peligro */}
+      <View style={styles.dangerSection}>
+        <Text style={styles.dangerSectionTitle}>Zona de Peligro</Text>
+        <View style={styles.dangerCard}>
+          <Text style={styles.dangerText}>
+            Eliminar tu cuenta borrará permanentemente todos tus datos y reservas.
+          </Text>
+          <TouchableOpacity
+            style={[styles.deleteAccountButton, deleting && styles.deleteAccountButtonDisabled]}
+            onPress={handleDeleteAccount}
+            disabled={deleting}
+          >
+            {deleting ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.deleteAccountButtonText}>Eliminar mi cuenta</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
 
       <Text style={styles.footer}>
         Desarrollado con React Native y Expo
@@ -812,6 +900,46 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   migracionBotonTexto: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  dangerSection: {
+    marginHorizontal: 16,
+    marginTop: 24,
+  },
+  dangerSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.error,
+    marginBottom: 12,
+  },
+  dangerCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.error + '40',
+  },
+  dangerText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  deleteAccountButton: {
+    backgroundColor: colors.error,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  deleteAccountButtonDisabled: {
+    backgroundColor: colors.error + '80',
+  },
+  deleteAccountButtonText: {
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',

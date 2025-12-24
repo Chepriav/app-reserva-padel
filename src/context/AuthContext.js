@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { authService } from '../services/authService.supabase';
+import { reservasService } from '../services/reservasService.supabase';
 
 const AuthContext = createContext(null);
 
@@ -7,6 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [notificacionesPendientes, setNotificacionesPendientes] = useState([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -35,6 +37,39 @@ export const AuthProvider = ({ children }) => {
       isMounted = false;
     };
   }, []);
+
+  // Cargar notificaciones cuando el usuario se autentica
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      cargarNotificaciones();
+    } else {
+      setNotificacionesPendientes([]);
+    }
+  }, [isAuthenticated, user]);
+
+  const cargarNotificaciones = async () => {
+    if (!user) return;
+
+    try {
+      const result = await reservasService.obtenerNotificacionesPendientes(user.id);
+      if (result.success) {
+        setNotificacionesPendientes(result.data);
+      }
+    } catch (error) {
+      console.error('Error cargando notificaciones:', error);
+    }
+  };
+
+  const marcarNotificacionesLeidas = async () => {
+    if (!user) return;
+
+    try {
+      await reservasService.marcarNotificacionesLeidas(user.id);
+      setNotificacionesPendientes([]);
+    } catch (error) {
+      console.error('Error marcando notificaciones:', error);
+    }
+  };
 
   const login = async (email, password) => {
     try {
@@ -109,6 +144,8 @@ export const AuthProvider = ({ children }) => {
     register,
     updateProfile,
     resetPassword,
+    notificacionesPendientes,
+    marcarNotificacionesLeidas,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

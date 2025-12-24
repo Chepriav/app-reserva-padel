@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useReservas } from '../context/ReservasContext';
 import { colors } from '../constants/colors';
-import { formatearFechaLegible, formatearHora } from '../utils/dateHelpers';
+import { formatearFechaLegible, formatearHora, horasHasta } from '../utils/dateHelpers';
 import { puedeCancelar } from '../utils/validators';
 import { CustomAlert } from '../components/CustomAlert';
 
@@ -81,23 +81,62 @@ export default function ReservasScreen() {
     const puedeCancelarla =
       reserva.estado === 'confirmada' && !esPasada;
 
+    // Calcular si está protegida (< 24h)
+    const horasRestantes = horasHasta(reserva.fecha, reserva.horaInicio);
+    const estaProtegida = horasRestantes < 24;
+
+    // Determinar tipo de prioridad a mostrar
+    const esGarantizada = reserva.prioridad === 'primera' || estaProtegida;
+    const esProvisional = reserva.prioridad === 'segunda' && !estaProtegida;
+
+    // Reserva pasada disfrutada (confirmada que ya pasó)
+    const esDisfrutada = esPasada && reserva.estado === 'confirmada';
+
     return (
-      <View key={reserva.id} style={styles.reservaCard}>
+      <View
+        key={reserva.id}
+        style={styles.reservaCard}
+      >
         <View style={styles.reservaHeader}>
           <Text style={styles.pistaNombre}>{reserva.pistaNombre}</Text>
-          <View
-            style={[
-              styles.estadoBadge,
-              reserva.estado === 'confirmada' && styles.estadoConfirmada,
-              reserva.estado === 'cancelada' && styles.estadoCancelada,
-              reserva.estado === 'completada' && styles.estadoCompletada,
-            ]}
-          >
-            <Text style={styles.estadoText}>
-              {reserva.estado === 'confirmada' && 'Confirmada'}
-              {reserva.estado === 'cancelada' && 'Cancelada'}
-              {reserva.estado === 'completada' && 'Completada'}
-            </Text>
+          <View style={styles.badgesContainer}>
+            {/* Badge de prioridad - solo para reservas confirmadas próximas */}
+            {reserva.estado === 'confirmada' && !esPasada && (
+              <View
+                style={[
+                  styles.prioridadBadge,
+                  esGarantizada && styles.prioridadGarantizada,
+                  esProvisional && styles.prioridadProvisional,
+                ]}
+              >
+                <Text style={styles.prioridadText}>
+                  {esGarantizada ? 'Garantizada' : 'Provisional'}
+                </Text>
+              </View>
+            )}
+            {/* Badge para reserva disfrutada */}
+            {esDisfrutada && (
+              <View style={styles.estadoDisfrutada}>
+                <Text style={styles.estadoText}>Disfrutada</Text>
+              </View>
+            )}
+            {/* Badge de estado - no mostrar para disfrutadas */}
+            {!esDisfrutada && (
+              <View
+                style={[
+                  styles.estadoBadge,
+                  reserva.estado === 'confirmada' && styles.estadoConfirmada,
+                  reserva.estado === 'cancelada' && styles.estadoCancelada,
+                  reserva.estado === 'completada' && styles.estadoCompletada,
+                ]}
+              >
+                <Text style={styles.estadoText}>
+                  {reserva.estado === 'confirmada' && 'Confirmada'}
+                  {reserva.estado === 'cancelada' && 'Cancelada'}
+                  {reserva.estado === 'completada' && 'Completada'}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -108,6 +147,16 @@ export default function ReservasScreen() {
           <Text style={styles.horario}>
             {formatearHora(reserva.horaInicio)} - {formatearHora(reserva.horaFin)}
           </Text>
+
+          {/* Aviso para reservas provisionales */}
+          {esProvisional && reserva.estado === 'confirmada' && !esPasada && (
+            <View style={styles.avisoProvisional}>
+              <Text style={styles.avisoProvisionalText}>
+                Esta reserva puede ser desplazada si otra vivienda necesita este horario como su primera reserva.
+                Se convertirá en garantizada en {Math.round(horasRestantes - 24)} horas.
+              </Text>
+            </View>
+          )}
 
           {reserva.jugadores.length > 0 && (
             <View style={styles.jugadoresContainer}>
@@ -339,5 +388,47 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     textAlign: 'center',
+  },
+  // Estilos para sistema de prioridades
+  badgesContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  prioridadBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  prioridadGarantizada: {
+    backgroundColor: colors.reservaGarantizada,
+  },
+  prioridadProvisional: {
+    backgroundColor: colors.reservaProvisional,
+  },
+  prioridadText: {
+    fontSize: 11,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  avisoProvisional: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: '#fffbeb',
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.reservaProvisional,
+  },
+  avisoProvisionalText: {
+    fontSize: 13,
+    color: colors.text,
+    lineHeight: 18,
+  },
+  // Estilos para reservas disfrutadas (pasadas confirmadas)
+  estadoDisfrutada: {
+    backgroundColor: colors.reservaPasada,  // Verde grisáceo
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
 });

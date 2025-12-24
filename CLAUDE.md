@@ -4,12 +4,12 @@ Guía para Claude Code (claude.ai/code) y desarrolladores que trabajan en este r
 
 ## Descripción del Proyecto
 
-Aplicación móvil React Native (Expo) y PWA para gestionar reservas de pistas de pádel en una urbanización. Los residentes pueden reservar turnos, ver disponibilidad y administrar sus reservas. Incluye sistema de autenticación con aprobación de administrador y subida de fotos de perfil.
+Aplicación móvil React Native (Expo) y PWA para gestionar reservas de pistas de pádel en una urbanización. Los residentes pueden reservar turnos, ver disponibilidad y administrar sus reservas. Incluye sistema de autenticación con aprobación de administrador, sistema de prioridades (Garantizada/Provisional) por vivienda, y subida de fotos de perfil.
 
 ## Stack Tecnológico
 
 - **Frontend**: React Native + Expo (compatible con iOS, Android y Web/PWA)
-- **Backend**: Supabase (Authentication + PostgreSQL)
+- **Backend**: Supabase (Authentication + PostgreSQL + Edge Functions)
 - **Almacenamiento de Imágenes**: Supabase Storage
 - **Hosting Web**: Vercel
 - **Testing**: Jest
@@ -71,9 +71,8 @@ App_reserva_padel_urbanizacion/
     ├── services/
     │   ├── supabaseConfig.js       # Configuración cliente Supabase
     │   ├── authService.supabase.js # Servicio de autenticación
-    │   ├── reservasService.supabase.js  # Servicio de reservas
+    │   ├── reservasService.supabase.js  # Servicio de reservas + RPCs
     │   ├── storageService.supabase.js   # Servicio de almacenamiento de imágenes
-    │   ├── mockData.js             # Datos mock para desarrollo
     │   └── registerServiceWorker.js # Registro SW para PWA
     ├── utils/
     │   ├── dateHelpers.js          # Funciones de fecha/hora
@@ -83,70 +82,43 @@ App_reserva_padel_urbanizacion/
         └── config.js               # Configuración de horarios y límites
 ```
 
-## Servicios Supabase
+## Sistema de Prioridades (Garantizada/Provisional)
 
-### supabaseConfig.js
+### Concepto
+El sistema limita reservas **por vivienda** (no por usuario):
+- **Primera reserva** → Garantizada (G) - No puede ser desplazada
+- **Segunda reserva** → Provisional (P) - Puede ser desplazada por otra vivienda
 
-Configuración del cliente Supabase con persistencia de sesión.
+### Reglas de Conversión Automática P → G
 
-```javascript
-import { createClient } from '@supabase/supabase-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+| Escenario | Regla | Tiempo de Conversión |
+|-----------|-------|---------------------|
+| Continuidad | G termina exactamente cuando P empieza | Cuando G termine |
+| Mismo día | G termina, P existe mismo día (<3h gap) | 90 min después de que G termine |
+| Gap > 3h | G y P mismo día pero >3h separación | 24h después de que G termine |
+| Diferente día | G termina, P existe en otro día | 24h después de que G termine |
+| Sin G - mismo día | Solo existe P para hoy | 90 min desde creación |
+| Sin G - diferente día | Solo existe P para otro día | 24h desde creación |
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    storage: AsyncStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
-});
+### Desplazamiento
+Una vivienda puede desplazar la reserva P de otra vivienda si:
+- La reserva es Provisional (P)
+- Faltan más de 24 horas para la reserva
+- La vivienda que desplaza tiene su primera reserva disponible
+
+### Implementación Técnica
+- **RPC `crear_reserva_con_prioridad`**: Calcula prioridad y tiempo de conversión automáticamente
+- **RPC `desplazar_reserva_y_crear_nueva`**: Desplazamiento atómico con notificación
+- **RPC `process_pending_conversions`**: Procesa conversiones pendientes (llamado por cron)
+- **Cron Job (pg_cron)**: Ejecuta cada 15 minutos para procesar conversiones
+
+### Columnas adicionales en `reservas`
+```sql
+prioridad TEXT DEFAULT 'primera',  -- 'primera' (G) o 'segunda' (P)
+conversion_timestamp TIMESTAMPTZ,   -- Cuándo convertir P a G
+conversion_rule TEXT,               -- Regla aplicada
+converted_at TIMESTAMPTZ            -- Cuándo se convirtió
 ```
-
-### authService.supabase.js
-
-Maneja autenticación y gestión de usuarios.
-
-**Funciones principales:**
-- `login(email, password)` - Inicia sesión, verifica aprobación
-- `register(userData)` - Registra usuario pendiente de aprobación
-- `logout()` - Cierra sesión
-- `resetPassword(email)` - Envía email de recuperación
-- `updateProfile(userId, updates)` - Actualiza perfil con foto opcional
-- `onAuthChange(callback)` - Observer de cambios de auth
-- `getUsuariosPendientes()` - Lista usuarios pendientes (admin)
-- `aprobarUsuario(userId)` - Aprueba usuario (admin)
-- `rechazarUsuario(userId)` - Rechaza usuario (admin)
-- `getCurrentUser()` - Obtiene usuario actual
-- `isAuthenticated()` - Verifica si hay sesión activa
-
-### reservasService.supabase.js
-
-Maneja todas las operaciones de reservas.
-
-**Funciones principales:**
-- `obtenerPistas()` - Lista de pistas desde PostgreSQL
-- `obtenerDisponibilidad(pistaId, fecha)` - Horarios disponibles para una fecha
-- `crearReserva(reservaData)` - Crea nueva reserva con validaciones
-- `cancelarReserva(reservaId, usuarioId)` - Cancela reserva (mínimo 4h antes)
-- `obtenerReservasUsuario(userId)` - Reservas del usuario
-- `obtenerReservasPorFecha(fecha)` - Reservas de una fecha
-- `obtenerTodasReservas()` - Todas las reservas (admin)
-- `obtenerEstadisticas()` - Estadísticas de reservas (admin)
-
-### storageService.supabase.js
-
-Maneja subida de imágenes a Supabase Storage.
-
-**Funciones principales:**
-- `uploadAvatar(userId, imageUri)` - Sube foto de perfil
-- `deleteOldAvatars(userId)` - Elimina fotos anteriores
-- `isLocalImageUri(uri)` - Verifica si URI es local
-
-**Soporte multiplataforma:**
-- URIs de archivo (`file://`) en móvil
-- Blob URLs (`blob:`) y data URIs (`data:`) en web
-- Convierte automáticamente a ArrayBuffer para Supabase
 
 ## Estructura de Datos en PostgreSQL
 
@@ -157,11 +129,11 @@ CREATE TABLE public.users (
   nombre TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
   telefono TEXT NOT NULL,
-  vivienda TEXT NOT NULL,
-  nivel_juego TEXT,  -- 'principiante'|'intermedio'|'avanzado'|'profesional'
-  foto_perfil TEXT,  -- URL de Supabase Storage
+  vivienda TEXT NOT NULL,           -- Formato "1-3-B" (escalera-piso-puerta)
+  nivel_juego TEXT,                 -- 'principiante'|'intermedio'|'avanzado'|'profesional'
+  foto_perfil TEXT,                 -- URL de Supabase Storage
   es_admin BOOLEAN DEFAULT FALSE,
-  estado_aprobacion TEXT DEFAULT 'pendiente',  -- 'pendiente'|'aprobado'|'rechazado'
+  estado_aprobacion TEXT DEFAULT 'pendiente',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -188,14 +160,35 @@ CREATE TABLE public.reservas (
   pista_nombre TEXT NOT NULL,
   usuario_id UUID NOT NULL REFERENCES public.users(id),
   usuario_nombre TEXT NOT NULL,
+  vivienda TEXT NOT NULL,
   fecha DATE NOT NULL,
   hora_inicio TIME NOT NULL,
   hora_fin TIME NOT NULL,
-  duracion INTEGER NOT NULL,  -- minutos
-  estado TEXT DEFAULT 'confirmada',  -- 'confirmada'|'cancelada'
+  duracion INTEGER NOT NULL,
+  estado TEXT DEFAULT 'confirmada',
+  prioridad TEXT DEFAULT 'primera',    -- 'primera' (G) o 'segunda' (P)
+  conversion_timestamp TIMESTAMPTZ,
+  conversion_rule TEXT,
+  converted_at TIMESTAMPTZ,
   jugadores TEXT[] DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Tabla: `notificaciones_desplazamiento`
+```sql
+CREATE TABLE public.notificaciones_desplazamiento (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID NOT NULL REFERENCES public.users(id),
+  vivienda TEXT NOT NULL,
+  fecha_reserva DATE NOT NULL,
+  hora_inicio TIME NOT NULL,
+  hora_fin TIME NOT NULL,
+  pista_nombre TEXT NOT NULL,
+  desplazado_por_vivienda TEXT NOT NULL,
+  leida BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 ```
 
@@ -203,16 +196,17 @@ CREATE TABLE public.reservas (
 
 ### Horarios
 - **Apertura**: 08:00 - **Cierre**: 22:00
-- **Bloques disponibles**: 30 min, 60 min, 90 min
-- **Horarios predefinidos**: 08:00-09:30, 09:30-11:00, 11:00-12:30, etc.
+- **Bloques**: 30 minutos cada uno
+- **Máximo por reserva**: 3 bloques (1.5 horas)
 
-### Límites de Reserva
+### Límites de Reserva (por vivienda)
 | Concepto | Valor |
 |----------|-------|
-| Máximo reservas activas por usuario | 2 |
-| Anticipación mínima para reservar | 2 horas |
+| Máximo reservas activas | 2 |
+| Anticipación mínima para reservar | Sin límite |
 | Anticipación máxima para reservar | 7 días |
 | Anticipación mínima para cancelar | 4 horas |
+| Protección contra desplazamiento | 24 horas |
 
 ### Flujo de Registro
 1. Usuario se registra con datos + contraseña
@@ -222,104 +216,78 @@ CREATE TABLE public.reservas (
 5. Si aprobado: usuario puede hacer login
 6. Si rechazado: estado cambia a 'rechazado'
 
+## Servicios
+
+### reservasService.supabase.js
+
+**Funciones principales:**
+- `obtenerPistas()` - Lista de pistas
+- `obtenerDisponibilidad(pistaId, fecha)` - Horarios con info de prioridad
+- `crearReserva(reservaData)` - Usa RPC para prioridad automática
+- `cancelarReserva(reservaId, usuarioId)` - Cancela reserva
+- `obtenerReservasUsuario(userId)` - Reservas del usuario
+- `desplazarReservaYCrear(reservaADesplazar, nuevaData)` - Desplazamiento atómico
+
+### authService.supabase.js
+
+**Funciones principales:**
+- `login(email, password)` - Inicia sesión
+- `register(userData)` - Registra usuario pendiente
+- `logout()` - Cierra sesión
+- `updateProfile(userId, updates)` - Actualiza perfil
+- `getUsuariosPendientes()` - Lista pendientes (admin)
+- `aprobarUsuario(userId)` / `rechazarUsuario(userId)` - Gestión admin
+
 ## Context API
 
 ### AuthContext
 ```javascript
 const {
-  user,           // Usuario actual o null
-  loading,        // true mientras carga estado inicial
-  isAuthenticated,// true si hay usuario autenticado
-  login,          // (email, password) => Promise<{success, error?}>
-  logout,         // () => Promise<{success, error?}>
-  register,       // (userData) => Promise<{success, message?, error?}>
-  updateProfile,  // (updates) => Promise<{success, error?}>
-  resetPassword,  // (email) => Promise<{success, error?}>
+  user,                      // Usuario actual
+  isAuthenticated,           // Boolean
+  notificacionesPendientes,  // Array de notificaciones de desplazamiento
+  login, logout, register, updateProfile, resetPassword,
+  marcarNotificacionesLeidas,
 } = useAuth();
 ```
 
 ### ReservasContext
 ```javascript
 const {
-  reservas,           // Array de reservas del usuario
-  pistas,             // Array de pistas disponibles
-  loading,            // true mientras carga
-  crearReserva,       // (data) => Promise<{success, error?}>
-  cancelarReserva,    // (id) => Promise<{success, error?}>
-  obtenerDisponibilidad, // (pistaId, fecha) => Promise<{success, data?, error?}>
-  obtenerReservasPorFecha, // (fecha) => Promise<{success, data?, error?}>
-  getReservasProximas, // () => Array - filtro local
-  getReservasPasadas,  // () => Array - filtro local
-  recargarReservas,   // () => void
+  reservas,                  // Reservas del usuario
+  pistas,                    // Pistas disponibles
+  loading,
+  crearReserva,
+  cancelarReserva,
+  obtenerDisponibilidad,
+  recargarReservas,
 } = useReservas();
-```
-
-## Validadores (src/utils/validators.js)
-
-```javascript
-// Validación de email
-validarEmail(email) // => boolean
-
-// Validación de teléfono español (9+ dígitos)
-validarTelefono(telefono) // => boolean
-
-// Verificar si usuario puede reservar
-puedeReservar(usuario, nuevaReserva, reservasActuales)
-// => { valido: boolean, error?: string }
-
-// Verificar si puede cancelar (4h mínimo)
-puedeCancelar(reserva) // => { valido: boolean, error?: string }
-
-// Validar formulario de registro
-validarRegistro(datos) // => { valido: boolean, errores: {} }
-
-// Validar formulario de perfil
-validarPerfil(datos) // => { valido: boolean, errores: {} }
-```
-
-## Helpers de Fecha (src/utils/dateHelpers.js)
-
-```javascript
-// Convertir "2024-06-15" + "10:00" a Date
-stringToDate(fecha, hora) // => Date
-
-// Date a "YYYY-MM-DD"
-formatearFecha(date) // => string
-
-// "2024-06-15" a "sábado, 15 de junio de 2024"
-formatearFechaLegible(fecha) // => string
-
-// Generar array de horarios del día
-generarHorariosDisponibles() // => [{horaInicio, horaFin}, ...]
-
-// Verificar si fecha/hora es futura
-esFuturo(fecha, hora) // => boolean
-
-// Horas desde ahora hasta fecha/hora
-horasHasta(fecha, hora) // => number
-
-// Fecha de hoy en YYYY-MM-DD
-obtenerFechaHoy() // => string
-
-// Fecha está entre hoy y hoy+7 días
-esFechaValida(fecha) // => boolean
 ```
 
 ## Paleta de Colores
 
 ```javascript
-// src/constants/colors.js
 {
-  primary: '#2e7d32',      // Verde oscuro - tema principal
-  secondary: '#4caf50',    // Verde claro - acciones secundarias
-  accent: '#ff9800',       // Naranja - destacados
-  background: '#f5f5f5',   // Fondo general
-  surface: '#ffffff',      // Cards y superficies
-  error: '#d32f2f',        // Errores y alertas
-  text: '#212121',         // Texto principal
-  textSecondary: '#757575', // Texto secundario
-  disabled: '#bdbdbd',     // Elementos deshabilitados
-  border: '#e0e0e0',       // Bordes
+  primary: '#2e7d32',           // Verde oscuro
+  secondary: '#4caf50',         // Verde claro
+  accent: '#ff9800',            // Naranja (selección)
+  reservaGarantizada: '#2e7d32', // Verde (G)
+  reservaProvisional: '#FFC107', // Amarillo/Dorado (P)
+  reservaDesplazable: '#e0e0e0', // Gris (otra vivienda)
+  error: '#d32f2f',
+  disabled: '#bdbdbd',
+}
+```
+
+## Configuración de Viviendas
+
+Formato estructurado: `escalera-piso-puerta` (ej: "1-3-B")
+
+```javascript
+VIVIENDA_CONFIG = {
+  escaleras: [1, 2, 3, 4, 5, 6],
+  pisos: [1, 2, 3, 4, 5, 6],
+  puertas: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'],
 }
 ```
 
@@ -332,21 +300,7 @@ EXPO_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 ```
 
-## Configuración Supabase
-
-### Storage Bucket
-- Nombre: `avatars`
-- Público: Sí
-- Estructura: `{userId}/avatar-{timestamp}.jpg`
-
-### Row Level Security (RLS)
-Las tablas `users`, `pistas` y `reservas` tienen RLS deshabilitado temporalmente para simplificar el desarrollo. En producción, considerar habilitar políticas más restrictivas.
-
 ## Testing
-
-Tests ubicados en `__tests__/`:
-- `validators.test.js` - 22 tests para validadores
-- `dateHelpers.test.js` - 24 tests para helpers de fecha
 
 ```bash
 npm test                    # Ejecutar todos
@@ -361,8 +315,6 @@ npx expo export:web
 npx vercel --prod
 ```
 
-La configuración está en `vercel.json` con rewrites para SPA.
-
 ### Móvil (Expo)
 ```bash
 npx expo build:ios
@@ -372,66 +324,19 @@ npx expo build:android
 ## Convenciones de Código
 
 - Componentes funcionales con Hooks
-- Nombres de archivos = nombre del componente exportado
 - PascalCase para componentes
 - camelCase para funciones y variables
-- UPPER_SNAKE_CASE para constantes
 - snake_case para columnas de PostgreSQL
 - Mensajes de error en español
-- Sin console.logs en producción
-- JSDoc para funciones complejas
 
 ## Mapeo de Campos (camelCase ↔ snake_case)
 
-El código JavaScript usa camelCase pero PostgreSQL usa snake_case:
-
 | JavaScript | PostgreSQL |
 |------------|------------|
-| `nivelJuego` | `nivel_juego` |
-| `fotoPerfil` | `foto_perfil` |
-| `esAdmin` | `es_admin` |
-| `estadoAprobacion` | `estado_aprobacion` |
-| `pistaId` | `pista_id` |
-| `usuarioId` | `usuario_id` |
+| `vivienda` | `vivienda` |
+| `prioridad` | `prioridad` |
+| `conversionTimestamp` | `conversion_timestamp` |
+| `conversionRule` | `conversion_rule` |
+| `convertedAt` | `converted_at` |
 | `horaInicio` | `hora_inicio` |
 | `horaFin` | `hora_fin` |
-| `createdAt` | `created_at` |
-| `updatedAt` | `updated_at` |
-
-Los servicios de Supabase incluyen funciones `mapToCamelCase` y `mapToSnakeCase` para la conversión automática.
-
-## Flujos de Usuario
-
-### Crear Reserva
-1. HomeScreen: Seleccionar fecha en calendario
-2. Ver horarios disponibles del día
-3. Seleccionar duración (30/60/90 min)
-4. Seleccionar hora de inicio
-5. Confirmar reserva
-6. Sistema valida límites y crea reserva
-
-### Cancelar Reserva
-1. ReservasScreen: Ver reservas próximas
-2. Seleccionar reserva a cancelar
-3. Sistema valida que falten >4 horas
-4. Confirmar cancelación
-
-### Editar Perfil
-1. PerfilScreen: Ver datos actuales
-2. Tocar foto para cambiar imagen
-3. Seleccionar de galería o cámara
-4. Editar nombre/teléfono/vivienda/nivel
-5. Guardar cambios (foto se sube a Supabase Storage)
-
-### Aprobar Usuarios (Admin)
-1. AdminScreen: Ver solicitudes pendientes
-2. Revisar datos del solicitante
-3. Aprobar o Rechazar
-4. Estado del usuario se actualiza en PostgreSQL
-
-## Futuras Mejoras
-
-Con Supabase Edge Functions (gratuitas) se pueden implementar:
-- Notificaciones push (recordatorios de reserva)
-- Emails automáticos (aprobación de cuenta)
-- Webhooks para integraciones externas

@@ -318,7 +318,7 @@ export const authService = {
   },
 
   /**
-   * Elimina un usuario (solo admin/manager)
+   * Elimina un usuario (solo admin/manager) - solo de la tabla users
    */
   async deleteUser(userId) {
     try {
@@ -335,6 +335,45 @@ export const authService = {
       return { success: true };
     } catch (error) {
       return { success: false, error: 'Error al eliminar usuario' };
+    }
+  },
+
+  /**
+   * Elimina la cuenta del usuario actual (auto-eliminación)
+   * Elimina reservas y tabla users. El trigger on_user_deleted
+   * se encarga de eliminar automáticamente de auth.users.
+   */
+  async deleteOwnAccount(userId) {
+    try {
+      // 1. Eliminar reservas del usuario
+      const { error: reservasError } = await supabase
+        .from('reservas')
+        .delete()
+        .eq('usuario_id', userId);
+
+      if (reservasError) {
+        console.log('Error eliminando reservas:', reservasError.message);
+      }
+
+      // 2. Eliminar de la tabla users
+      // El trigger on_user_deleted elimina automáticamente de auth.users
+      const { error: userError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
+
+      if (userError) {
+        console.log('Error eliminando usuario:', userError.message);
+        return { success: false, error: `Error al eliminar la cuenta: ${userError.message}` };
+      }
+
+      // 3. Cerrar sesión
+      await supabase.auth.signOut();
+
+      return { success: true };
+    } catch (error) {
+      console.log('Exception eliminando cuenta:', error);
+      return { success: false, error: 'Error al eliminar la cuenta' };
     }
   },
 
