@@ -2,28 +2,33 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { supabase } from './supabaseConfig';
+import { webPushService } from './webPushService';
 
-// Configurar comportamiento de notificaciones cuando la app está en primer plano
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+// Configurar comportamiento de notificaciones cuando la app está en primer plano (solo móvil)
+if (Platform.OS !== 'web') {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+}
 
 export const notificationService = {
   /**
    * Solicita permisos de notificación y registra el push token
+   * Funciona tanto en móvil (Expo) como en web (Web Push)
    * @param {string} userId - ID del usuario autenticado
    * @returns {Promise<{success: boolean, token?: string, error?: string}>}
    */
   async registerForPushNotifications(userId) {
-    // Solo funciona en dispositivos físicos, no en web
+    // En web, usar Web Push
     if (Platform.OS === 'web') {
-      return { success: false, error: 'Push notifications no disponibles en web' };
+      return await webPushService.subscribe(userId);
     }
 
+    // En móvil, solo funciona en dispositivos físicos
     if (!Device.isDevice) {
       return { success: false, error: 'Push notifications requieren dispositivo físico' };
     }
@@ -70,7 +75,7 @@ export const notificationService = {
   },
 
   /**
-   * Guarda el push token en Supabase
+   * Guarda el push token en Supabase (para móvil)
    */
   async savePushToken(userId, token) {
     try {
@@ -103,7 +108,10 @@ export const notificationService = {
    * Elimina el push token al cerrar sesión
    */
   async removePushToken(userId) {
-    if (Platform.OS === 'web') return { success: true };
+    // En web, usar Web Push
+    if (Platform.OS === 'web') {
+      return await webPushService.unsubscribe(userId);
+    }
 
     try {
       const tokenData = await Notifications.getExpoPushTokenAsync({
@@ -135,7 +143,21 @@ export const notificationService = {
    * @returns {Promise<string|null>} ID de la notificación programada
    */
   async scheduleReservationReminder(reserva, minutosAntes = 60) {
-    if (Platform.OS === 'web') return null;
+    // En web, programar con setTimeout (solo funciona mientras la página está abierta)
+    if (Platform.OS === 'web') {
+      const fechaReserva = new Date(`${reserva.fecha}T${reserva.horaInicio}`);
+      const fechaNotificacion = new Date(fechaReserva.getTime() - minutosAntes * 60 * 1000);
+      const delayMs = fechaNotificacion.getTime() - Date.now();
+
+      if (delayMs <= 0) return null;
+
+      return webPushService.scheduleNotification(
+        'Recordatorio de Reserva',
+        `Tu reserva en ${reserva.pistaNombre} es en ${minutosAntes} minutos (${reserva.horaInicio})`,
+        delayMs,
+        { type: 'reservation_reminder', reservaId: reserva.id }
+      );
+    }
 
     try {
       // Calcular fecha/hora de la notificación
@@ -173,7 +195,12 @@ export const notificationService = {
    * Cancela una notificación programada
    */
   async cancelScheduledNotification(notificationId) {
-    if (Platform.OS === 'web' || !notificationId) return;
+    if (!notificationId) return;
+
+    if (Platform.OS === 'web') {
+      webPushService.cancelScheduledNotification(notificationId);
+      return;
+    }
 
     try {
       await Notifications.cancelScheduledNotificationAsync(notificationId);
@@ -196,23 +223,75 @@ export const notificationService = {
   },
 
   /**
-   * Envía push notification a usuarios específicos (desde el cliente)
-   * Nota: En producción, esto debería hacerse desde el backend (Edge Functions)
-   * @param {string[]} tokens - Array de Expo push tokens
+   * Envía push notification a un usuario
+   * Usa la Edge Function de Supabase para Web Push
+   * Usa Expo API para móvil
+   * @param {string} userId - ID del usuario destinatario
    * @param {string} title - Título de la notificación
    * @param {string} body - Cuerpo de la notificación
    * @param {Object} data - Datos adicionales
    */
-  async sendPushNotification(tokens, title, body, data = {}) {
-    const messages = tokens.map((token) => ({
-      to: token,
-      sound: 'default',
-      title,
-      body,
-      data,
-    }));
+  async sendPushToUser(userId, title, body, data = {}) {
+    // Intentar enviar por Web Push (Edge Function)
+    const webPushResult = await this.sendWebPush(userId, title, body, data);
 
+    // Intentar enviar por Expo Push (móvil)
+    const expoPushResult = await this.sendExpoPush(userId, title, body, data);
+
+    return {
+      success: webPushResult.success || expoPushResult.success,
+      webPush: webPushResult,
+      expoPush: expoPushResult,
+    };
+  },
+
+  /**
+   * Envía Web Push via Edge Function de Supabase
+   */
+  async sendWebPush(userId, title, body, data = {}) {
     try {
+      const { data: result, error } = await supabase.functions.invoke(
+        'send-push-notification',
+        {
+          body: { userId, title, body, data },
+        }
+      );
+
+      if (error) {
+        console.error('Error enviando Web Push:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, ...result };
+    } catch (error) {
+      console.error('Error enviando Web Push:', error);
+      return { success: false, error: 'Error al enviar notificación web' };
+    }
+  },
+
+  /**
+   * Envía Expo Push notification (para dispositivos móviles)
+   */
+  async sendExpoPush(userId, title, body, data = {}) {
+    try {
+      // Obtener tokens de Expo del usuario
+      const { data: tokens, error } = await supabase
+        .from('push_tokens')
+        .select('token')
+        .eq('user_id', userId);
+
+      if (error || !tokens || tokens.length === 0) {
+        return { success: false, error: 'Sin tokens móviles' };
+      }
+
+      const messages = tokens.map((t) => ({
+        to: t.token,
+        sound: 'default',
+        title,
+        body,
+        data,
+      }));
+
       const response = await fetch('https://exp.host/--/api/v2/push/send', {
         method: 'POST',
         headers: {
@@ -223,30 +302,11 @@ export const notificationService = {
         body: JSON.stringify(messages),
       });
 
-      return await response.json();
+      const result = await response.json();
+      return { success: true, ...result };
     } catch (error) {
-      console.error('Error enviando push notification:', error);
-      return { success: false, error };
-    }
-  },
-
-  /**
-   * Obtiene tokens de un usuario para enviarle notificaciones
-   */
-  async getUserPushTokens(userId) {
-    try {
-      const { data, error } = await supabase
-        .from('push_tokens')
-        .select('token')
-        .eq('user_id', userId);
-
-      if (error) {
-        return { success: false, error: 'Error obteniendo tokens' };
-      }
-
-      return { success: true, data: data.map((t) => t.token) };
-    } catch (error) {
-      return { success: false, error: 'Error obteniendo tokens' };
+      console.error('Error enviando Expo push:', error);
+      return { success: false, error: 'Error al enviar notificación móvil' };
     }
   },
 
@@ -254,11 +314,6 @@ export const notificationService = {
    * Notifica a un usuario sobre cambio de vivienda aprobado/rechazado
    */
   async notifyViviendaChange(userId, aprobado, viviendaNueva) {
-    const tokensResult = await this.getUserPushTokens(userId);
-    if (!tokensResult.success || tokensResult.data.length === 0) {
-      return { success: false, error: 'Usuario sin tokens de notificación' };
-    }
-
     const title = aprobado
       ? 'Cambio de vivienda aprobado'
       : 'Cambio de vivienda rechazado';
@@ -267,41 +322,37 @@ export const notificationService = {
       ? `Tu solicitud de cambio a ${viviendaNueva} ha sido aprobada.`
       : 'Tu solicitud de cambio de vivienda ha sido rechazada.';
 
-    return await this.sendPushNotification(
-      tokensResult.data,
-      title,
-      body,
-      { type: 'vivienda_change', aprobado }
-    );
+    return await this.sendPushToUser(userId, title, body, {
+      type: 'vivienda_change',
+      aprobado,
+    });
   },
 
   /**
    * Notifica a un usuario sobre desplazamiento de reserva
    */
   async notifyReservationDisplacement(userId, reservaInfo) {
-    const tokensResult = await this.getUserPushTokens(userId);
-    if (!tokensResult.success || tokensResult.data.length === 0) {
-      return { success: false, error: 'Usuario sin tokens de notificación' };
-    }
-
     const title = 'Reserva desplazada';
     const body = `Tu reserva del ${reservaInfo.fecha} a las ${reservaInfo.horaInicio} en ${reservaInfo.pistaNombre} ha sido desplazada.`;
 
-    return await this.sendPushNotification(
-      tokensResult.data,
-      title,
-      body,
-      { type: 'reservation_displacement', ...reservaInfo }
-    );
+    return await this.sendPushToUser(userId, title, body, {
+      type: 'reservation_displacement',
+      ...reservaInfo,
+    });
   },
 
   /**
-   * Añade listeners para notificaciones
+   * Añade listeners para notificaciones (solo móvil)
    * @param {Function} onNotificationReceived - Callback cuando se recibe notificación
    * @param {Function} onNotificationResponse - Callback cuando usuario toca notificación
    * @returns {Function} Función para limpiar listeners
    */
   addNotificationListeners(onNotificationReceived, onNotificationResponse) {
+    if (Platform.OS === 'web') {
+      // En web los listeners están en el Service Worker
+      return () => {};
+    }
+
     const receivedSubscription = Notifications.addNotificationReceivedListener(
       onNotificationReceived
     );

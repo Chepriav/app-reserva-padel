@@ -113,9 +113,13 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      // Eliminar push token antes de cerrar sesión
+      // Eliminar push token antes de cerrar sesión (no bloquear si falla)
       if (user) {
-        await notificationService.removePushToken(user.id);
+        try {
+          await notificationService.removePushToken(user.id);
+        } catch {
+          // Ignorar errores de push token, no deben bloquear el logout
+        }
       }
 
       const response = await authService.logout();

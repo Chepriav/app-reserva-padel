@@ -131,12 +131,37 @@ export const authService = {
   async logout() {
     try {
       const { error } = await supabase.auth.signOut();
+
+      // En web, limpiar localStorage manualmente para asegurar logout
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+      }
+
       if (error) {
-        return { success: false, error: 'Error al cerrar sesión' };
+        // Aunque haya error en Supabase, ya limpiamos localStorage
+        console.error('Error en signOut:', error);
       }
       return { success: true };
     } catch (error) {
-      return { success: false, error: 'Error al cerrar sesión' };
+      // En caso de error, intentar limpiar localStorage de todas formas
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+      }
+      return { success: true };
     }
   },
 

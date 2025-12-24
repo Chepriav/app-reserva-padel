@@ -19,6 +19,8 @@ import { ViviendaSelector } from '../components/ViviendaSelector';
 import { NIVELES_JUEGO, parseVivienda, combinarVivienda, formatearVivienda, esViviendaValida } from '../constants/config';
 import { validarPerfil, validarViviendaComponentes } from '../utils/validators';
 import { authService } from '../services/authService.supabase';
+import { notificationService } from '../services/notificationService';
+import { webPushService } from '../services/webPushService';
 
 // Importar ImageManipulator solo en plataformas nativas
 let ImageManipulator;
@@ -61,6 +63,58 @@ export default function PerfilScreen() {
     saving: false,
   });
   const [cancelingSolicitud, setCancelingSolicitud] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [enablingNotifications, setEnablingNotifications] = useState(false);
+
+  // Verificar estado de notificaciones al cargar
+  useEffect(() => {
+    checkNotificationStatus();
+  }, []);
+
+  const checkNotificationStatus = async () => {
+    if (Platform.OS === 'web') {
+      // En web, verificar permiso del navegador
+      if ('Notification' in window) {
+        setNotificationsEnabled(Notification.permission === 'granted');
+      }
+    }
+  };
+
+  const handleEnableNotifications = async () => {
+    if (!user) return;
+
+    setEnablingNotifications(true);
+
+    try {
+      const result = await notificationService.registerForPushNotifications(user.id);
+
+      if (result.success) {
+        setNotificationsEnabled(true);
+        setAlertConfig({
+          visible: true,
+          title: 'Notificaciones Activadas',
+          message: 'Recibirás notificaciones sobre tus reservas y cambios importantes.',
+          buttons: [{ text: 'OK', onPress: () => {} }],
+        });
+      } else {
+        setAlertConfig({
+          visible: true,
+          title: 'Error',
+          message: result.error || 'No se pudieron activar las notificaciones',
+          buttons: [{ text: 'OK', onPress: () => {} }],
+        });
+      }
+    } catch (error) {
+      setAlertConfig({
+        visible: true,
+        title: 'Error',
+        message: 'Error al activar notificaciones',
+        buttons: [{ text: 'OK', onPress: () => {} }],
+      });
+    }
+
+    setEnablingNotifications(false);
+  };
 
   // Validar si una URL de imagen es válida
   const isValidImageUrl = (url) => {
@@ -698,18 +752,20 @@ export default function PerfilScreen() {
         </View>
       )}
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Acerca de</Text>
-        <View style={styles.infoCard}>
-          <Text style={styles.aboutText}>
-            App de Reservas de Pádel
-          </Text>
-          <Text style={styles.aboutVersion}>Versión 1.0.0</Text>
-          <Text style={styles.aboutNote}>
-            Aplicación para gestionar reservas de pistas de pádel en la urbanización
-          </Text>
-        </View>
-      </View>
+      {/* Botón de Notificaciones */}
+      {Platform.OS === 'web' && (
+        <TouchableOpacity
+          style={[styles.notificationButton, enablingNotifications && styles.buttonDisabled]}
+          onPress={handleEnableNotifications}
+          disabled={enablingNotifications}
+        >
+          {enablingNotifications ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.notificationButtonText}>🔔 Activar Notificaciones</Text>
+          )}
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
@@ -1255,5 +1311,23 @@ const styles = StyleSheet.create({
   },
   modalButtonDisabled: {
     opacity: 0.6,
+  },
+  notificationButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    padding: 16,
+    margin: 16,
+    marginBottom: 0,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  notificationButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

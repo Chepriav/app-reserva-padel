@@ -1,13 +1,15 @@
-// Desregistrar Service Workers existentes y no registrar nuevos
-// El SW estaba causando problemas con las peticiones a Supabase
+// Registrar Service Worker para PWA y Web Push
 export function registerServiceWorker() {
   if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-    // Desregistrar todos los SW existentes
-    navigator.serviceWorker.getRegistrations().then((registrations) => {
-      registrations.forEach((registration) => {
-        registration.unregister();
-        console.log('🗑️ Service Worker unregistered');
-      });
+    window.addEventListener('load', () => {
+      navigator.serviceWorker
+        .register('/service-worker.js')
+        .then((registration) => {
+          console.log('Service Worker registrado:', registration.scope);
+        })
+        .catch((error) => {
+          console.error('Error registrando Service Worker:', error);
+        });
     });
   }
 }
