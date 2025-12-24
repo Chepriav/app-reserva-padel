@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { reservasService } from '../services/reservasService.supabase';
+import { notificationService } from '../services/notificationService';
 import { useAuth } from './AuthContext';
 
 const ReservasContext = createContext(null);
@@ -9,6 +10,7 @@ export const ReservasProvider = ({ children }) => {
   const [reservas, setReservas] = useState([]);
   const [pistas, setPistas] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [reservasVersion, setReservasVersion] = useState(0);
 
   // Cargar reservas del usuario cuando se autentique
   useEffect(() => {
@@ -78,6 +80,12 @@ export const ReservasProvider = ({ children }) => {
       if (response.success) {
         // Actualizar lista de reservas
         setReservas([...reservas, response.data]);
+        // Incrementar versión para que HomeScreen recargue
+        setReservasVersion((v) => v + 1);
+
+        // Programar recordatorio local 1 hora antes
+        notificationService.scheduleReservationReminder(response.data, 60);
+
         return { success: true, data: response.data };
       }
       return { success: false, error: response.error };
@@ -94,6 +102,8 @@ export const ReservasProvider = ({ children }) => {
         setReservas(
           reservas.map((r) => (r.id === reservaId ? response.data : r))
         );
+        // Incrementar versión para que HomeScreen recargue
+        setReservasVersion((v) => v + 1);
         return { success: true };
       }
       return { success: false, error: response.error };
@@ -139,6 +149,7 @@ export const ReservasProvider = ({ children }) => {
     reservas,
     pistas,
     loading,
+    reservasVersion,
     crearReserva,
     cancelarReserva,
     obtenerDisponibilidad,

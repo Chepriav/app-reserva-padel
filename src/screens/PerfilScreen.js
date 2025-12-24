@@ -9,6 +9,7 @@ import {
   Image,
   TextInput,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../context/AuthContext';
@@ -51,8 +52,15 @@ export default function PerfilScreen() {
   const [showNivelPicker, setShowNivelPicker] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  // Verificar si necesita actualizar vivienda al nuevo formato
-  const necesitaActualizarVivienda = user?.vivienda && !esViviendaValida(user.vivienda);
+  // Estado para modal de solicitud de cambio de vivienda
+  const [solicitudModal, setSolicitudModal] = useState({
+    visible: false,
+    escalera: '',
+    piso: '',
+    puerta: '',
+    saving: false,
+  });
+  const [cancelingSolicitud, setCancelingSolicitud] = useState(false);
 
   // Validar si una URL de imagen es válida
   const isValidImageUrl = (url) => {
@@ -155,21 +163,23 @@ export default function PerfilScreen() {
 
   // Guardar cambios del perfil
   const handleGuardarPerfil = async () => {
-    // Validar vivienda
-    const viviendaValidacion = validarViviendaComponentes(escalera, piso, puerta);
-    if (!viviendaValidacion.valido) {
-      const errores = Object.values(viviendaValidacion.errores).join('\n');
-      setAlertConfig({
-        visible: true,
-        title: 'Error en vivienda',
-        message: errores,
-        buttons: [{ text: 'OK', onPress: () => {} }],
-      });
-      return;
-    }
+    // Solo validar vivienda si es admin (los usuarios normales no pueden cambiarla)
+    let vivienda = user?.vivienda;
 
-    // Combinar vivienda
-    const vivienda = combinarVivienda(escalera, piso, puerta);
+    if (user?.esAdmin) {
+      const viviendaValidacion = validarViviendaComponentes(escalera, piso, puerta);
+      if (!viviendaValidacion.valido) {
+        const errores = Object.values(viviendaValidacion.errores).join('\n');
+        setAlertConfig({
+          visible: true,
+          title: 'Error en vivienda',
+          message: errores,
+          buttons: [{ text: 'OK', onPress: () => {} }],
+        });
+        return;
+      }
+      vivienda = combinarVivienda(escalera, piso, puerta);
+    }
 
     const validacion = validarPerfil({
       nombre,
@@ -216,6 +226,121 @@ export default function PerfilScreen() {
         buttons: [{ text: 'OK', onPress: () => {} }],
       });
     }
+  };
+
+  // Abrir modal para solicitar cambio de vivienda
+  const openSolicitudModal = () => {
+    setSolicitudModal({
+      visible: true,
+      escalera: '',
+      piso: '',
+      puerta: '',
+      saving: false,
+    });
+  };
+
+  // Cerrar modal de solicitud
+  const closeSolicitudModal = () => {
+    setSolicitudModal({
+      visible: false,
+      escalera: '',
+      piso: '',
+      puerta: '',
+      saving: false,
+    });
+  };
+
+  // Enviar solicitud de cambio de vivienda
+  const handleEnviarSolicitud = async () => {
+    const { escalera: solEscalera, piso: solPiso, puerta: solPuerta } = solicitudModal;
+
+    // Validar componentes
+    const validacion = validarViviendaComponentes(solEscalera, solPiso, solPuerta);
+    if (!validacion.valido) {
+      const errorMsg = Object.values(validacion.errores).join('\n');
+      setAlertConfig({
+        visible: true,
+        title: 'Error de validación',
+        message: errorMsg,
+        buttons: [{ text: 'OK', onPress: () => {} }],
+      });
+      return;
+    }
+
+    const nuevaVivienda = combinarVivienda(solEscalera, solPiso, solPuerta);
+
+    // Verificar que no sea la misma vivienda actual
+    if (nuevaVivienda === user?.vivienda) {
+      setAlertConfig({
+        visible: true,
+        title: 'Error',
+        message: 'La vivienda seleccionada es igual a tu vivienda actual',
+        buttons: [{ text: 'OK', onPress: () => {} }],
+      });
+      return;
+    }
+
+    setSolicitudModal((prev) => ({ ...prev, saving: true }));
+
+    const result = await authService.solicitarCambioVivienda(user.id, nuevaVivienda);
+
+    if (result.success) {
+      closeSolicitudModal();
+      // Actualizar el usuario en el contexto
+      await updateProfile({ viviendaSolicitada: nuevaVivienda });
+      setAlertConfig({
+        visible: true,
+        title: 'Solicitud Enviada',
+        message: `Tu solicitud de cambio a ${formatearVivienda(nuevaVivienda)} ha sido enviada. Un administrador la revisará pronto.`,
+        buttons: [{ text: 'OK', onPress: () => {} }],
+      });
+    } else {
+      setSolicitudModal((prev) => ({ ...prev, saving: false }));
+      setAlertConfig({
+        visible: true,
+        title: 'Error',
+        message: result.error || 'Error al enviar solicitud',
+        buttons: [{ text: 'OK', onPress: () => {} }],
+      });
+    }
+  };
+
+  // Cancelar solicitud pendiente
+  const handleCancelarSolicitud = () => {
+    setAlertConfig({
+      visible: true,
+      title: 'Cancelar Solicitud',
+      message: '¿Estás seguro de que quieres cancelar tu solicitud de cambio de vivienda?',
+      buttons: [
+        { text: 'No', style: 'cancel', onPress: () => {} },
+        {
+          text: 'Sí, Cancelar',
+          style: 'destructive',
+          onPress: async () => {
+            setCancelingSolicitud(true);
+            const result = await authService.cancelarSolicitudVivienda(user.id);
+
+            if (result.success) {
+              await updateProfile({ viviendaSolicitada: null });
+              setAlertConfig({
+                visible: true,
+                title: 'Solicitud Cancelada',
+                message: 'Tu solicitud de cambio de vivienda ha sido cancelada.',
+                buttons: [{ text: 'OK', onPress: () => {} }],
+              });
+            } else {
+              setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: result.error || 'Error al cancelar solicitud',
+                buttons: [{ text: 'OK', onPress: () => {} }],
+              });
+            }
+            setCancelingSolicitud(false);
+          },
+        },
+      ],
+    });
   };
 
   const handleLogout = () => {
@@ -418,8 +543,13 @@ export default function PerfilScreen() {
 
           {/* Vivienda */}
           <View style={styles.infoRowVertical}>
-            <Text style={styles.infoLabel}>Vivienda</Text>
-            {editMode ? (
+            <View style={styles.viviendaLabelRow}>
+              <Text style={styles.infoLabel}>Vivienda</Text>
+              {!user?.esAdmin && (
+                <Text style={styles.viviendaLocked}>🔒</Text>
+              )}
+            </View>
+            {editMode && user?.esAdmin ? (
               <View style={styles.viviendaSelectorContainer}>
                 <ViviendaSelector
                   escalera={escalera}
@@ -437,22 +567,42 @@ export default function PerfilScreen() {
                   : user?.vivienda}
               </Text>
             )}
-          </View>
 
-          {/* Aviso de migración de vivienda */}
-          {necesitaActualizarVivienda && !editMode && (
-            <View style={styles.migracionAviso}>
-              <Text style={styles.migracionTexto}>
-                Tu vivienda tiene el formato antiguo. Por favor, actualiza tus datos.
-              </Text>
+            {/* Solicitud pendiente */}
+            {!user?.esAdmin && user?.viviendaSolicitada && (
+              <View style={styles.solicitudPendiente}>
+                <View style={styles.solicitudInfo}>
+                  <Text style={styles.solicitudBadge}>Cambio pendiente</Text>
+                  <Text style={styles.solicitudText}>
+                    Solicitud: {esViviendaValida(user.viviendaSolicitada)
+                      ? formatearVivienda(user.viviendaSolicitada)
+                      : user.viviendaSolicitada}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.cancelarSolicitudButton, cancelingSolicitud && styles.buttonDisabled]}
+                  onPress={handleCancelarSolicitud}
+                  disabled={cancelingSolicitud}
+                >
+                  {cancelingSolicitud ? (
+                    <ActivityIndicator size="small" color={colors.error} />
+                  ) : (
+                    <Text style={styles.cancelarSolicitudText}>Cancelar</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Botón para solicitar cambio */}
+            {!user?.esAdmin && !user?.viviendaSolicitada && !editMode && (
               <TouchableOpacity
-                style={styles.migracionBoton}
-                onPress={() => setEditMode(true)}
+                style={styles.solicitarCambioButton}
+                onPress={openSolicitudModal}
               >
-                <Text style={styles.migracionBotonTexto}>Actualizar Vivienda</Text>
+                <Text style={styles.solicitarCambioText}>Solicitar cambio de vivienda</Text>
               </TouchableOpacity>
-            </View>
-          )}
+            )}
+          </View>
 
           <View style={styles.separator} />
 
@@ -589,6 +739,64 @@ export default function PerfilScreen() {
       <Text style={styles.footer}>
         Desarrollado con React Native y Expo
       </Text>
+
+      {/* Modal para solicitar cambio de vivienda */}
+      <Modal
+        visible={solicitudModal.visible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closeSolicitudModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Solicitar Cambio de Vivienda</Text>
+            <Text style={styles.modalSubtitle}>
+              Selecciona tu nueva vivienda. Un administrador revisará tu solicitud.
+            </Text>
+
+            <View style={styles.modalViviendaSelector}>
+              <ViviendaSelector
+                escalera={solicitudModal.escalera}
+                piso={solicitudModal.piso}
+                puerta={solicitudModal.puerta}
+                onChangeEscalera={(value) =>
+                  setSolicitudModal((prev) => ({ ...prev, escalera: value }))
+                }
+                onChangePiso={(value) =>
+                  setSolicitudModal((prev) => ({ ...prev, piso: value }))
+                }
+                onChangePuerta={(value) =>
+                  setSolicitudModal((prev) => ({ ...prev, puerta: value }))
+                }
+              />
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={closeSolicitudModal}
+                disabled={solicitudModal.saving}
+              >
+                <Text style={styles.modalCancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalSaveButton,
+                  solicitudModal.saving && styles.modalButtonDisabled,
+                ]}
+                onPress={handleEnviarSolicitud}
+                disabled={solicitudModal.saving}
+              >
+                {solicitudModal.saving ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.modalSaveButtonText}>Enviar Solicitud</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* CustomAlert component */}
       <CustomAlert
@@ -876,33 +1084,22 @@ const styles = StyleSheet.create({
   infoRowVertical: {
     paddingVertical: 12,
   },
+  viviendaLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  viviendaLocked: {
+    fontSize: 14,
+  },
+  viviendaAviso: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
   viviendaSelectorContainer: {
     marginTop: 8,
-  },
-  migracionAviso: {
-    backgroundColor: colors.accent + '20',
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: colors.accent,
-  },
-  migracionTexto: {
-    fontSize: 14,
-    color: colors.text,
-    marginBottom: 8,
-  },
-  migracionBoton: {
-    backgroundColor: colors.accent,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    alignSelf: 'flex-start',
-  },
-  migracionBotonTexto: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
   },
   dangerSection: {
     marginHorizontal: 16,
@@ -943,5 +1140,120 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  solicitudPendiente: {
+    marginTop: 12,
+    backgroundColor: colors.accent + '15',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.accent + '40',
+  },
+  solicitudInfo: {
+    marginBottom: 8,
+  },
+  solicitudBadge: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.accent,
+    marginBottom: 4,
+  },
+  solicitudText: {
+    fontSize: 14,
+    color: colors.text,
+  },
+  cancelarSolicitudButton: {
+    backgroundColor: colors.surface,
+    borderRadius: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: colors.error,
+    minHeight: 36,
+    justifyContent: 'center',
+  },
+  cancelarSolicitudText: {
+    color: colors.error,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  solicitarCambioButton: {
+    marginTop: 12,
+    backgroundColor: colors.primary + '10',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  solicitarCambioText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalViviendaSelector: {
+    marginBottom: 24,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalCancelButton: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  modalCancelButtonText: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modalSaveButton: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    padding: 14,
+    alignItems: 'center',
+  },
+  modalSaveButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modalButtonDisabled: {
+    opacity: 0.6,
   },
 });

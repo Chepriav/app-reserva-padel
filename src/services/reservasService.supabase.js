@@ -1,6 +1,7 @@
 import { supabase } from './supabaseConfig';
-import { horasHasta, stringToDate, generarHorariosDisponibles } from '../utils/dateHelpers';
+import { horasHasta, stringToDate, generarHorariosDisponibles, formatearFechaLegible } from '../utils/dateHelpers';
 import { LIMITES_RESERVA } from '../constants/config';
+import { notificationService } from './notificationService';
 
 /**
  * Convierte tiempo en formato HH:MM a minutos totales
@@ -311,6 +312,13 @@ export const reservasService = {
           pista_nombre: reservaADesplazar.pistaNombre,
           desplazado_por_vivienda: viviendaDesplazadora,
         });
+
+      // 3. Enviar push notification al usuario desplazado
+      notificationService.notifyReservationDisplacement(reservaADesplazar.usuarioId, {
+        fecha: formatearFechaLegible(reservaADesplazar.fecha),
+        horaInicio: reservaADesplazar.horaInicio,
+        pistaNombre: reservaADesplazar.pistaNombre,
+      });
 
       return { success: true };
     } catch (error) {

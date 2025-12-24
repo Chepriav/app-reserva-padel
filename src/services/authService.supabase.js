@@ -55,6 +55,7 @@ const mapUserToCamelCase = (data) => {
     email: data.email,
     telefono: data.telefono,
     vivienda: data.vivienda,
+    viviendaSolicitada: data.vivienda_solicitada,
     nivelJuego: data.nivel_juego,
     fotoPerfil: data.foto_perfil,
     esAdmin: data.es_admin,
@@ -495,6 +496,125 @@ export const authService = {
       };
     } catch (error) {
       return { success: false, error: 'Error al enviar el correo de recuperación' };
+    }
+  },
+
+  /**
+   * Solicita cambio de vivienda (usuario)
+   */
+  async solicitarCambioVivienda(userId, nuevaVivienda) {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ vivienda_solicitada: nuevaVivienda })
+        .eq('id', userId);
+
+      if (error) {
+        return { success: false, error: 'Error al solicitar cambio de vivienda' };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Error al solicitar cambio de vivienda' };
+    }
+  },
+
+  /**
+   * Cancela solicitud de cambio de vivienda propia (usuario)
+   */
+  async cancelarSolicitudVivienda(userId) {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ vivienda_solicitada: null })
+        .eq('id', userId);
+
+      if (error) {
+        return { success: false, error: 'Error al cancelar solicitud' };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Error al cancelar solicitud' };
+    }
+  },
+
+  /**
+   * Obtiene usuarios con solicitudes de cambio de vivienda pendientes (solo admin)
+   */
+  async getSolicitudesCambioVivienda() {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .not('vivienda_solicitada', 'is', null)
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        return { success: false, error: 'Error al obtener solicitudes de cambio' };
+      }
+
+      return {
+        success: true,
+        data: data.map(mapUserToCamelCase),
+      };
+    } catch (error) {
+      return { success: false, error: 'Error al obtener solicitudes de cambio' };
+    }
+  },
+
+  /**
+   * Aprueba solicitud de cambio de vivienda (solo admin)
+   */
+  async aprobarCambioVivienda(userId) {
+    try {
+      // Primero obtener la vivienda solicitada
+      const { data: userData, error: fetchError } = await supabase
+        .from('users')
+        .select('vivienda_solicitada')
+        .eq('id', userId)
+        .single();
+
+      if (fetchError || !userData?.vivienda_solicitada) {
+        return { success: false, error: 'No hay solicitud pendiente para este usuario' };
+      }
+
+      // Actualizar vivienda y limpiar solicitud
+      const { error } = await supabase
+        .from('users')
+        .update({
+          vivienda: userData.vivienda_solicitada,
+          vivienda_solicitada: null,
+        })
+        .eq('id', userId);
+
+      if (error) {
+        return { success: false, error: 'Error al aprobar cambio de vivienda' };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Error al aprobar cambio de vivienda' };
+    }
+  },
+
+  /**
+   * Rechaza solicitud de cambio de vivienda (solo admin)
+   */
+  async rechazarCambioVivienda(userId) {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ vivienda_solicitada: null })
+        .eq('id', userId);
+
+      if (error) {
+        return { success: false, error: 'Error al rechazar cambio de vivienda' };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Error al rechazar cambio de vivienda' };
     }
   },
 

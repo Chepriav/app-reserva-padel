@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { authService } from '../services/authService.supabase';
 import { reservasService } from '../services/reservasService.supabase';
+import { notificationService } from '../services/notificationService';
 
 const AuthContext = createContext(null);
 
@@ -38,13 +39,38 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
-  // Cargar notificaciones cuando el usuario se autentica
+  // Cargar notificaciones y registrar push token cuando el usuario se autentica
   useEffect(() => {
+    let notificationCleanup = null;
+
     if (isAuthenticated && user) {
       cargarNotificaciones();
+
+      // Registrar para push notifications
+      notificationService.registerForPushNotifications(user.id);
+
+      // Configurar listeners de notificaciones
+      notificationCleanup = notificationService.addNotificationListeners(
+        (notification) => {
+          // Notificación recibida en primer plano
+          console.log('Notificación recibida:', notification);
+        },
+        (response) => {
+          // Usuario tocó la notificación
+          const data = response.notification.request.content.data;
+          console.log('Notificación tocada:', data);
+          // Aquí se podría navegar a la pantalla correspondiente
+        }
+      );
     } else {
       setNotificacionesPendientes([]);
     }
+
+    return () => {
+      if (notificationCleanup) {
+        notificationCleanup();
+      }
+    };
   }, [isAuthenticated, user]);
 
   const cargarNotificaciones = async () => {
@@ -87,6 +113,11 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      // Eliminar push token antes de cerrar sesión
+      if (user) {
+        await notificationService.removePushToken(user.id);
+      }
+
       const response = await authService.logout();
       if (response.success) {
         setUser(null);

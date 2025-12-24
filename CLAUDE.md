@@ -73,6 +73,7 @@ App_reserva_padel_urbanizacion/
     │   ├── authService.supabase.js # Servicio de autenticación
     │   ├── reservasService.supabase.js  # Servicio de reservas + RPCs
     │   ├── storageService.supabase.js   # Servicio de almacenamiento de imágenes
+    │   ├── notificationService.js  # Push notifications + recordatorios locales
     │   └── registerServiceWorker.js # Registro SW para PWA
     ├── utils/
     │   ├── dateHelpers.js          # Funciones de fecha/hora
@@ -130,9 +131,11 @@ CREATE TABLE public.users (
   email TEXT UNIQUE NOT NULL,
   telefono TEXT NOT NULL,
   vivienda TEXT NOT NULL,           -- Formato "1-3-B" (escalera-piso-puerta)
+  vivienda_solicitada TEXT,         -- Cambio de vivienda pendiente de aprobación
   nivel_juego TEXT,                 -- 'principiante'|'intermedio'|'avanzado'|'profesional'
   foto_perfil TEXT,                 -- URL de Supabase Storage
   es_admin BOOLEAN DEFAULT FALSE,
+  es_manager BOOLEAN DEFAULT FALSE, -- Manager no puede ser eliminado ni quitar admin
   estado_aprobacion TEXT DEFAULT 'pendiente',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -192,6 +195,19 @@ CREATE TABLE public.notificaciones_desplazamiento (
 );
 ```
 
+### Tabla: `push_tokens`
+```sql
+CREATE TABLE public.push_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  token TEXT NOT NULL,              -- Expo Push Token
+  platform TEXT NOT NULL,           -- 'ios' o 'android'
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, token)
+);
+```
+
 ## Reglas de Negocio
 
 ### Horarios
@@ -237,6 +253,32 @@ CREATE TABLE public.notificaciones_desplazamiento (
 - `updateProfile(userId, updates)` - Actualiza perfil
 - `getUsuariosPendientes()` - Lista pendientes (admin)
 - `aprobarUsuario(userId)` / `rechazarUsuario(userId)` - Gestión admin
+- `solicitarCambioVivienda(userId, nuevaVivienda)` - Usuario solicita cambio
+- `cancelarSolicitudVivienda(userId)` - Usuario cancela su solicitud
+- `getSolicitudesCambioVivienda()` - Lista solicitudes pendientes (admin)
+- `aprobarCambioVivienda(userId)` - Admin aprueba cambio
+- `rechazarCambioVivienda(userId)` - Admin rechaza cambio
+
+### notificationService.js
+
+**Push Notifications (Expo):**
+- `registerForPushNotifications(userId)` - Solicita permisos y guarda token
+- `removePushToken(userId)` - Elimina token al cerrar sesión
+- `savePushToken(userId, token)` - Guarda token en Supabase
+- `getUserPushTokens(userId)` - Obtiene tokens de un usuario
+
+**Notificaciones Locales:**
+- `scheduleReservationReminder(reserva, minutosAntes)` - Programa recordatorio
+- `cancelScheduledNotification(notificationId)` - Cancela recordatorio
+- `cancelAllScheduledNotifications()` - Cancela todos
+
+**Envío de Push:**
+- `sendPushNotification(tokens, title, body, data)` - Envía via Expo API
+- `notifyViviendaChange(userId, aprobado, viviendaNueva)` - Notifica cambio vivienda
+- `notifyReservationDisplacement(userId, reservaInfo)` - Notifica desplazamiento
+
+**Listeners:**
+- `addNotificationListeners(onReceived, onResponse)` - Configura handlers
 
 ## Context API
 
@@ -298,6 +340,7 @@ Crear archivo `.env` en la raíz (NO commitear):
 ```
 EXPO_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+EXPO_PUBLIC_PROJECT_ID=tu-project-id-de-expo  # Para push notifications
 ```
 
 ## Testing
@@ -340,3 +383,46 @@ npx expo build:android
 | `convertedAt` | `converted_at` |
 | `horaInicio` | `hora_inicio` |
 | `horaFin` | `hora_fin` |
+| `viviendaSolicitada` | `vivienda_solicitada` |
+| `esManager` | `es_manager` |
+
+## Sistema de Solicitud de Cambio de Vivienda
+
+### Flujo
+1. Usuario va a PerfilScreen y pulsa "Solicitar cambio de vivienda"
+2. Selecciona nueva vivienda con ViviendaSelector
+3. Se guarda en `vivienda_solicitada` y queda pendiente
+4. Admin ve solicitud en AdminScreen > pestaña "Cambios"
+5. Admin aprueba (vivienda se actualiza) o rechaza (se limpia solicitud)
+6. Usuario recibe push notification con el resultado
+
+### UI en PerfilScreen
+- Vivienda bloqueada con candado para usuarios no-admin
+- Si hay solicitud pendiente: muestra badge + botón "Cancelar"
+- Si no hay solicitud: muestra botón "Solicitar cambio"
+
+### UI en AdminScreen
+- Nueva pestaña "Cambios" con contador
+- Muestra: nombre, email, vivienda actual → vivienda solicitada
+- Botones: Aprobar / Rechazar
+
+## Sistema de Notificaciones
+
+### Tipos de Notificaciones
+
+| Evento | Tipo | Cuándo se envía |
+|--------|------|-----------------|
+| Recordatorio reserva | Local | 1 hora antes de la reserva |
+| Cambio vivienda aprobado | Push | Al aprobar en AdminScreen |
+| Cambio vivienda rechazado | Push | Al rechazar en AdminScreen |
+| Reserva desplazada | Push | Cuando otra vivienda desplaza |
+
+### Configuración
+- Solo funciona en dispositivos físicos (iOS/Android)
+- En web se ignoran silenciosamente
+- Tokens se guardan en tabla `push_tokens`
+- Se eliminan al cerrar sesión
+
+### Permisos Requeridos
+- Android: Configurado automáticamente en app.json
+- iOS: Se solicita al primer login

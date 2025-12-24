@@ -22,7 +22,7 @@ import { CustomAlert } from '../components/CustomAlert';
 
 export default function HomeScreen({ navigation }) {
   const { user, notificacionesPendientes, marcarNotificacionesLeidas } = useAuth();
-  const { pistas, crearReserva, obtenerDisponibilidad, reservas } =
+  const { pistas, crearReserva, obtenerDisponibilidad, reservas, reservasVersion } =
     useReservas();
   const [fechaSeleccionada, setFechaSeleccionada] = useState(obtenerFechaHoy());
   const [pistaSeleccionada, setPistaSeleccionada] = useState(null);
@@ -103,7 +103,7 @@ export default function HomeScreen({ navigation }) {
         cargarHorariosSemana();
       }
     }
-  }, [pistaSeleccionada, fechaSeleccionada, vistaActual]);
+  }, [pistaSeleccionada, fechaSeleccionada, vistaActual, reservasVersion]);
 
   const cargarHorarios = async () => {
     if (!pistaSeleccionada) return;

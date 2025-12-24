@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Reserva Pádel",
-    "slug": "app-reserva-padel-urbanizacion",
+    "slug": "reserva-padel",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -25,7 +25,9 @@
       "permissions": [
         "NOTIFICATIONS",
         "READ_CALENDAR",
-        "WRITE_CALENDAR"
+        "WRITE_CALENDAR",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR"
       ]
     },
     "web": {
@@ -46,6 +48,12 @@
     "plugins": [
       "expo-calendar",
       "expo-notifications"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "c1d6974f-0912-4c2f-bbe4-d4daaa70c0cc"
+      }
+    },
+    "owner": "chepriavs-organization"
   }
 }

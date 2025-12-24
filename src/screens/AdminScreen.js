@@ -9,18 +9,24 @@ import {
   Platform,
   RefreshControl,
   Switch,
+  Modal,
 } from 'react-native';
 import { authService } from '../services/authService.supabase';
+import { notificationService } from '../services/notificationService';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../constants/colors';
 import { formatearFechaLegible } from '../utils/dateHelpers';
 import { CustomAlert } from '../components/CustomAlert';
+import { ViviendaSelector } from '../components/ViviendaSelector';
+import { parseVivienda, combinarVivienda, formatearVivienda } from '../constants/config';
+import { validarViviendaComponentes } from '../utils/validators';
 
 export default function AdminScreen() {
   const { user } = useAuth();
   const [tabActiva, setTabActiva] = useState('solicitudes');
   const [usuariosPendientes, setUsuariosPendientes] = useState([]);
   const [todosUsuarios, setTodosUsuarios] = useState([]);
+  const [solicitudesCambio, setSolicitudesCambio] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -30,6 +36,87 @@ export default function AdminScreen() {
     message: '',
     buttons: [],
   });
+
+  // Estado para modal de editar vivienda
+  const [editViviendaModal, setEditViviendaModal] = useState({
+    visible: false,
+    usuario: null,
+    escalera: '',
+    piso: '',
+    puerta: '',
+    saving: false,
+  });
+
+  const openEditVivienda = (usuario) => {
+    const parsed = parseVivienda(usuario.vivienda);
+    setEditViviendaModal({
+      visible: true,
+      usuario,
+      escalera: parsed.escalera,
+      piso: parsed.piso,
+      puerta: parsed.puerta,
+      saving: false,
+    });
+  };
+
+  const closeEditVivienda = () => {
+    setEditViviendaModal({
+      visible: false,
+      usuario: null,
+      escalera: '',
+      piso: '',
+      puerta: '',
+      saving: false,
+    });
+  };
+
+  const handleSaveVivienda = async () => {
+    const { usuario, escalera, piso, puerta } = editViviendaModal;
+
+    // Validar componentes
+    const validacion = validarViviendaComponentes(escalera, piso, puerta);
+    if (!validacion.valido) {
+      const errorMsg = Object.values(validacion.errores).join('\n');
+      setAlertConfig({
+        visible: true,
+        title: 'Error de validación',
+        message: errorMsg,
+        buttons: [{ text: 'OK', onPress: () => {} }],
+      });
+      return;
+    }
+
+    setEditViviendaModal((prev) => ({ ...prev, saving: true }));
+
+    const nuevaVivienda = combinarVivienda(escalera, piso, puerta);
+    const result = await authService.updateProfile(usuario.id, {
+      vivienda: nuevaVivienda,
+    });
+
+    if (result.success) {
+      // Actualizar lista local
+      setTodosUsuarios((prev) =>
+        prev.map((u) =>
+          u.id === usuario.id ? { ...u, vivienda: nuevaVivienda } : u
+        )
+      );
+      closeEditVivienda();
+      setAlertConfig({
+        visible: true,
+        title: 'Vivienda actualizada',
+        message: `La vivienda de ${usuario.nombre} ha sido cambiada a ${formatearVivienda(nuevaVivienda)}`,
+        buttons: [{ text: 'OK', onPress: () => {} }],
+      });
+    } else {
+      setEditViviendaModal((prev) => ({ ...prev, saving: false }));
+      setAlertConfig({
+        visible: true,
+        title: 'Error',
+        message: result.error || 'Error al actualizar la vivienda',
+        buttons: [{ text: 'OK', onPress: () => {} }],
+      });
+    }
+  };
 
   useEffect(() => {
     cargarTodosDatos();
@@ -41,15 +128,19 @@ export default function AdminScreen() {
 
   const cargarTodosDatos = async () => {
     setLoading(true);
-    const [pendientesResult, usuariosResult] = await Promise.all([
+    const [pendientesResult, usuariosResult, cambiosResult] = await Promise.all([
       authService.getUsuariosPendientes(),
       authService.getTodosUsuarios(),
+      authService.getSolicitudesCambioVivienda(),
     ]);
     if (pendientesResult.success) {
       setUsuariosPendientes(pendientesResult.data);
     }
     if (usuariosResult.success) {
       setTodosUsuarios(usuariosResult.data);
+    }
+    if (cambiosResult.success) {
+      setSolicitudesCambio(cambiosResult.data);
     }
     setLoading(false);
   };
@@ -59,6 +150,11 @@ export default function AdminScreen() {
       const result = await authService.getUsuariosPendientes();
       if (result.success) {
         setUsuariosPendientes(result.data);
+      }
+    } else if (tabActiva === 'cambios') {
+      const result = await authService.getSolicitudesCambioVivienda();
+      if (result.success) {
+        setSolicitudesCambio(result.data);
       }
     } else {
       const result = await authService.getTodosUsuarios();
@@ -241,6 +337,82 @@ export default function AdminScreen() {
     });
   };
 
+  const handleAprobarCambioVivienda = (usuario) => {
+    setAlertConfig({
+      visible: true,
+      title: 'Aprobar Cambio de Vivienda',
+      message: `¿Aprobar el cambio de vivienda de ${usuario.nombre}?\n\nActual: ${formatearVivienda(usuario.vivienda)}\nNueva: ${formatearVivienda(usuario.viviendaSolicitada)}`,
+      buttons: [
+        { text: 'Cancelar', style: 'cancel', onPress: () => {} },
+        {
+          text: 'Aprobar',
+          onPress: async () => {
+            const result = await authService.aprobarCambioVivienda(usuario.id);
+            if (result.success) {
+              setSolicitudesCambio((prev) =>
+                prev.filter((u) => u.id !== usuario.id)
+              );
+
+              // Enviar notificación push al usuario
+              notificationService.notifyViviendaChange(
+                usuario.id,
+                true,
+                formatearVivienda(usuario.viviendaSolicitada)
+              );
+
+              setAlertConfig({
+                visible: true,
+                title: 'Cambio Aprobado',
+                message: `La vivienda de ${usuario.nombre} ha sido cambiada a ${formatearVivienda(usuario.viviendaSolicitada)}`,
+                buttons: [{ text: 'OK', onPress: () => {} }],
+              });
+            } else {
+              setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: result.error,
+                buttons: [{ text: 'OK', onPress: () => {} }],
+              });
+            }
+          },
+        },
+      ],
+    });
+  };
+
+  const handleRechazarCambioVivienda = (usuario) => {
+    setAlertConfig({
+      visible: true,
+      title: 'Rechazar Cambio de Vivienda',
+      message: `¿Rechazar la solicitud de cambio de vivienda de ${usuario.nombre}?\n\nSolicita: ${formatearVivienda(usuario.viviendaSolicitada)}`,
+      buttons: [
+        { text: 'Cancelar', style: 'cancel', onPress: () => {} },
+        {
+          text: 'Rechazar',
+          style: 'destructive',
+          onPress: async () => {
+            const result = await authService.rechazarCambioVivienda(usuario.id);
+            if (result.success) {
+              setSolicitudesCambio((prev) =>
+                prev.filter((u) => u.id !== usuario.id)
+              );
+
+              // Enviar notificación push al usuario
+              notificationService.notifyViviendaChange(usuario.id, false, null);
+            } else {
+              setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: result.error,
+                buttons: [{ text: 'OK', onPress: () => {} }],
+              });
+            }
+          },
+        },
+      ],
+    });
+  };
+
   const renderSolicitud = (usuario) => (
     <View key={usuario.id} style={styles.usuarioCard}>
       <View style={styles.usuarioHeader}>
@@ -333,6 +505,13 @@ export default function AdminScreen() {
         />
       </View>
 
+      <TouchableOpacity
+        style={styles.editViviendaButton}
+        onPress={() => openEditVivienda(usuario)}
+      >
+        <Text style={styles.editViviendaButtonText}>Cambiar Vivienda</Text>
+      </TouchableOpacity>
+
       {usuario.id !== user.id && !usuario.esManager && (
         <TouchableOpacity
           style={styles.deleteButton}
@@ -341,6 +520,46 @@ export default function AdminScreen() {
           <Text style={styles.deleteButtonText}>Eliminar Usuario</Text>
         </TouchableOpacity>
       )}
+    </View>
+  );
+
+  const renderSolicitudCambio = (usuario) => (
+    <View key={usuario.id} style={styles.usuarioCard}>
+      <View style={styles.usuarioHeader}>
+        <Text style={styles.usuarioNombre}>{usuario.nombre}</Text>
+        <View style={styles.cambioBadge}>
+          <Text style={styles.badgeText}>Cambio</Text>
+        </View>
+      </View>
+
+      <View style={styles.usuarioInfo}>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Email:</Text>
+          <Text style={styles.infoValue}>{usuario.email}</Text>
+        </View>
+        <View style={styles.cambioViviendaContainer}>
+          <Text style={styles.cambioValue}>{formatearVivienda(usuario.vivienda)}</Text>
+          <Text style={styles.cambioArrow}>→</Text>
+          <Text style={[styles.cambioValue, styles.cambioNueva]}>
+            {formatearVivienda(usuario.viviendaSolicitada)}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.botonesContainer}>
+        <TouchableOpacity
+          style={styles.botonAprobar}
+          onPress={() => handleAprobarCambioVivienda(usuario)}
+        >
+          <Text style={styles.botonAprobarText}>Aprobar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.botonRechazar}
+          onPress={() => handleRechazarCambioVivienda(usuario)}
+        >
+          <Text style={styles.botonRechazarText}>Rechazar</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -362,6 +581,20 @@ export default function AdminScreen() {
             ]}
           >
             Solicitudes ({usuariosPendientes.length})
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tab, tabActiva === 'cambios' && styles.tabActive]}
+          onPress={() => setTabActiva('cambios')}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              tabActiva === 'cambios' && styles.tabTextActive,
+            ]}
+          >
+            Cambios ({solicitudesCambio.length})
           </Text>
         </TouchableOpacity>
 
@@ -401,6 +634,17 @@ export default function AdminScreen() {
               </Text>
             </View>
           )
+        ) : tabActiva === 'cambios' ? (
+          solicitudesCambio.length > 0 ? (
+            solicitudesCambio.map(renderSolicitudCambio)
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>No hay cambios pendientes</Text>
+              <Text style={styles.emptySubtext}>
+                Las solicitudes de cambio de vivienda aparecerán aquí
+              </Text>
+            </View>
+          )
         ) : todosUsuarios.length > 0 ? (
           todosUsuarios.map(renderUsuario)
         ) : (
@@ -409,6 +653,65 @@ export default function AdminScreen() {
           </View>
         )}
       </ScrollView>
+
+      <Modal
+        visible={editViviendaModal.visible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closeEditVivienda}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Cambiar Vivienda</Text>
+            {editViviendaModal.usuario && (
+              <Text style={styles.modalSubtitle}>
+                Usuario: {editViviendaModal.usuario.nombre}
+              </Text>
+            )}
+
+            <View style={styles.viviendaSelectorContainer}>
+              <ViviendaSelector
+                escalera={editViviendaModal.escalera}
+                piso={editViviendaModal.piso}
+                puerta={editViviendaModal.puerta}
+                onChangeEscalera={(value) =>
+                  setEditViviendaModal((prev) => ({ ...prev, escalera: value }))
+                }
+                onChangePiso={(value) =>
+                  setEditViviendaModal((prev) => ({ ...prev, piso: value }))
+                }
+                onChangePuerta={(value) =>
+                  setEditViviendaModal((prev) => ({ ...prev, puerta: value }))
+                }
+              />
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={closeEditVivienda}
+                disabled={editViviendaModal.saving}
+              >
+                <Text style={styles.modalCancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalSaveButton,
+                  editViviendaModal.saving && styles.modalButtonDisabled,
+                ]}
+                onPress={handleSaveVivienda}
+                disabled={editViviendaModal.saving}
+              >
+                {editViviendaModal.saving ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.modalSaveButtonText}>Guardar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <CustomAlert
         visible={alertConfig.visible}
@@ -617,5 +920,112 @@ const styles = StyleSheet.create({
     color: colors.error,
     fontSize: 15,
     fontWeight: '600',
+  },
+  editViviendaButton: {
+    marginTop: 12,
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  editViviendaButtonText: {
+    color: colors.primary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  viviendaSelectorContainer: {
+    marginBottom: 24,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalCancelButton: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  modalCancelButtonText: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modalSaveButton: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    padding: 14,
+    alignItems: 'center',
+  },
+  modalSaveButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modalButtonDisabled: {
+    opacity: 0.6,
+  },
+  cambioBadge: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  cambioViviendaContainer: {
+    marginTop: 8,
+    backgroundColor: colors.background,
+    borderRadius: 8,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  cambioValue: {
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: '500',
+  },
+  cambioNueva: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  cambioArrow: {
+    fontSize: 18,
+    color: colors.textSecondary,
   },
 });
