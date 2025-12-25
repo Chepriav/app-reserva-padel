@@ -51,7 +51,12 @@ App_reserva_padel_urbanizacion/
 │   └── dateHelpers.test.js         # Tests de helpers de fecha
 ├── public/                         # Assets PWA
 │   ├── manifest.json               # Manifest de la PWA
-│   └── service-worker.js           # Service Worker para offline
+│   ├── service-worker.js           # Service Worker para offline y Web Push
+│   ├── icon-180.png                # Icono para iOS (apple-touch-icon)
+│   ├── icon-192.png                # Icono PWA 192x192
+│   └── icon-512.png                # Icono PWA 512x512
+├── scripts/
+│   └── inject-pwa-meta.js          # Inyecta meta tags iOS en el HTML
 └── src/
     ├── screens/                    # Pantallas de la aplicación
     │   ├── LoginScreen.js          # Inicio de sesión + recuperar contraseña
@@ -73,7 +78,8 @@ App_reserva_padel_urbanizacion/
     │   ├── authService.supabase.js # Servicio de autenticación
     │   ├── reservasService.supabase.js  # Servicio de reservas + RPCs
     │   ├── storageService.supabase.js   # Servicio de almacenamiento de imágenes
-    │   ├── notificationService.js  # Push notifications + recordatorios locales
+    │   ├── notificationService.js  # Push notifications nativas (Expo)
+    │   ├── webPushService.js       # Web Push para PWA (iOS/Android/Desktop)
     │   └── registerServiceWorker.js # Registro SW para PWA
     ├── utils/
     │   ├── dateHelpers.js          # Funciones de fecha/hora
@@ -341,6 +347,7 @@ Crear archivo `.env` en la raíz (NO commitear):
 EXPO_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 EXPO_PUBLIC_PROJECT_ID=tu-project-id-de-expo  # Para push notifications
+EXPO_PUBLIC_VAPID_PUBLIC_KEY=BNRg...          # Para Web Push (PWA)
 ```
 
 ## Testing
@@ -426,3 +433,121 @@ npx expo build:android
 ### Permisos Requeridos
 - Android: Configurado automáticamente en app.json
 - iOS: Se solicita al primer login
+
+## Sistema de Web Push (PWA)
+
+### Descripción
+Web Push permite enviar notificaciones a usuarios de la PWA incluso cuando la app está cerrada. Funciona en:
+- **iOS Safari** (16.4+): PWA debe estar instalada en pantalla de inicio
+- **Android Chrome**: PWA instalada o navegador
+- **Desktop Chrome/Edge/Firefox**: Navegador
+
+### Arquitectura
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│   Frontend      │     │   Supabase       │     │   Push Service  │
+│   (PWA)         │────▶│   Edge Function  │────▶│   (FCM/APNs)    │
+│                 │     │   send-push-     │     │                 │
+│   webPushService│     │   notification   │     │                 │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+        │                       │
+        ▼                       ▼
+┌─────────────────┐     ┌──────────────────┐
+│ Service Worker  │     │ web_push_        │
+│ (push handler)  │     │ subscriptions    │
+└─────────────────┘     └──────────────────┘
+```
+
+### Tabla: `web_push_subscriptions`
+```sql
+CREATE TABLE public.web_push_subscriptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  endpoint TEXT NOT NULL,             -- URL del push service
+  p256dh TEXT NOT NULL,               -- Clave pública del cliente
+  auth TEXT NOT NULL,                 -- Token de autenticación
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, endpoint)
+);
+```
+
+### webPushService.js
+
+**Funciones principales:**
+- `isSupported()` - Verifica si el navegador soporta Web Push
+- `requestPermission()` - Solicita permiso de notificaciones
+- `subscribe(userId)` - Suscribe al usuario y guarda en Supabase
+- `unsubscribe(userId)` - Cancela suscripción al cerrar sesión
+- `saveSubscription(userId, subscription)` - Guarda en base de datos
+- `showLocalNotification(title, body, data)` - Notificación local inmediata
+
+### Edge Function: send-push-notification
+
+Ubicación: `supabase/functions/send-push-notification/index.ts`
+
+**Secretos requeridos en Supabase:**
+```
+VAPID_PUBLIC_KEY    - Clave pública VAPID (misma que en .env)
+VAPID_PRIVATE_KEY   - Clave privada VAPID
+VAPID_EMAIL         - Email de contacto (mailto:...)
+```
+
+**Uso desde curl:**
+```bash
+curl -X POST "https://xxx.supabase.co/functions/v1/send-push-notification" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <anon_key>" \
+  -d '{"userId":"<uuid>","title":"Titulo","body":"Mensaje"}'
+```
+
+### Service Worker (public/service-worker.js)
+
+Maneja eventos push y muestra notificaciones:
+```javascript
+self.addEventListener('push', (event) => {
+  const data = event.data?.json() || {};
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: '/icon-192.png'
+    })
+  );
+});
+```
+
+### Generar VAPID Keys
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+Guarda:
+- `publicKey` → `.env` como `EXPO_PUBLIC_VAPID_PUBLIC_KEY`
+- `publicKey` → Supabase Secrets como `VAPID_PUBLIC_KEY`
+- `privateKey` → Supabase Secrets como `VAPID_PRIVATE_KEY`
+
+### Flujo de Activación
+
+1. Usuario abre PWA y va a Perfil
+2. Activa switch de notificaciones
+3. `webPushService.subscribe(userId)` se ejecuta:
+   - Solicita permiso al navegador
+   - Obtiene suscripción del PushManager
+   - Guarda en `web_push_subscriptions`
+4. Al enviar notificación:
+   - Edge Function consulta suscripciones del usuario
+   - Envía a cada endpoint usando web-push
+   - Elimina suscripciones expiradas (404/410)
+
+### Requisitos para iOS
+
+- iOS 16.4 o superior
+- PWA **debe estar instalada** en pantalla de inicio
+- Meta tags requeridos en HTML:
+  ```html
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png" />
+  ```
+- Iconos **deben ser PNG** (iOS no acepta SVG)

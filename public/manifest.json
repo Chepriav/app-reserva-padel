@@ -12,28 +12,34 @@
   "dir": "ltr",
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg width='192' height='192' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='192' height='192' fill='%232e7d32'/%3E%3Ccircle cx='96' cy='96' r='76' fill='white'/%3E%3Ctext x='96' y='96' font-family='Arial' font-size='120' font-weight='bold' fill='%232e7d32' text-anchor='middle' dominant-baseline='central'%3EP%3C/text%3E%3C/svg%3E",
+      "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "data:image/svg+xml,%3Csvg width='192' height='192' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='192' height='192' fill='%232e7d32'/%3E%3Ccircle cx='96' cy='96' r='76' fill='white'/%3E%3Ctext x='96' y='96' font-family='Arial' font-size='120' font-weight='bold' fill='%232e7d32' text-anchor='middle' dominant-baseline='central'%3EP%3C/text%3E%3C/svg%3E",
+      "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "data:image/svg+xml,%3Csvg width='512' height='512' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='512' height='512' fill='%232e7d32'/%3E%3Ccircle cx='256' cy='256' r='200' fill='white'/%3E%3Ctext x='256' y='256' font-family='Arial' font-size='320' font-weight='bold' fill='%232e7d32' text-anchor='middle' dominant-baseline='central'%3EP%3C/text%3E%3C/svg%3E",
+      "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "data:image/svg+xml,%3Csvg width='512' height='512' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='512' height='512' fill='%232e7d32'/%3E%3Ccircle cx='256' cy='256' r='200' fill='white'/%3E%3Ctext x='256' y='256' font-family='Arial' font-size='320' font-weight='bold' fill='%232e7d32' text-anchor='middle' dominant-baseline='central'%3EP%3C/text%3E%3C/svg%3E",
+      "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "categories": ["sports", "lifestyle"],

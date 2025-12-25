@@ -84,8 +84,15 @@ export const webPushService = {
         }
       }
 
-      // Obtener registro del Service Worker
-      const registration = await navigator.serviceWorker.ready;
+      // Obtener registro del Service Worker con timeout
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Service Worker timeout')), 10000)
+      );
+
+      const registration = await Promise.race([
+        navigator.serviceWorker.ready,
+        timeoutPromise
+      ]);
 
       // Verificar si ya hay una suscripción
       let subscription = await registration.pushManager.getSubscription();
@@ -105,7 +112,10 @@ export const webPushService = {
       return { success: true, subscription: subscriptionData };
     } catch (error) {
       console.error('Error suscribiendo a Web Push:', error);
-      return { success: false, error: 'Error al suscribir a notificaciones' };
+      const errorMessage = error.message === 'Service Worker timeout'
+        ? 'El Service Worker no respondió. Recarga la app e intenta de nuevo.'
+        : 'Error al suscribir a notificaciones';
+      return { success: false, error: errorMessage };
     }
   },
 
@@ -193,8 +203,8 @@ export const webPushService = {
       const registration = await navigator.serviceWorker.ready;
       await registration.showNotification(title, {
         body,
-        icon: '/icon-192.svg',
-        badge: '/icon-192.svg',
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
         tag: data.tag || 'default',
         data,
         vibrate: [200, 100, 200],

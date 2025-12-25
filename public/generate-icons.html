@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generador de Iconos PNG</title>
+</head>
+<body>
+    <h1>Generador de Iconos PNG para PWA</h1>
+    <p>Abre esta página en un navegador y los iconos se descargarán automáticamente.</p>
+
+    <canvas id="canvas180" width="180" height="180"></canvas>
+    <canvas id="canvas192" width="192" height="192"></canvas>
+    <canvas id="canvas512" width="512" height="512"></canvas>
+
+    <script>
+        function drawIcon(canvas, size) {
+            const ctx = canvas.getContext('2d');
+
+            // Fondo verde
+            ctx.fillStyle = '#2e7d32';
+            ctx.fillRect(0, 0, size, size);
+
+            // Círculo blanco
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            const radius = size * 0.395; // ~76/192
+            ctx.arc(size/2, size/2, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Letra P
+            ctx.fillStyle = '#2e7d32';
+            ctx.font = `bold ${size * 0.625}px Arial`; // ~120/192
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('P', size/2, size/2 + size * 0.02);
+        }
+
+        function downloadCanvas(canvas, filename) {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Generar iconos
+        const canvas180 = document.getElementById('canvas180');
+        const canvas192 = document.getElementById('canvas192');
+        const canvas512 = document.getElementById('canvas512');
+
+        drawIcon(canvas180, 180);
+        drawIcon(canvas192, 192);
+        drawIcon(canvas512, 512);
+
+        // Descargar con delay para evitar bloqueos
+        setTimeout(() => downloadCanvas(canvas180, 'icon-180.png'), 500);
+        setTimeout(() => downloadCanvas(canvas192, 'icon-192.png'), 1000);
+        setTimeout(() => downloadCanvas(canvas512, 'icon-512.png'), 1500);
+
+        console.log('Iconos generados. Copia los archivos a la carpeta public/');
+    </script>
+</body>
+</html>

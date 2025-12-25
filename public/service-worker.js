@@ -1,10 +1,10 @@
 // Service Worker para PWA con soporte de Push Notifications
-const CACHE_NAME = 'reserva-padel-v3';
+const CACHE_NAME = 'reserva-padel-v4';
 const urlsToCache = [
   '/',
   '/manifest.json',
-  '/icon-192.svg',
-  '/icon-512.svg',
+  '/icon-192.png',
+  '/icon-512.png',
 ];
 
 // Instalación del Service Worker
@@ -76,8 +76,8 @@ self.addEventListener('push', (event) => {
   let data = {
     title: 'Reserva Pádel',
     body: 'Tienes una notificación',
-    icon: '/icon-192.svg',
-    badge: '/icon-192.svg',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
     tag: 'default',
     data: {},
   };
