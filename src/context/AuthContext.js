@@ -1,7 +1,9 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { Platform } from 'react-native';
 import { authService } from '../services/authService.supabase';
 import { reservasService } from '../services/reservasService.supabase';
 import { notificationService } from '../services/notificationService';
+import { navigateFromNotification } from '../navigation/AppNavigator';
 
 const AuthContext = createContext(null);
 
@@ -10,6 +12,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [notificacionesPendientes, setNotificacionesPendientes] = useState([]);
+  // Mensaje de notificación para mostrar en pantalla destino
+  const [notificationMessage, setNotificationMessage] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -49,17 +53,17 @@ export const AuthProvider = ({ children }) => {
       // Registrar para push notifications
       notificationService.registerForPushNotifications(user.id);
 
-      // Configurar listeners de notificaciones
+      // Configurar listeners de notificaciones (móvil)
       notificationCleanup = notificationService.addNotificationListeners(
         (notification) => {
           // Notificación recibida en primer plano
           console.log('Notificación recibida:', notification);
         },
         (response) => {
-          // Usuario tocó la notificación
+          // Usuario tocó la notificación (móvil)
           const data = response.notification.request.content.data;
           console.log('Notificación tocada:', data);
-          // Aquí se podría navegar a la pantalla correspondiente
+          handleNotificationNavigation(data.type, data);
         }
       );
     } else {
@@ -72,6 +76,98 @@ export const AuthProvider = ({ children }) => {
       }
     };
   }, [isAuthenticated, user]);
+
+  // Listener para mensajes del Service Worker (Web Push)
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+
+    const handleServiceWorkerMessage = (event) => {
+      console.log('[AuthContext] Mensaje del Service Worker:', event.data);
+
+      if (event.data?.type === 'NOTIFICATION_CLICK') {
+        const { notificationType, data } = event.data.payload;
+        handleNotificationNavigation(notificationType, data || {});
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+
+    return () => {
+      navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
+    };
+  }, []);
+
+  /**
+   * Navega a la pantalla correspondiente según el tipo de notificación
+   * y establece un mensaje para mostrar al usuario
+   */
+  const handleNotificationNavigation = (notificationType, notificationData = {}) => {
+    console.log('[AuthContext] Navegando por notificación:', notificationType, notificationData);
+
+    // Crear mensaje contextual según el tipo
+    let message = null;
+
+    switch (notificationType) {
+      case 'vivienda_change':
+        if (notificationData.aprobado) {
+          message = {
+            type: 'success',
+            title: 'Cambio de vivienda aprobado',
+            text: 'Tu solicitud de cambio de vivienda ha sido aprobada.',
+          };
+        } else {
+          message = {
+            type: 'error',
+            title: 'Cambio de vivienda rechazado',
+            text: 'Tu solicitud de cambio de vivienda ha sido rechazada.',
+          };
+        }
+        setNotificationMessage(message);
+        navigateFromNotification('Perfil');
+        break;
+
+      case 'reservation_reminder':
+        message = {
+          type: 'info',
+          title: 'Recordatorio',
+          text: 'Tienes una reserva próximamente.',
+        };
+        setNotificationMessage(message);
+        navigateFromNotification('Mis Reservas');
+        break;
+
+      case 'reservation_displacement':
+        message = {
+          type: 'warning',
+          title: 'Reserva desplazada',
+          text: 'Una de tus reservas ha sido desplazada por otra vivienda.',
+        };
+        setNotificationMessage(message);
+        navigateFromNotification('Mis Reservas');
+        break;
+
+      case 'reservation_converted':
+        message = {
+          type: 'success',
+          title: 'Reserva confirmada',
+          text: 'Tu reserva provisional ha pasado a ser garantizada.',
+        };
+        setNotificationMessage(message);
+        navigateFromNotification('Mis Reservas');
+        break;
+
+      default:
+        console.log('[AuthContext] Tipo de notificación no reconocido:', notificationType);
+    }
+  };
+
+  /**
+   * Limpia el mensaje de notificación (llamar después de mostrarlo)
+   */
+  const clearNotificationMessage = () => {
+    setNotificationMessage(null);
+  };
 
   const cargarNotificaciones = async () => {
     if (!user) return;
@@ -113,24 +209,26 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      // Eliminar push token antes de cerrar sesión (no bloquear si falla)
-      if (user) {
-        try {
-          await notificationService.removePushToken(user.id);
-        } catch {
-          // Ignorar errores de push token, no deben bloquear el logout
-        }
+      // Primero actualizar el estado para que la UI cambie inmediatamente
+      const currentUser = user;
+      setUser(null);
+      setIsAuthenticated(false);
+
+      // Luego hacer las operaciones de limpieza en segundo plano
+      // Eliminar push token (no bloquear si falla)
+      if (currentUser) {
+        notificationService.removePushToken(currentUser.id).catch(() => {});
       }
 
-      const response = await authService.logout();
-      if (response.success) {
-        setUser(null);
-        setIsAuthenticated(false);
-        return { success: true };
-      }
-      return { success: false, error: response.error };
+      // Cerrar sesión en Supabase
+      authService.logout().catch(() => {});
+
+      return { success: true };
     } catch (error) {
-      return { success: false, error: 'Error al cerrar sesión' };
+      // Asegurar que siempre se cierra sesión en la UI
+      setUser(null);
+      setIsAuthenticated(false);
+      return { success: true };
     }
   };
 
@@ -170,6 +268,27 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Recargar datos del usuario desde el servidor
+   * Útil después de recibir notificaciones de cambios
+   */
+  const refreshUser = async () => {
+    try {
+      console.log('[AuthContext] Refrescando usuario...');
+      const result = await authService.getCurrentUser();
+      console.log('[AuthContext] Resultado refreshUser:', result);
+      if (result.success && result.data) {
+        console.log('[AuthContext] Nueva vivienda:', result.data.vivienda);
+        setUser(result.data);
+        return { success: true };
+      }
+      return { success: false };
+    } catch (error) {
+      console.error('Error refrescando usuario:', error);
+      return { success: false };
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -179,8 +298,11 @@ export const AuthProvider = ({ children }) => {
     register,
     updateProfile,
     resetPassword,
+    refreshUser,
     notificacionesPendientes,
     marcarNotificacionesLeidas,
+    notificationMessage,
+    clearNotificationMessage,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

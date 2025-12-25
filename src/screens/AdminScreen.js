@@ -354,7 +354,7 @@ export default function AdminScreen() {
               );
 
               // Enviar notificación push al usuario
-              notificationService.notifyViviendaChange(
+              await notificationService.notifyViviendaChange(
                 usuario.id,
                 true,
                 formatearVivienda(usuario.viviendaSolicitada)
@@ -398,7 +398,7 @@ export default function AdminScreen() {
               );
 
               // Enviar notificación push al usuario
-              notificationService.notifyViviendaChange(usuario.id, false, null);
+              await notificationService.notifyViviendaChange(usuario.id, false, null);
             } else {
               setAlertConfig({
                 visible: true,

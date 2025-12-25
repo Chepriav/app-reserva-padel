@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Platform } from 'react-native';
 import HomeScreen from '../screens/HomeScreen';
 import ReservasScreen from '../screens/ReservasScreen';
+import PartidasScreen from '../screens/PartidasScreen';
 import PerfilScreen from '../screens/PerfilScreen';
 import AdminScreen from '../screens/AdminScreen';
 import { colors } from '../constants/colors';
@@ -58,6 +59,15 @@ export default function TabNavigator() {
           ),
         }}
       />
+      <Tab.Screen
+        name="Partidas"
+        component={PartidasScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon name="partidas" color={color} size={size} />
+          ),
+        }}
+      />
       {esAdmin && (
         <Tab.Screen
           name="Admin"
@@ -90,6 +100,7 @@ const TabIcon = ({ name, color, size }) => {
   const icons = {
     home: '🏠',
     calendar: '📅',
+    partidas: '🎾',
     admin: '⚙️',
     user: '👤',
   };

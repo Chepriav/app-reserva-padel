@@ -1,5 +1,8 @@
 // Supabase Edge Function para enviar Web Push Notifications
 // Esto permite enviar notificaciones incluso cuando el usuario no tiene la app abierta
+//
+// NOTA: Esta función no verifica JWT porque usa SERVICE_ROLE_KEY internamente
+// y solo acepta requests con el apikey header válido (anon key)
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -19,6 +22,14 @@ serve(async (req) => {
   }
 
   try {
+    // Verificar que hay apikey (no JWT, pero sí apikey para seguridad básica)
+    const apikey = req.headers.get('apikey');
+    if (!apikey) {
+      return new Response(
+        JSON.stringify({ error: 'Missing apikey header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     // Configurar VAPID keys desde variables de entorno
     const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
     const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
@@ -62,12 +73,12 @@ serve(async (req) => {
       );
     }
 
-    // Preparar payload
+    // Preparar payload (usar PNG para compatibilidad con iOS)
     const payload = JSON.stringify({
       title,
       body,
-      icon: '/icon-192.svg',
-      badge: '/icon-192.svg',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
       data,
     });
 

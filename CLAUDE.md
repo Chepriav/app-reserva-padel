@@ -379,6 +379,161 @@ npx expo build:android
 - snake_case para columnas de PostgreSQL
 - Mensajes de error en español
 
+## Arquitectura y Buenas Prácticas (OBLIGATORIO)
+
+### Principios Fundamentales
+
+**SIEMPRE aplicar estos principios en todo el código:**
+
+1. **Separación de Responsabilidades (SRP)**
+   - Cada componente/hook/servicio tiene UNA SOLA responsabilidad
+   - Si un archivo supera ~200-300 líneas, probablemente necesita refactorización
+
+2. **Componentes Pequeños y Reutilizables**
+   - Extraer sub-componentes cuando la lógica es independiente
+   - Cada componente debe ser fácil de entender de un vistazo
+
+3. **Custom Hooks para Lógica de Estado**
+   - Extraer lógica de estado compleja a hooks personalizados en `src/hooks/`
+   - Los hooks encapsulan: estado, efectos, y funciones relacionadas
+
+4. **DRY (Don't Repeat Yourself)**
+   - Reutilizar componentes en lugar de duplicar código
+   - Crear utilidades para lógica repetida
+
+5. **Composición sobre Herencia**
+   - Construir componentes grandes a partir de componentes pequeños
+   - Usar props para configuración y callbacks para comunicación
+
+### Estructura de Carpetas
+
+```
+src/
+├── components/
+│   ├── [feature]/           # Componentes agrupados por feature
+│   │   ├── index.js         # Exports centralizados
+│   │   ├── MainComponent.js
+│   │   └── SubComponent.js
+│   └── common/              # Componentes compartidos
+├── hooks/
+│   ├── index.js             # Exports centralizados
+│   ├── use[Feature].js      # Hooks por feature
+│   └── useCommon.js         # Hooks compartidos
+├── services/
+│   └── [entity]Service.js   # Servicios por entidad
+├── screens/
+│   └── [Name]Screen.js      # Pantallas (orquestadores)
+└── utils/
+    └── [helper].js          # Funciones puras de utilidad
+```
+
+### Ejemplo: Refactorización de PartidasScreen
+
+**ANTES (malo):** Un archivo de 1400+ líneas con todo mezclado
+
+**DESPUÉS (bueno):**
+```
+src/
+├── components/partidas/
+│   ├── index.js                 # export { PartidaCard, ... }
+│   ├── PartidaCard.js           # Tarjeta individual (~250 líneas)
+│   ├── ParticipantesList.js     # Lista de participantes (~100 líneas)
+│   ├── SolicitudesPendientes.js # Solicitudes del creador (~100 líneas)
+│   ├── CrearPartidaModal.js     # Modal de creación (~300 líneas)
+│   ├── JugadoresEditor.js       # Editor de jugadores (~120 líneas)
+│   └── AddJugadorModal.js       # Modal añadir jugador (~300 líneas)
+├── hooks/
+│   ├── usePartidas.js           # Hooks: usePartidas, usePartidasActions, useCrearPartidaModal
+│   └── useUsuarios.js           # Hook: useUsuariosUrbanizacion
+└── screens/
+    └── PartidasScreen.js        # Orquestador (~400 líneas)
+```
+
+### Patrones de Hooks
+
+```javascript
+// Hook para datos y estado
+export function usePartidas(userId, tabActivo) {
+  const [partidas, setPartidas] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const cargarPartidas = useCallback(async () => { ... }, [userId, tabActivo]);
+
+  useEffect(() => { cargarPartidas(); }, [cargarPartidas]);
+
+  return { partidas, loading, cargarPartidas };
+}
+
+// Hook para acciones
+export function usePartidasActions(userId, onSuccess) {
+  const crearPartida = async (data) => { ... };
+  const cancelarPartida = async (id) => { ... };
+
+  return { crearPartida, cancelarPartida };
+}
+
+// Hook para modal
+export function useCrearPartidaModal() {
+  const [visible, setVisible] = useState(false);
+  const [state, setState] = useState({ ... });
+
+  const abrir = () => { ... };
+  const cerrar = () => { ... };
+
+  return { visible, state, setState, abrir, cerrar };
+}
+```
+
+### Patrones de Componentes
+
+```javascript
+// Componente principal (orquestador)
+export default function FeatureScreen() {
+  const { data, loading } = useFeatureData();
+  const actions = useFeatureActions();
+  const modal = useFeatureModal();
+
+  return (
+    <View>
+      <FeatureList data={data} onAction={actions.doSomething} />
+      <FeatureModal {...modal} />
+    </View>
+  );
+}
+
+// Sub-componente reutilizable
+function FeatureCard({ item, onPress }) {
+  return (
+    <TouchableOpacity onPress={() => onPress(item)}>
+      <CardHeader {...item} />
+      <CardContent {...item} />
+      <CardActions {...item} />
+    </TouchableOpacity>
+  );
+}
+```
+
+### Checklist de Refactorización
+
+Antes de crear o modificar código, verificar:
+
+- [ ] ¿El archivo tiene menos de 300 líneas?
+- [ ] ¿Cada función/componente tiene una sola responsabilidad?
+- [ ] ¿La lógica de estado está en hooks separados?
+- [ ] ¿Los componentes son reutilizables?
+- [ ] ¿Hay código duplicado que se pueda extraer?
+- [ ] ¿Los nombres son descriptivos y consistentes?
+- [ ] ¿Existe un index.js para exports centralizados?
+
+### Anti-patrones a Evitar
+
+1. **Archivos gigantes** - Dividir si supera 300 líneas
+2. **Lógica en el render** - Extraer a funciones o hooks
+3. **Props drilling excesivo** - Usar Context o composición
+4. **Código duplicado** - Extraer a componentes/hooks/utils
+5. **Componentes que hacen demasiado** - Dividir en sub-componentes
+6. **Estado mezclado** - Separar en hooks por responsabilidad
+
 ## Mapeo de Campos (camelCase ↔ snake_case)
 
 | JavaScript | PostgreSQL |
@@ -551,3 +706,169 @@ Guarda:
   <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png" />
   ```
 - Iconos **deben ser PNG** (iOS no acepta SVG)
+
+## Sistema de Partidas (Buscar Jugadores)
+
+### Descripción
+Sistema para que los usuarios puedan crear solicitudes de partida y buscar otros jugadores de la urbanización o invitar externos. Permite gestionar equipos de 4 jugadores para partidas de pádel.
+
+### Tablas en PostgreSQL
+
+#### Tabla: `partidas`
+```sql
+CREATE TABLE public.partidas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  creador_id UUID NOT NULL REFERENCES public.users(id),
+  creador_nombre TEXT NOT NULL,
+  creador_vivienda TEXT NOT NULL,
+  reserva_id UUID REFERENCES public.reservas(id),  -- Opcional: vincular a reserva existente
+  fecha DATE,                    -- Fecha de la partida (si tiene reserva)
+  hora_inicio TIME,              -- Hora inicio (si tiene reserva)
+  hora_fin TIME,                 -- Hora fin (si tiene reserva)
+  pista_nombre TEXT,             -- Nombre de la pista (si tiene reserva)
+  tipo TEXT DEFAULT 'abierta',   -- 'abierta' (sin reserva) o 'con_reserva'
+  mensaje TEXT,                  -- Mensaje/comentario del creador
+  nivel_preferido TEXT,          -- Nivel de juego preferido
+  estado TEXT DEFAULT 'buscando', -- 'buscando', 'completa', 'cancelada'
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### Tabla: `partidas_jugadores`
+```sql
+CREATE TABLE public.partidas_jugadores (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  partida_id UUID NOT NULL REFERENCES public.partidas(id) ON DELETE CASCADE,
+  usuario_id UUID REFERENCES public.users(id),  -- NULL para jugadores externos
+  usuario_nombre TEXT NOT NULL,
+  usuario_vivienda TEXT,          -- NULL para jugadores externos
+  nivel_juego TEXT,
+  es_externo BOOLEAN DEFAULT FALSE,  -- true = jugador externo (no tiene cuenta)
+  estado TEXT DEFAULT 'confirmado',  -- 'pendiente', 'confirmado', 'rechazado'
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Políticas RLS Requeridas
+
+```sql
+-- El creador puede actualizar jugadores de su partida
+CREATE POLICY "Creador puede actualizar jugadores de su partida"
+ON public.partidas_jugadores
+FOR UPDATE
+USING (
+  EXISTS (
+    SELECT 1 FROM public.partidas
+    WHERE partidas.id = partidas_jugadores.partida_id
+    AND partidas.creador_id = auth.uid()
+  )
+);
+
+-- El creador puede eliminar jugadores de su partida
+CREATE POLICY "Creador puede eliminar jugadores de su partida"
+ON public.partidas_jugadores
+FOR DELETE
+USING (
+  EXISTS (
+    SELECT 1 FROM public.partidas
+    WHERE partidas.id = partidas_jugadores.partida_id
+    AND partidas.creador_id = auth.uid()
+  )
+);
+```
+
+### Flujo de Creación de Partida
+
+1. Usuario pulsa "Buscar jugadores" en PartidasScreen
+2. Selecciona tipo: "Abierta" (sin reserva) o "Con reserva" (vinculada a reserva existente)
+3. Opcionalmente añade jugadores iniciales:
+   - **De la urbanización**: Busca usuarios registrados
+   - **Externos**: Añade nombre y nivel de jugadores sin cuenta
+4. Al publicar:
+   - Se crea entrada en `partidas`
+   - Se crean entradas en `partidas_jugadores` para jugadores añadidos (estado: 'confirmado')
+   - Si hay 4 jugadores, estado = 'completa'; sino, estado = 'buscando'
+
+### Flujo de Solicitud para Unirse
+
+1. Usuario ve partida en "Buscan jugadores" (solo partidas de OTROS usuarios)
+2. Pulsa "Solicitar unirse"
+3. Se crea entrada en `partidas_jugadores` con estado = 'pendiente'
+4. Creador ve solicitud en su partida (sección "Solicitudes pendientes")
+5. Creador acepta (estado → 'confirmado') o rechaza (se elimina registro)
+6. Si al aceptar hay 4 jugadores, la partida pasa a estado = 'completa'
+
+### Servicios
+
+#### partidasService.js
+
+**Funciones principales:**
+- `obtenerPartidasActivas()` - Partidas con estado 'buscando'
+- `obtenerMisPartidas(userId)` - Partidas creadas por el usuario
+- `obtenerPartidasApuntado(userId)` - Partidas donde el usuario está inscrito
+- `crearPartida(partidaData)` - Crea partida con jugadores iniciales
+- `solicitarUnirse(partidaId, usuario)` - Envía solicitud (estado 'pendiente')
+- `aceptarSolicitud(usuarioId, partidaId, creadorId)` - Acepta solicitud
+- `rechazarSolicitud(usuarioId, partidaId)` - Rechaza solicitud
+- `cancelarPartida(partidaId, creadorId)` - Cancela partida
+- `desapuntarsePartida(partidaId, usuarioId)` - Desapuntarse de partida
+- `cancelarSolicitud(partidaId, userId)` - Cancelar solicitud propia
+
+### Hooks
+
+#### usePartidas.js
+
+```javascript
+// Hook para cargar partidas
+const { partidas, loading, refreshing, cargarPartidas, onRefresh } = usePartidas(userId, tabActivo);
+
+// Hook para acciones
+const { crearPartida, cancelarPartida, solicitarUnirse, aceptarSolicitud, rechazarSolicitud } = usePartidasActions(userId, onSuccess);
+
+// Hook para modal de crear partida
+const { visible, modalState, jugadores, abrir, cerrar, addJugador, removeJugador } = useCrearPartidaModal(userId);
+
+// Hook para modal de añadir jugador
+const { visible, modalState, abrir, cerrar, addUrbanizacion, addExterno } = useAddJugadorModal(onAddJugador);
+```
+
+### Componentes
+
+```
+src/components/partidas/
+├── index.js                 # Exports centralizados
+├── PartidaCard.js           # Tarjeta de partida con acciones
+├── ParticipantesList.js     # Lista de jugadores confirmados
+├── SolicitudesPendientes.js # Solicitudes para el creador
+├── CrearPartidaModal.js     # Modal de creación
+├── JugadoresEditor.js       # Editor de jugadores iniciales
+└── AddJugadorModal.js       # Modal para añadir jugador
+```
+
+### UI/UX
+
+- **Tab "Buscan jugadores"**: Solo muestra partidas de OTROS usuarios
+- **Tab "Mis partidas"**: Partidas creadas + partidas donde está inscrito
+- **Badge X/4**: Muestra jugadores confirmados + creador
+- **Borde verde**: Partidas completas (4/4 jugadores)
+- **Solicitudes pendientes**: Solo visibles para el creador de la partida
+
+### Mapeo de Campos
+
+| JavaScript | PostgreSQL |
+|------------|------------|
+| `creadorId` | `creador_id` |
+| `creadorNombre` | `creador_nombre` |
+| `creadorVivienda` | `creador_vivienda` |
+| `reservaId` | `reserva_id` |
+| `horaInicio` | `hora_inicio` |
+| `horaFin` | `hora_fin` |
+| `pistaNombre` | `pista_nombre` |
+| `nivelPreferido` | `nivel_preferido` |
+| `partidaId` | `partida_id` |
+| `usuarioId` | `usuario_id` |
+| `usuarioNombre` | `usuario_nombre` |
+| `usuarioVivienda` | `usuario_vivienda` |
+| `nivelJuego` | `nivel_juego` |
+| `esExterno` | `es_externo` |

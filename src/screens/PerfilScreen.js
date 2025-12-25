@@ -29,7 +29,7 @@ if (Platform.OS !== 'web') {
 }
 
 export default function PerfilScreen() {
-  const { user, logout, updateProfile } = useAuth();
+  const { user, logout, updateProfile, refreshUser, notificationMessage, clearNotificationMessage } = useAuth();
 
   // Estado para CustomAlert
   const [alertConfig, setAlertConfig] = useState({
@@ -66,10 +66,56 @@ export default function PerfilScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [enablingNotifications, setEnablingNotifications] = useState(false);
 
+  // Estado para usuarios de la misma vivienda
+  const [usuariosVivienda, setUsuariosVivienda] = useState([]);
+  const [loadingUsuarios, setLoadingUsuarios] = useState(false);
+
   // Verificar estado de notificaciones al cargar
   useEffect(() => {
     checkNotificationStatus();
   }, []);
+
+  // Cargar usuarios de la misma vivienda
+  useEffect(() => {
+    const cargarUsuariosVivienda = async () => {
+      if (!user?.vivienda) return;
+
+      setLoadingUsuarios(true);
+      const result = await authService.getUsuariosMismaVivienda(user.vivienda);
+      if (result.success) {
+        setUsuariosVivienda(result.data);
+      }
+      setLoadingUsuarios(false);
+    };
+
+    cargarUsuariosVivienda();
+  }, [user?.vivienda]);
+
+  // Mostrar mensaje si viene de una notificación push
+  useEffect(() => {
+    if (notificationMessage) {
+      // Primero refrescar los datos del usuario
+      if (refreshUser) {
+        refreshUser().then(() => {
+          console.log('[PerfilScreen] Usuario refrescado después de notificación');
+        }).catch((err) => {
+          console.error('[PerfilScreen] Error refrescando usuario:', err);
+        });
+      }
+
+      setAlertConfig({
+        visible: true,
+        title: notificationMessage.title,
+        message: notificationMessage.text,
+        buttons: [{
+          text: 'OK',
+          onPress: () => {
+            clearNotificationMessage();
+          }
+        }],
+      });
+    }
+  }, [notificationMessage, refreshUser, clearNotificationMessage]);
 
   const checkNotificationStatus = async () => {
     if (Platform.OS === 'web') {
@@ -727,6 +773,63 @@ export default function PerfilScreen() {
         </View>
       </View>
 
+      {/* Sección Tu Vivienda */}
+      {user?.vivienda && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            Tu Vivienda ({esViviendaValida(user.vivienda) ? formatearVivienda(user.vivienda) : user.vivienda})
+          </Text>
+          <View style={styles.infoCard}>
+            {loadingUsuarios ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator color={colors.primary} />
+                <Text style={styles.loadingText}>Cargando...</Text>
+              </View>
+            ) : usuariosVivienda.length === 0 ? (
+              <Text style={styles.noUsuariosText}>No hay usuarios registrados en esta vivienda</Text>
+            ) : (
+              usuariosVivienda.map((usuario, index) => (
+                <View key={usuario.id}>
+                  {index > 0 && <View style={styles.separator} />}
+                  <View style={styles.usuarioViviendaRow}>
+                    <View style={styles.usuarioViviendaAvatar}>
+                      {usuario.fotoPerfil ? (
+                        <Image
+                          source={{ uri: usuario.fotoPerfil }}
+                          style={styles.usuarioViviendaImage}
+                        />
+                      ) : (
+                        <Text style={styles.usuarioViviendaInitials}>
+                          {usuario.nombre
+                            ?.split(' ')
+                            .map((n) => n[0])
+                            .join('')
+                            .toUpperCase()
+                            .slice(0, 2) || '?'}
+                        </Text>
+                      )}
+                    </View>
+                    <View style={styles.usuarioViviendaInfo}>
+                      <Text style={styles.usuarioViviendaNombre}>
+                        {usuario.nombre}
+                        {usuario.id === user?.id && (
+                          <Text style={styles.usuarioViviendaTu}> (Tú)</Text>
+                        )}
+                      </Text>
+                      {usuario.nivelJuego && (
+                        <Text style={styles.usuarioViviendaNivel}>
+                          {NIVELES_JUEGO.find((n) => n.value === usuario.nivelJuego)?.label || usuario.nivelJuego}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
+        </View>
+      )}
+
       {/* Botones de Guardar/Cancelar en modo edición */}
       {editMode && (
         <View style={styles.editButtons}>
@@ -1329,5 +1432,65 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  // Estilos para sección Tu Vivienda
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    gap: 10,
+  },
+  loadingText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+  },
+  noUsuariosText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    textAlign: 'center',
+    padding: 20,
+  },
+  usuarioViviendaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    gap: 12,
+  },
+  usuarioViviendaAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  usuarioViviendaImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
+  usuarioViviendaInitials: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  usuarioViviendaInfo: {
+    flex: 1,
+  },
+  usuarioViviendaNombre: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  usuarioViviendaTu: {
+    fontSize: 14,
+    fontWeight: 'normal',
+    color: colors.primary,
+  },
+  usuarioViviendaNivel: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 2,
   },
 });

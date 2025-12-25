@@ -247,24 +247,45 @@ export const notificationService = {
 
   /**
    * Envía Web Push via Edge Function de Supabase
+   * Usa fetch directo para evitar problemas de autenticación JWT
    */
   async sendWebPush(userId, title, body, data = {}) {
     try {
-      const { data: result, error } = await supabase.functions.invoke(
-        'send-push-notification',
+      console.log('[Push] Enviando Web Push a usuario:', userId, { title, body });
+
+      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.error('[Push] Faltan variables de entorno de Supabase');
+        return { success: false, error: 'Configuración incompleta' };
+      }
+
+      // Llamar a la Edge Function directamente con fetch
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/send-push-notification`,
         {
-          body: { userId, title, body, data },
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: supabaseAnonKey,
+            Authorization: `Bearer ${supabaseAnonKey}`,
+          },
+          body: JSON.stringify({ userId, title, body, data }),
         }
       );
 
-      if (error) {
-        console.error('Error enviando Web Push:', error);
-        return { success: false, error: error.message };
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[Push] Error HTTP:', response.status, errorText);
+        return { success: false, error: `Error HTTP ${response.status}` };
       }
 
+      const result = await response.json();
+      console.log('[Push] Web Push enviado:', result);
       return { success: true, ...result };
     } catch (error) {
-      console.error('Error enviando Web Push:', error);
+      console.error('[Push] Error enviando Web Push:', error);
       return { success: false, error: 'Error al enviar notificación web' };
     }
   },

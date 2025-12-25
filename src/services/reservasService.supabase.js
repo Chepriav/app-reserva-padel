@@ -183,6 +183,7 @@ export const reservasService = {
    */
   async obtenerDisponibilidad(pistaId, fecha) {
     try {
+      console.log('[obtenerDisponibilidad] Consultando pista:', pistaId, 'fecha:', fecha);
       const { data, error } = await supabase
         .from('reservas')
         .select('*')
@@ -191,9 +192,11 @@ export const reservasService = {
         .eq('estado', 'confirmada');
 
       if (error) {
+        console.error('[obtenerDisponibilidad] Error:', error);
         return { success: false, error: 'Error al verificar disponibilidad' };
       }
 
+      console.log('[obtenerDisponibilidad] Reservas confirmadas encontradas:', data?.length, data?.map(r => ({ id: r.id, vivienda: r.vivienda, estado: r.estado, prioridad: r.prioridad })));
       const reservasExistentes = data.map(mapReservaToCamelCase);
       const horariosGenerados = generarHorariosDisponibles();
 
@@ -286,22 +289,47 @@ export const reservasService = {
    * Desplaza (cancela) una reserva secundaria y crea notificación
    */
   async desplazarReserva(reservaADesplazar, viviendaDesplazadora) {
+    console.log('[desplazarReserva] Iniciando...', {
+      id: reservaADesplazar.id,
+      viviendaOriginal: reservaADesplazar.vivienda,
+      viviendaDesplazadora,
+      fecha: reservaADesplazar.fecha,
+      horaInicio: reservaADesplazar.horaInicio,
+    });
+
     try {
       // 1. Cancelar la reserva existente
-      const { error: cancelError } = await supabase
+      const { data: updateData, error: cancelError } = await supabase
         .from('reservas')
         .update({
           estado: 'cancelada',
           updated_at: new Date().toISOString()
         })
-        .eq('id', reservaADesplazar.id);
+        .eq('id', reservaADesplazar.id)
+        .select();
 
       if (cancelError) {
+        console.error('[desplazarReserva] Error cancelando reserva:', cancelError);
         return { success: false, error: 'Error al desplazar la reserva' };
       }
 
+      // Verificar que realmente se actualizó
+      console.log('[desplazarReserva] Resultado UPDATE:', updateData);
+      if (!updateData || updateData.length === 0) {
+        console.error('[desplazarReserva] UPDATE no afectó ninguna fila - posible problema de RLS');
+        // Intentar verificar el estado actual de la reserva
+        const { data: checkData } = await supabase
+          .from('reservas')
+          .select('id, estado, vivienda')
+          .eq('id', reservaADesplazar.id)
+          .single();
+        console.log('[desplazarReserva] Estado actual de la reserva:', checkData);
+        return { success: false, error: 'No se pudo cancelar la reserva (permisos insuficientes)' };
+      }
+      console.log('[desplazarReserva] Reserva cancelada en BD OK, nuevo estado:', updateData[0]?.estado);
+
       // 2. Crear notificación para el usuario desplazado
-      await supabase
+      const { error: notifError } = await supabase
         .from('notificaciones_desplazamiento')
         .insert({
           usuario_id: reservaADesplazar.usuarioId,
@@ -313,15 +341,24 @@ export const reservasService = {
           desplazado_por_vivienda: viviendaDesplazadora,
         });
 
+      if (notifError) {
+        console.error('[desplazarReserva] Error creando notificación:', notifError);
+        // No fallamos aquí, la notificación no es crítica
+      } else {
+        console.log('[desplazarReserva] Notificación creada OK');
+      }
+
       // 3. Enviar push notification al usuario desplazado
       notificationService.notifyReservationDisplacement(reservaADesplazar.usuarioId, {
         fecha: formatearFechaLegible(reservaADesplazar.fecha),
         horaInicio: reservaADesplazar.horaInicio,
         pistaNombre: reservaADesplazar.pistaNombre,
       });
+      console.log('[desplazarReserva] Push notification enviada');
 
       return { success: true };
     } catch (error) {
+      console.error('[desplazarReserva] Error general:', error);
       return { success: false, error: 'Error al desplazar la reserva' };
     }
   },
@@ -389,55 +426,79 @@ export const reservasService = {
 
       const horarioSeleccionado = disponibilidad.data.find((h) => h.horaInicio === horaInicio);
 
-      // Manejar caso de horario ocupado
-      if (horarioSeleccionado && !horarioSeleccionado.disponible) {
-        // Verificar si es desplazable
-        if (!horarioSeleccionado.esDesplazable) {
-          return {
-            success: false,
-            error: 'El horario seleccionado ya no está disponible (reserva garantizada)'
-          };
-        }
+      // Buscar todos los bloques que se van a reservar (desde horaInicio hasta horaFin)
+      const bloquesAReservar = disponibilidad.data.filter((h) => {
+        const bloqueMin = timeToMinutes(h.horaInicio);
+        const reservaInicioMin = timeToMinutes(horaInicio);
+        const reservaFinMin = timeToMinutes(horaFin);
+        return bloqueMin >= reservaInicioMin && bloqueMin < reservaFinMin;
+      });
 
-        // Es desplazable - verificar que la nueva sería "primera"
-        const prioridadNueva = await this.obtenerPrioridadParaNuevaReserva(vivienda);
-        if (prioridadNueva !== 'primera') {
-          return {
-            success: false,
-            error: 'Solo puedes desplazar reservas provisionales con tu primera reserva',
-          };
-        }
+      // Fase 1: Validar bloques y recopilar reservas ÚNICAS a desplazar
+      // (Una reserva puede ocupar múltiples bloques, evitamos desplazarla varias veces)
+      const reservasADesplazar = new Map();
 
-        // Verificar que no sea de la misma vivienda
-        if (horarioSeleccionado.reservaExistente.vivienda === vivienda) {
-          return { success: false, error: 'Tu vivienda ya tiene una reserva a esta hora' };
-        }
+      for (const bloque of bloquesAReservar) {
+        if (!bloque.disponible) {
+          // Verificar si es desplazable
+          if (!bloque.esDesplazable) {
+            return {
+              success: false,
+              error: `El horario ${bloque.horaInicio} ya no está disponible (reserva garantizada)`
+            };
+          }
 
-        // Desplazar la reserva existente
-        if (forzarDesplazamiento) {
-          const resultadoDesplazamiento = await this.desplazarReserva(
-            horarioSeleccionado.reservaExistente,
-            vivienda
-          );
+          // Verificar que no sea de la misma vivienda
+          if (bloque.reservaExistente?.vivienda === vivienda) {
+            return { success: false, error: 'Tu vivienda ya tiene una reserva a esta hora' };
+          }
+
+          // Agregar a Map solo si no existe ya (deduplicar por id)
+          if (bloque.reservaExistente && !reservasADesplazar.has(bloque.reservaExistente.id)) {
+            reservasADesplazar.set(bloque.reservaExistente.id, bloque.reservaExistente);
+          }
+
+          // Si no hay confirmación de desplazamiento, pedir confirmación
+          if (!forzarDesplazamiento) {
+            return {
+              success: false,
+              requiereConfirmacion: true,
+              reservaADesplazar: bloque.reservaExistente,
+              error: 'Este horario tiene una reserva provisional que será desplazada',
+            };
+          }
+        }
+      }
+
+      // Fase 2: Desplazar cada reserva UNA SOLA VEZ
+      if (forzarDesplazamiento && reservasADesplazar.size > 0) {
+        console.log('[crearReserva] Reservas a desplazar:', reservasADesplazar.size);
+        for (const [id, reserva] of reservasADesplazar) {
+          console.log('[crearReserva] Desplazando reserva:', id, 'vivienda:', reserva.vivienda);
+          const resultadoDesplazamiento = await this.desplazarReserva(reserva, vivienda);
 
           if (!resultadoDesplazamiento.success) {
+            console.error('[crearReserva] Error al desplazar:', resultadoDesplazamiento.error);
             return resultadoDesplazamiento;
           }
-        } else {
-          // Indicar que se necesita confirmación
-          return {
-            success: false,
-            requiereConfirmacion: true,
-            reservaADesplazar: horarioSeleccionado.reservaExistente,
-            error: 'Este horario tiene una reserva provisional que será desplazada',
-          };
+          console.log('[crearReserva] Reserva desplazada OK:', id);
         }
       }
 
       // Determinar prioridad de la nueva reserva
-      const prioridad = await this.obtenerPrioridadParaNuevaReserva(vivienda);
+      // Si es un desplazamiento, la reserva es SIEMPRE garantizada (primera)
+      // porque estás tomando el slot de una reserva provisional de otra vivienda
+      let prioridad;
+      if (forzarDesplazamiento) {
+        prioridad = 'primera';
+        console.log('[crearReserva] Desplazamiento: prioridad forzada a "primera"');
+      } else {
+        prioridad = await this.obtenerPrioridadParaNuevaReserva(vivienda);
+        console.log('[crearReserva] Prioridad calculada:', prioridad);
+      }
 
       if (!prioridad) {
+        console.log('[crearReserva] Sin prioridad disponible, vivienda ya tiene 2 reservas');
         return {
           success: false,
           error: `Tu vivienda ya tiene ${LIMITS.MAX_ACTIVE_RESERVATIONS} reservas activas.`,
@@ -480,6 +541,7 @@ export const reservasService = {
       };
 
       // Intentar con prioridad primero
+      console.log('[crearReserva] Insertando reserva con prioridad:', prioridad);
       let { data, error } = await supabase
         .from('reservas')
         .insert({ ...reservaInsert, prioridad })
@@ -488,7 +550,9 @@ export const reservasService = {
 
       // Si falla por la columna prioridad, intentar sin ella
       if (error) {
+        console.error('[crearReserva] Error al insertar:', error);
         if (error.message?.includes('prioridad') || error.code === '42703') {
+          console.log('[crearReserva] Reintentando sin columna prioridad...');
           const result = await supabase
             .from('reservas')
             .insert(reservaInsert)
@@ -500,12 +564,14 @@ export const reservasService = {
       }
 
       if (error) {
+        console.error('[crearReserva] Error final:', error);
         if (error.code === '42501') {
           return { success: false, error: 'No tienes permisos para crear reservas' };
         }
         return { success: false, error: 'Error al crear la reserva. Intenta de nuevo' };
       }
 
+      console.log('[crearReserva] Reserva creada OK:', data?.id, 'prioridad:', data?.prioridad);
       return {
         success: true,
         data: mapReservaToCamelCase(data),

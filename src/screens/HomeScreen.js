@@ -159,11 +159,16 @@ export default function HomeScreen({ navigation }) {
       return;
     }
 
-    // Agregar el nuevo bloque
+    // Detectar si es un bloque desplazable (provisional de otra vivienda)
+    const esDesplazable = !horario.disponible && horario.prioridad === 'segunda' && !horario.estaProtegida;
+
+    // Agregar el nuevo bloque con info de desplazamiento
     const nuevoBloque = {
       fecha: fechaAUsar,
       horaInicio: horario.horaInicio,
       horaFin: horario.horaFin,
+      esDesplazable: esDesplazable,
+      viviendaDesplazada: esDesplazable ? horario.reservaExistente?.vivienda : null,
     };
 
     const nuevaSeleccion = [...bloquesSeleccionados, nuevoBloque];
@@ -208,53 +213,10 @@ export default function HomeScreen({ navigation }) {
   };
 
   // Manejar selección de horario desplazable (reserva provisional de otro)
+  // Ahora simplemente añade el bloque a la selección igual que los disponibles
   const handleSeleccionarDesplazable = (horario, fechaReserva = null) => {
-    const fechaAUsar = fechaReserva || fechaSeleccionada;
-
-    setAlertConfig({
-      visible: true,
-      title: 'Reserva Provisional',
-      message: `Este horario tiene una reserva provisional de otra vivienda.\n\nSi reservas aquí, desplazarás esa reserva y la tuya será GARANTIZADA.\n\n¿Deseas continuar?`,
-      buttons: [
-        { text: 'Cancelar', style: 'cancel', onPress: () => {} },
-        {
-          text: 'Desplazar y Reservar',
-          style: 'destructive',
-          onPress: () => confirmarReservaConDesplazamiento(horario, fechaAUsar),
-        },
-      ],
-    });
-  };
-
-  // Confirmar reserva desplazando otra
-  const confirmarReservaConDesplazamiento = async (horario, fechaReserva) => {
-    if (!user || !pistaSeleccionada) return;
-
-    setReservando(true);
-    const result = await crearReserva({
-      pistaId: pistaSeleccionada.id,
-      fecha: fechaReserva,
-      horaInicio: horario.horaInicio,
-      horaFin: horario.horaFin,
-      jugadores: [],
-      forzarDesplazamiento: true,
-    });
-    setReservando(false);
-
-    if (result.success) {
-      mostrarAlerta(
-        '¡Reserva confirmada!',
-        'Tu reserva GARANTIZADA se ha creado correctamente.\nLa reserva provisional anterior ha sido desplazada.'
-      );
-      limpiarSeleccion();
-      if (vistaActual === 'dia') {
-        cargarHorarios();
-      } else {
-        cargarHorariosSemana();
-      }
-    } else {
-      mostrarAlerta('Error', result.error);
-    }
+    // Tratamos los bloques desplazables igual que los disponibles
+    toggleBloqueSeleccionado(horario, fechaReserva);
   };
 
   // Función para confirmar la reserva de los bloques seleccionados
@@ -300,49 +262,79 @@ export default function HomeScreen({ navigation }) {
       return;
     }
 
+    // Verificar si hay bloques que desplazarán reservas de otras viviendas
+    const bloquesDesplazables = bloquesOrdenados.filter(b => b.esDesplazable);
+    const hayDesplazamientos = bloquesDesplazables.length > 0;
+
     // Confirmar reserva
     const duracionMinutos = bloquesSeleccionados.length * 30;
     const duracionTexto = duracionMinutos === 30 ? '30 minutos' :
                          duracionMinutos === 60 ? '1 hora' : '1.5 horas';
 
-    mostrarConfirmacion(
-      'Confirmar Reserva',
-      `¿Reservar ${pistaSeleccionada.nombre} el ${formatearFechaLegible(
-        fechaReserva
-      )} de ${horaInicio} a ${horaFin}?\n\nDuración: ${duracionTexto} (${bloquesSeleccionados.length} bloques)`,
-      async () => {
-        setReservando(true);
-        const result = await crearReserva({
-          pistaId: pistaSeleccionada.id,
-          fecha: fechaReserva,
-          horaInicio: horaInicio,
-          horaFin: horaFin,
-          jugadores: [],
-        });
-        setReservando(false);
+    // Construir mensaje según si hay desplazamientos o no
+    let titulo = 'Confirmar Reserva';
+    let mensaje = `¿Reservar ${pistaSeleccionada.nombre} el ${formatearFechaLegible(
+      fechaReserva
+    )} de ${horaInicio} a ${horaFin}?\n\nDuración: ${duracionTexto} (${bloquesSeleccionados.length} bloques)`;
 
-        if (result.success) {
-          mostrarAlerta(
-            '¡Reserva confirmada!',
-            'Tu reserva se ha creado correctamente'
-          );
-          // Limpiar selección
-          limpiarSeleccion();
-          // Actualizar la fecha seleccionada si se reservó desde vista semana
-          if (fechaReserva !== fechaSeleccionada) {
-            setFechaSeleccionada(fechaReserva);
-          }
-          // Recargar horarios
-          if (vistaActual === 'dia') {
-            cargarHorarios();
-          } else {
-            cargarHorariosSemana();
-          }
-        } else {
-          mostrarAlerta('Error', result.error);
-        }
-      }
-    );
+    if (hayDesplazamientos) {
+      // Obtener viviendas únicas que serán desplazadas
+      const viviendasDesplazadas = [...new Set(bloquesDesplazables.map(b => b.viviendaDesplazada).filter(Boolean))];
+      const horasDesplazadas = bloquesDesplazables.map(b => b.horaInicio).join(', ');
+
+      titulo = 'Desplazar y Reservar';
+      mensaje = `¿Reservar ${pistaSeleccionada.nombre} el ${formatearFechaLegible(fechaReserva)} de ${horaInicio} a ${horaFin}?\n\n`;
+      mensaje += `⚠️ ATENCIÓN: Se cancelarán las reservas provisionales de:\n`;
+      mensaje += `• Vivienda(s): ${viviendasDesplazadas.join(', ')}\n`;
+      mensaje += `• Horario(s): ${horasDesplazadas}\n\n`;
+      mensaje += `Tu reserva será GARANTIZADA.`;
+    }
+
+    setAlertConfig({
+      visible: true,
+      title: titulo,
+      message: mensaje,
+      buttons: [
+        { text: 'Cancelar', style: 'cancel', onPress: () => {} },
+        {
+          text: hayDesplazamientos ? 'Desplazar y Reservar' : 'Confirmar',
+          style: hayDesplazamientos ? 'destructive' : 'default',
+          onPress: async () => {
+            setReservando(true);
+            const result = await crearReserva({
+              pistaId: pistaSeleccionada.id,
+              fecha: fechaReserva,
+              horaInicio: horaInicio,
+              horaFin: horaFin,
+              jugadores: [],
+              forzarDesplazamiento: hayDesplazamientos,
+            });
+            setReservando(false);
+
+            if (result.success) {
+              const mensajeExito = hayDesplazamientos
+                ? 'Tu reserva GARANTIZADA se ha creado correctamente.\nLas reservas provisionales anteriores han sido desplazadas.'
+                : 'Tu reserva se ha creado correctamente';
+              mostrarAlerta('¡Reserva confirmada!', mensajeExito);
+              // Limpiar selección
+              limpiarSeleccion();
+              // Actualizar la fecha seleccionada si se reservó desde vista semana
+              if (fechaReserva !== fechaSeleccionada) {
+                setFechaSeleccionada(fechaReserva);
+              }
+              // Recargar horarios
+              if (vistaActual === 'dia') {
+                cargarHorarios();
+              } else {
+                cargarHorariosSemana();
+              }
+            } else {
+              mostrarAlerta('Error', result.error);
+            }
+          },
+        },
+      ],
+    });
   };
 
   const cargarHorariosSemana = async () => {

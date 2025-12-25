@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { useReservas } from '../context/ReservasContext';
+import { useAuth } from '../context/AuthContext';
 import { colors } from '../constants/colors';
 import { formatearFechaLegible, formatearHora, horasHasta } from '../utils/dateHelpers';
 import { puedeCancelar } from '../utils/validators';
@@ -16,6 +17,7 @@ import { CustomAlert } from '../components/CustomAlert';
 export default function ReservasScreen() {
   const { getReservasProximas, getReservasPasadas, cancelarReserva } =
     useReservas();
+  const { notificationMessage, clearNotificationMessage } = useAuth();
   const [tabActiva, setTabActiva] = useState('proximas');
 
   const reservasProximas = getReservasProximas();
@@ -28,6 +30,23 @@ export default function ReservasScreen() {
     message: '',
     buttons: [],
   });
+
+  // Mostrar mensaje si viene de una notificación push
+  useEffect(() => {
+    if (notificationMessage) {
+      setAlertConfig({
+        visible: true,
+        title: notificationMessage.title,
+        message: notificationMessage.text,
+        buttons: [{
+          text: 'OK',
+          onPress: () => {
+            clearNotificationMessage();
+          }
+        }],
+      });
+    }
+  }, [notificationMessage]);
 
   const handleCancelar = (reserva) => {
     const validacion = puedeCancelar(reserva);

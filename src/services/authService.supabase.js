@@ -675,4 +675,39 @@ export const authService = {
 
     return () => subscription.unsubscribe();
   },
+
+  /**
+   * Obtiene los usuarios que pertenecen a la misma vivienda
+   */
+  async getUsuariosMismaVivienda(vivienda) {
+    try {
+      if (!vivienda) {
+        return { success: false, error: 'Vivienda no especificada' };
+      }
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, nombre, email, foto_perfil, nivel_juego')
+        .eq('vivienda', vivienda)
+        .eq('estado_aprobacion', 'aprobado')
+        .order('nombre', { ascending: true });
+
+      if (error) {
+        return { success: false, error: 'Error al obtener usuarios de la vivienda' };
+      }
+
+      return {
+        success: true,
+        data: data.map(u => ({
+          id: u.id,
+          nombre: u.nombre,
+          email: u.email,
+          fotoPerfil: u.foto_perfil,
+          nivelJuego: u.nivel_juego,
+        })),
+      };
+    } catch (error) {
+      return { success: false, error: 'Error al obtener usuarios de la vivienda' };
+    }
+  },
 };
