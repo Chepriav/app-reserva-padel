@@ -22,6 +22,16 @@ jest.mock('../src/services/supabaseConfig', () => ({
   },
 }));
 
+// Mock de notificationService
+jest.mock('../src/services/notificationService', () => ({
+  notificationService: {
+    notifyPartidaSolicitud: jest.fn().mockResolvedValue({ success: true }),
+    notifyPartidaAceptada: jest.fn().mockResolvedValue({ success: true }),
+    notifyPartidaCompleta: jest.fn().mockResolvedValue({ success: true }),
+    notifyPartidaCancelada: jest.fn().mockResolvedValue({ success: true }),
+  },
+}));
+
 import { partidasService } from '../src/services/partidasService';
 import { supabase } from '../src/services/supabaseConfig';
 
@@ -291,17 +301,42 @@ describe('partidasService', () => {
   });
 
   describe('cancelarPartida', () => {
-    test('actualiza estado a cancelada', async () => {
+    test('actualiza estado a cancelada y notifica jugadores', async () => {
       let updateCalled = false;
-      const mockFrom = jest.fn().mockReturnValue({
-        update: jest.fn((data) => {
-          updateCalled = true;
-          expect(data.estado).toBe('cancelada');
+      let callCount = 0;
+
+      const mockFrom = jest.fn().mockImplementation(() => {
+        callCount++;
+        // Primera llamada: fetch de la partida
+        if (callCount === 1) {
           return {
+            select: jest.fn().mockReturnThis(),
             eq: jest.fn().mockReturnThis(),
+            single: jest.fn().mockResolvedValue({
+              data: {
+                creador_id: 'user-1',
+                creador_nombre: 'Juan',
+                fecha: '2025-01-01',
+                partidas_jugadores: [
+                  { usuario_id: 'jugador-1' },
+                  { usuario_id: 'jugador-2' },
+                ],
+              },
+              error: null,
+            }),
           };
-        }),
-        eq: jest.fn().mockResolvedValue({ error: null }),
+        }
+        // Segunda llamada: update
+        return {
+          update: jest.fn((data) => {
+            updateCalled = true;
+            expect(data.estado).toBe('cancelada');
+            return {
+              eq: jest.fn().mockReturnThis(),
+            };
+          }),
+          eq: jest.fn().mockResolvedValue({ error: null }),
+        };
       });
       supabase.from = mockFrom;
 
@@ -309,6 +344,28 @@ describe('partidasService', () => {
 
       expect(updateCalled).toBe(true);
       expect(result.success).toBe(true);
+    });
+
+    test('rechaza si no es el creador', async () => {
+      const mockFrom = jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: {
+            creador_id: 'otro-user',
+            creador_nombre: 'Pedro',
+            fecha: null,
+            partidas_jugadores: [],
+          },
+          error: null,
+        }),
+      });
+      supabase.from = mockFrom;
+
+      const result = await partidasService.cancelarPartida('partida-1', 'user-1');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Solo el creador puede cancelar la partida');
     });
   });
 
@@ -333,6 +390,187 @@ describe('partidasService', () => {
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(['reserva-1', 'reserva-2']);
+    });
+  });
+
+  describe('editarPartida', () => {
+    test('rechaza si no es el creador', async () => {
+      const mockFrom = jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: { creador_id: 'otro-user' },
+          error: null,
+        }),
+      });
+      supabase.from = mockFrom;
+
+      const result = await partidasService.editarPartida('partida-1', 'user-1', { mensaje: 'Hola' });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Solo el creador puede editar la partida');
+    });
+
+    test('actualiza campos correctamente', async () => {
+      let callCount = 0;
+      let updateData = null;
+
+      const mockFrom = jest.fn().mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            single: jest.fn().mockResolvedValue({
+              data: { creador_id: 'user-1' },
+              error: null,
+            }),
+          };
+        }
+        return {
+          update: jest.fn((data) => {
+            updateData = data;
+            return {
+              eq: jest.fn().mockResolvedValue({ error: null }),
+            };
+          }),
+        };
+      });
+      supabase.from = mockFrom;
+
+      const updates = {
+        mensaje: 'Nuevo mensaje',
+        nivelPreferido: 'intermedio',
+      };
+
+      const result = await partidasService.editarPartida('partida-1', 'user-1', updates);
+
+      expect(result.success).toBe(true);
+      expect(updateData.mensaje).toBe('Nuevo mensaje');
+      expect(updateData.nivel_preferido).toBe('intermedio');
+    });
+  });
+
+  describe('anadirJugadorAPartida', () => {
+    test('rechaza si no es el creador', async () => {
+      const mockFrom = jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: { creador_id: 'otro-user', estado: 'buscando', partidas_jugadores: [] },
+          error: null,
+        }),
+      });
+      supabase.from = mockFrom;
+
+      const result = await partidasService.anadirJugadorAPartida('partida-1', 'user-1', {
+        usuarioNombre: 'Juan',
+        esExterno: true,
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Solo el creador puede añadir jugadores');
+    });
+
+    test('rechaza si la partida ya está completa', async () => {
+      const mockFrom = jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: {
+            creador_id: 'user-1',
+            estado: 'buscando',
+            partidas_jugadores: [
+              { estado: 'confirmado' },
+              { estado: 'confirmado' },
+              { estado: 'confirmado' },
+            ],
+          },
+          error: null,
+        }),
+      });
+      supabase.from = mockFrom;
+
+      const result = await partidasService.anadirJugadorAPartida('partida-1', 'user-1', {
+        usuarioNombre: 'Juan',
+        esExterno: true,
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('La partida ya está completa');
+    });
+
+    test('rechaza si el jugador ya está en la partida', async () => {
+      const mockFrom = jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: {
+            creador_id: 'user-1',
+            estado: 'buscando',
+            partidas_jugadores: [
+              { usuario_id: 'jugador-existente', estado: 'confirmado' },
+            ],
+          },
+          error: null,
+        }),
+      });
+      supabase.from = mockFrom;
+
+      const result = await partidasService.anadirJugadorAPartida('partida-1', 'user-1', {
+        usuarioId: 'jugador-existente',
+        usuarioNombre: 'Juan',
+        esExterno: false,
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Este jugador ya está en la partida');
+    });
+  });
+
+  describe('eliminarJugador', () => {
+    test('rechaza si no es el creador', async () => {
+      const mockFrom = jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: { creador_id: 'otro-user' },
+          error: null,
+        }),
+      });
+      supabase.from = mockFrom;
+
+      const result = await partidasService.eliminarJugador('jugador-1', 'partida-1', 'user-1');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Solo el creador puede eliminar jugadores');
+    });
+  });
+
+  describe('desapuntarsePartida', () => {
+    test('elimina jugador y actualiza estado', async () => {
+      let deleteCalled = false;
+      let rpcCalled = false;
+
+      const mockFrom = jest.fn().mockReturnValue({
+        delete: jest.fn(() => {
+          deleteCalled = true;
+          return {
+            eq: jest.fn().mockReturnThis(),
+          };
+        }),
+        eq: jest.fn().mockResolvedValue({ error: null }),
+      });
+
+      const mockRpc = jest.fn().mockResolvedValue({ data: true, error: null });
+
+      supabase.from = mockFrom;
+      supabase.rpc = mockRpc;
+
+      const result = await partidasService.desapuntarsePartida('partida-1', 'user-1');
+
+      expect(deleteCalled).toBe(true);
+      expect(result.success).toBe(true);
     });
   });
 });

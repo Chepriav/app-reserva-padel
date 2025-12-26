@@ -233,10 +233,12 @@ function JugadorExterno({ nombre, nivel, onNombreChange, onNivelChange, onAdd })
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    zIndex: 9999,
+    elevation: 9999,
   },
   content: {
     backgroundColor: colors.surface,
@@ -245,6 +247,8 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
     maxHeight: '80%',
+    zIndex: 10000,
+    elevation: 10000,
   },
   titulo: {
     fontSize: 20,

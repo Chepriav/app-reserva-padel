@@ -37,6 +37,9 @@ export default function PartidasScreen() {
     buttons: [],
   });
 
+  // Estado para modo editar (null = crear, partida = editar)
+  const [partidaEditando, setPartidaEditando] = useState(null);
+
   // Hooks para partidas
   const { partidas, loading, refreshing, cargarPartidas, onRefresh } = usePartidas(
     user?.id,
@@ -45,7 +48,7 @@ export default function PartidasScreen() {
 
   const actions = usePartidasActions(user?.id, cargarPartidas);
 
-  // Modal crear partida
+  // Modal crear/editar partida
   const crearModal = useCrearPartidaModal(user?.id);
 
   // Modal añadir jugador
@@ -68,14 +71,16 @@ export default function PartidasScreen() {
     setAlertConfig({ visible: true, title, message, buttons });
   };
 
-  // Obtener reservas futuras (excluyendo las que ya tienen partida)
-  const getReservasFuturas = () => {
+  // Obtener reservas futuras (excluyendo las que ya tienen partida, excepto la actual si estamos editando)
+  const getReservasFuturas = (partidaActual = partidaEditando) => {
     if (!reservas) return [];
     const ahora = new Date();
     return reservas.filter((r) => {
       const fechaReserva = new Date(r.fecha + 'T' + r.horaInicio);
+      // En modo editar, permitir la reserva actual de la partida
+      const esReservaActual = partidaActual && r.id === partidaActual.reservaId;
       const yaConPartida = crearModal.reservasConPartida.includes(r.id);
-      return r.estado === 'confirmada' && fechaReserva > ahora && !yaConPartida;
+      return r.estado === 'confirmada' && fechaReserva > ahora && (!yaConPartida || esReservaActual);
     });
   };
 
@@ -162,8 +167,57 @@ export default function PartidasScreen() {
     await actions.rechazarSolicitud(jugadorId, partida.id);
   };
 
-  // Crear partida
-  const handleCrearPartida = async () => {
+  // Abrir modal en modo crear
+  const handleAbrirCrear = async () => {
+    setPartidaEditando(null);
+    await crearModal.abrir();
+  };
+
+  // Abrir modal en modo editar
+  const handleEditar = async (partida) => {
+    setPartidaEditando(partida);
+    await crearModal.abrir();
+
+    // Cargar datos de la partida existente (pasar partida directamente porque el state aún no se actualizó)
+    const reservasFut = getReservasFuturas(partida);
+    const reservaActual = partida.reservaId
+      ? reservasFut.find(r => r.id === partida.reservaId)
+      : null;
+
+    // Convertir jugadores confirmados al formato del modal
+    const jugadoresConfirmados = (partida.jugadores || [])
+      .filter(j => j.estado === 'confirmado')
+      .map(j => ({
+        tipo: j.esExterno ? 'externo' : 'urbanizacion',
+        usuario: j.esExterno ? null : {
+          id: j.usuarioId,
+          nombre: j.usuarioNombre,
+          vivienda: j.usuarioVivienda,
+          nivelJuego: j.nivelJuego,
+        },
+        nombre: j.usuarioNombre,
+        vivienda: j.usuarioVivienda,
+        nivel: j.nivelJuego,
+      }));
+
+    // Inferir tipo: si tiene reservaId, es 'con_reserva'
+    const tipoInferido = partida.reservaId ? 'con_reserva' : (partida.tipo || 'abierta');
+
+    // Establecer estado inicial del modal
+    crearModal.setModalState({
+      tipo: tipoInferido,
+      reservaSeleccionada: reservaActual,
+      mensaje: partida.mensaje || '',
+      nivelPreferido: partida.nivelPreferido || null,
+      saving: false,
+    });
+
+    // Cargar jugadores existentes
+    jugadoresConfirmados.forEach(j => crearModal.addJugador(j));
+  };
+
+  // Crear o guardar partida
+  const handlePublicar = async () => {
     const { tipo, reservaSeleccionada, mensaje, nivelPreferido } = crearModal.modalState;
 
     if (tipo === 'con_reserva' && !reservaSeleccionada) {
@@ -173,38 +227,77 @@ export default function PartidasScreen() {
 
     crearModal.setSaving(true);
 
-    const partidaData = {
-      creadorId: user.id,
-      creadorNombre: user.nombre,
-      creadorVivienda: user.vivienda,
-      tipo,
-      mensaje: mensaje.trim() || null,
-      nivelPreferido,
-      jugadoresIniciales: crearModal.jugadores,
-    };
+    if (partidaEditando) {
+      // MODO EDITAR
+      const updates = {
+        mensaje: mensaje.trim() || null,
+        nivelPreferido,
+      };
 
-    if (tipo === 'con_reserva' && reservaSeleccionada) {
-      partidaData.reservaId = reservaSeleccionada.id;
-      partidaData.fecha = reservaSeleccionada.fecha;
-      partidaData.horaInicio = reservaSeleccionada.horaInicio;
-      partidaData.horaFin = reservaSeleccionada.horaFin;
-      partidaData.pistaNombre = reservaSeleccionada.pistaNombre;
-    }
+      if (tipo === 'abierta') {
+        updates.reservaId = null;
+        updates.fecha = null;
+        updates.horaInicio = null;
+        updates.horaFin = null;
+        updates.pistaNombre = null;
+      } else if (reservaSeleccionada) {
+        updates.reservaId = reservaSeleccionada.id;
+        updates.fecha = reservaSeleccionada.fecha;
+        updates.horaInicio = reservaSeleccionada.horaInicio;
+        updates.horaFin = reservaSeleccionada.horaFin;
+        updates.pistaNombre = reservaSeleccionada.pistaNombre;
+      }
 
-    const result = await actions.crearPartida(partidaData);
+      const result = await actions.editarPartida(partidaEditando.id, updates);
+      crearModal.setSaving(false);
 
-    crearModal.setSaving(false);
-
-    if (result.success) {
-      crearModal.cerrar();
-      const total = 1 + crearModal.jugadores.length;
-      const mensajeExito = total >= 4
-        ? 'Partida creada con 4 jugadores. ¡A jugar!'
-        : 'Tu solicitud de partida ha sido publicada.';
-      showAlert(total >= 4 ? 'Partida completa' : 'Partida creada', mensajeExito);
+      if (result.success) {
+        crearModal.cerrar();
+        setPartidaEditando(null);
+        showAlert('Partida actualizada', 'Los cambios se han guardado correctamente');
+      } else {
+        showAlert('Error', result.error);
+      }
     } else {
-      showAlert('Error', result.error);
+      // MODO CREAR
+      const partidaData = {
+        creadorId: user.id,
+        creadorNombre: user.nombre,
+        creadorVivienda: user.vivienda,
+        tipo,
+        mensaje: mensaje.trim() || null,
+        nivelPreferido,
+        jugadoresIniciales: crearModal.jugadores,
+      };
+
+      if (tipo === 'con_reserva' && reservaSeleccionada) {
+        partidaData.reservaId = reservaSeleccionada.id;
+        partidaData.fecha = reservaSeleccionada.fecha;
+        partidaData.horaInicio = reservaSeleccionada.horaInicio;
+        partidaData.horaFin = reservaSeleccionada.horaFin;
+        partidaData.pistaNombre = reservaSeleccionada.pistaNombre;
+      }
+
+      const result = await actions.crearPartida(partidaData);
+      crearModal.setSaving(false);
+
+      if (result.success) {
+        crearModal.cerrar();
+        const total = 1 + crearModal.jugadores.length;
+        const mensajeExito = total >= 4
+          ? 'Partida creada con 4 jugadores. ¡A jugar!'
+          : 'Tu solicitud de partida ha sido publicada.';
+        showAlert(total >= 4 ? 'Partida completa' : 'Partida creada', mensajeExito);
+      } else {
+        showAlert('Error', result.error);
+      }
     }
+  };
+
+  // Cerrar modal
+  const handleCerrarModal = () => {
+    crearModal.cerrar();
+    setPartidaEditando(null);
   };
 
   // Abrir modal añadir jugador
@@ -213,19 +306,150 @@ export default function PartidasScreen() {
     addJugadorModal.abrir();
   };
 
+  // Cerrar modal añadir jugador
+  const handleCerrarAddJugador = () => {
+    addJugadorModal.cerrar();
+  };
+
   // Añadir jugador de urbanización
-  const handleAddUrbanizacion = (usuario) => {
-    if (!addJugadorModal.addUrbanizacion(usuario)) {
-      showAlert('Partida completa', 'Ya tienes 3 jugadores añadidos (4 con el creador)');
+  const handleAddUrbanizacion = async (usuarioSeleccionado) => {
+    if (partidaEditando) {
+      // En modo edición, añadir directamente a la partida en BD
+      const partidaId = partidaEditando.id;
+      const result = await actions.anadirJugadorAPartida(partidaId, {
+        usuarioId: usuarioSeleccionado.id,
+        usuarioNombre: usuarioSeleccionado.nombre,
+        usuarioVivienda: usuarioSeleccionado.vivienda,
+        nivelJuego: usuarioSeleccionado.nivelJuego,
+        esExterno: false,
+      });
+      if (result.success) {
+        addJugadorModal.cerrar();
+        // Actualizar partidaEditando directamente con el nuevo jugador
+        const nuevoJugador = {
+          id: result.jugadorId || Date.now().toString(), // ID temporal si no viene
+          usuarioId: usuarioSeleccionado.id,
+          usuarioNombre: usuarioSeleccionado.nombre,
+          usuarioVivienda: usuarioSeleccionado.vivienda,
+          nivelJuego: usuarioSeleccionado.nivelJuego,
+          esExterno: false,
+          estado: 'confirmado',
+        };
+        setPartidaEditando(prev => ({
+          ...prev,
+          jugadores: [...(prev.jugadores || []), nuevoJugador],
+        }));
+        // También recargar en background para sincronizar
+        cargarPartidas();
+      } else {
+        showAlert('Error', result.error);
+      }
+    } else {
+      // En modo crear, usar la lógica del hook
+      if (!addJugadorModal.addUrbanizacion(usuarioSeleccionado)) {
+        showAlert('Partida completa', 'Ya tienes 3 jugadores añadidos (4 con el creador)');
+      }
     }
   };
 
   // Añadir jugador externo
-  const handleAddExterno = () => {
-    const result = addJugadorModal.addExterno();
-    if (!result.success) {
-      showAlert('Error', result.error);
+  const handleAddExterno = async () => {
+    const { nombreExterno, nivelExterno } = addJugadorModal.modalState;
+
+    if (!nombreExterno?.trim()) {
+      showAlert('Error', 'Introduce el nombre del jugador');
+      return;
     }
+
+    if (partidaEditando) {
+      // En modo edición, añadir directamente a la partida en BD
+      const partidaId = partidaEditando.id;
+      const nombreTrimmed = nombreExterno.trim();
+      const result = await actions.anadirJugadorAPartida(partidaId, {
+        usuarioId: null,
+        usuarioNombre: nombreTrimmed,
+        usuarioVivienda: null,
+        nivelJuego: nivelExterno,
+        esExterno: true,
+      });
+      if (result.success) {
+        addJugadorModal.cerrar();
+        // Actualizar partidaEditando directamente con el nuevo jugador
+        const nuevoJugador = {
+          id: result.jugadorId || Date.now().toString(),
+          usuarioId: null,
+          usuarioNombre: nombreTrimmed,
+          usuarioVivienda: null,
+          nivelJuego: nivelExterno,
+          esExterno: true,
+          estado: 'confirmado',
+        };
+        setPartidaEditando(prev => ({
+          ...prev,
+          jugadores: [...(prev.jugadores || []), nuevoJugador],
+        }));
+        // También recargar en background para sincronizar
+        cargarPartidas();
+      } else {
+        showAlert('Error', result.error);
+      }
+    } else {
+      // En modo crear, usar la lógica del hook
+      const resultCrear = addJugadorModal.addExterno();
+      if (!resultCrear.success) {
+        showAlert('Error', resultCrear.error);
+      }
+    }
+  };
+
+  // Eliminar jugador de la partida (solo en modo editar)
+  const handleRemoveJugador = async (index) => {
+    if (partidaEditando) {
+      // Obtener el jugador a eliminar de la partida actual
+      const jugadoresConfirmados = (partidaEditando.jugadores || [])
+        .filter(j => j.estado === 'confirmado');
+      const jugadorAEliminar = jugadoresConfirmados[index];
+
+      if (jugadorAEliminar) {
+        const jugadorId = jugadorAEliminar.id;
+        const result = await actions.eliminarJugador(jugadorId, partidaEditando.id);
+        if (result.success) {
+          // Actualizar partidaEditando directamente eliminando el jugador
+          setPartidaEditando(prev => ({
+            ...prev,
+            jugadores: (prev.jugadores || []).filter(j => j.id !== jugadorId),
+          }));
+          // También recargar en background para sincronizar
+          cargarPartidas();
+        } else {
+          showAlert('Error', result.error);
+        }
+      }
+    } else {
+      // En modo crear, usar la lógica del hook
+      crearModal.removeJugador(index);
+    }
+  };
+
+  // Obtener jugadores para el modal (en modo editar, desde la partida; en crear, desde el hook)
+  const getJugadoresModal = () => {
+    if (partidaEditando) {
+      return (partidaEditando.jugadores || [])
+        .filter(j => j.estado === 'confirmado')
+        .map(j => ({
+          tipo: j.esExterno ? 'externo' : 'urbanizacion',
+          usuario: j.esExterno ? null : {
+            id: j.usuarioId,
+            nombre: j.usuarioNombre,
+            vivienda: j.usuarioVivienda,
+            nivelJuego: j.nivelJuego,
+          },
+          nombre: j.usuarioNombre,
+          vivienda: j.usuarioVivienda,
+          nivel: j.nivelJuego,
+        }));
+    }
+    return crearModal.jugadores;
   };
 
   return (
@@ -277,6 +501,7 @@ export default function PartidasScreen() {
               partida={partida}
               usuarioActualId={user.id}
               onCancelar={handleCancelar}
+              onEditar={handleEditar}
               onSolicitarUnirse={handleSolicitarUnirse}
               onCancelarSolicitud={handleCancelarSolicitud}
               onDesapuntarse={handleDesapuntarse}
@@ -288,22 +513,23 @@ export default function PartidasScreen() {
       </ScrollView>
 
       {/* Botón crear partida */}
-      <TouchableOpacity style={styles.botonCrear} onPress={crearModal.abrir}>
+      <TouchableOpacity style={styles.botonCrear} onPress={handleAbrirCrear}>
         <Text style={styles.botonCrearText}>+ Buscar jugadores</Text>
       </TouchableOpacity>
 
-      {/* Modal crear partida */}
+      {/* Modal crear/editar partida */}
       <CrearPartidaModal
         visible={crearModal.visible}
         modalState={crearModal.modalState}
         setModalState={crearModal.setModalState}
-        jugadores={crearModal.jugadores}
+        jugadores={getJugadoresModal()}
         usuario={user}
         reservasFuturas={getReservasFuturas()}
         onAbrirModalJugador={handleAbrirAddJugador}
-        onRemoveJugador={crearModal.removeJugador}
-        onCrear={handleCrearPartida}
-        onCerrar={crearModal.cerrar}
+        onRemoveJugador={handleRemoveJugador}
+        onCrear={handlePublicar}
+        onCerrar={handleCerrarModal}
+        modoEditar={!!partidaEditando}
       />
 
       {/* Modal añadir jugador */}
@@ -313,10 +539,10 @@ export default function PartidasScreen() {
         setModalState={addJugadorModal.setModalState}
         usuarios={usuariosUrb.usuarios}
         loadingUsuarios={usuariosUrb.loading}
-        jugadoresActuales={crearModal.jugadores}
+        jugadoresActuales={getJugadoresModal()}
         onAddUrbanizacion={handleAddUrbanizacion}
         onAddExterno={handleAddExterno}
-        onCerrar={addJugadorModal.cerrar}
+        onCerrar={handleCerrarAddJugador}
       />
 
       <CustomAlert

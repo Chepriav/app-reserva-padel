@@ -129,6 +129,34 @@ export function usePartidasActions(userId, onSuccess) {
   const desapuntarse = async (partidaId) => {
     const result = await partidasService.desapuntarsePartida(partidaId, userId);
     if (result.success) {
+      // Pequeño delay para que Supabase propague el cambio
+      await new Promise(resolve => setTimeout(resolve, 300));
+      onSuccess?.();
+    }
+    return result;
+  };
+
+  const editarPartida = async (partidaId, updates) => {
+    setActionLoading(true);
+    const result = await partidasService.editarPartida(partidaId, userId, updates);
+    setActionLoading(false);
+    if (result.success) {
+      onSuccess?.();
+    }
+    return result;
+  };
+
+  const eliminarJugador = async (jugadorId, partidaId) => {
+    const result = await partidasService.eliminarJugador(jugadorId, partidaId, userId);
+    if (result.success) {
+      onSuccess?.();
+    }
+    return result;
+  };
+
+  const anadirJugadorAPartida = async (partidaId, jugadorData) => {
+    const result = await partidasService.anadirJugadorAPartida(partidaId, userId, jugadorData);
+    if (result.success) {
       onSuccess?.();
     }
     return result;
@@ -143,6 +171,9 @@ export function usePartidasActions(userId, onSuccess) {
     rechazarSolicitud,
     cancelarSolicitud,
     desapuntarse,
+    editarPartida,
+    eliminarJugador,
+    anadirJugadorAPartida,
   };
 }
 

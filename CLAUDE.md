@@ -872,3 +872,41 @@ src/components/partidas/
 | `usuarioVivienda` | `usuario_vivienda` |
 | `nivelJuego` | `nivel_juego` |
 | `esExterno` | `es_externo` |
+
+### Edición de Partidas
+
+El creador puede editar su partida existente desde el botón "Editar" en la tarjeta de partida.
+
+**Campos editables:**
+- Tipo de partida (abierta o con reserva)
+- Reserva vinculada (si es tipo "con reserva")
+- Nivel preferido
+- Mensaje/comentario
+- Añadir/eliminar jugadores
+
+**Funciones en partidasService.js:**
+- `editarPartida(partidaId, creadorId, updates)` - Actualiza campos de la partida
+- `anadirJugadorAPartida(partidaId, creadorId, jugadorData)` - Añade jugador a partida existente
+- `eliminarJugador(jugadorId, partidaId, creadorId)` - Elimina jugador de la partida
+
+**Modal unificado:**
+`CrearPartidaModal` se usa tanto para crear como para editar partidas mediante la prop `modoEditar`:
+- `modoEditar=false`: Título "Buscar jugadores", crea nueva partida
+- `modoEditar=true`: Título "Editar partida", actualiza partida existente
+
+### Notificaciones de Partidas
+
+El sistema envía push notifications en los siguientes eventos:
+
+| Evento | Destinatario | Tipo |
+|--------|--------------|------|
+| Solicitud de unirse | Creador de la partida | `partida_solicitud` |
+| Solicitud aceptada | Jugador que solicitó | `partida_aceptada` |
+| Partida completa (4/4) | Todos los jugadores | `partida_completa` |
+| Partida cancelada | Todos los jugadores | `partida_cancelada` |
+
+**Funciones en notificationService.js:**
+- `notifyPartidaSolicitud(creadorId, solicitanteNombre, partidaInfo)`
+- `notifyPartidaAceptada(usuarioId, creadorNombre, partidaInfo)`
+- `notifyPartidaCompleta(jugadoresIds, creadorNombre, partidaInfo)`
+- `notifyPartidaCancelada(jugadoresIds, creadorNombre, partidaInfo)`

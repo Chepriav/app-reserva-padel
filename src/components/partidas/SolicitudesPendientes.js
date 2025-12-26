@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors } from '../../constants/colors';
 import { NIVELES_JUEGO } from '../../constants/config';
 
@@ -33,6 +33,15 @@ function SolicitudRow({ solicitud, onAceptar, onRechazar }) {
 
   return (
     <View style={styles.row}>
+      {solicitud.usuarioFoto ? (
+        <Image source={{ uri: solicitud.usuarioFoto }} style={styles.avatar} />
+      ) : (
+        <View style={styles.avatarPlaceholder}>
+          <Text style={styles.avatarText}>
+            {solicitud.usuarioNombre?.charAt(0)?.toUpperCase() || '?'}
+          </Text>
+        </View>
+      )}
       <View style={styles.info}>
         <Text style={styles.nombre}>{solicitud.usuarioNombre}</Text>
         <Text style={styles.vivienda}>
@@ -71,6 +80,26 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 10,
+  },
+  avatarPlaceholder: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  avatarText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
   },
   info: {
     flex: 1,

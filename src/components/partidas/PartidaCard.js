@@ -13,6 +13,7 @@ export default function PartidaCard({
   partida,
   usuarioActualId,
   onCancelar,
+  onEditar,
   onSolicitarUnirse,
   onCancelarSolicitud,
   onDesapuntarse,
@@ -49,7 +50,7 @@ export default function PartidaCard({
       )}
 
       <ParticipantesList
-        creador={{ nombre: partida.creadorNombre, vivienda: partida.creadorVivienda }}
+        creador={{ nombre: partida.creadorNombre, vivienda: partida.creadorVivienda, foto: partida.creadorFoto, nivel: partida.creadorNivel }}
         jugadores={jugadoresConfirmados}
       />
 
@@ -70,6 +71,7 @@ export default function PartidaCard({
         esCompleta={esCompleta}
         mostrarAccionesCreador={mostrarAccionesCreador}
         onCancelar={() => onCancelar(partida)}
+        onEditar={() => onEditar?.(partida)}
         onSolicitarUnirse={() => onSolicitarUnirse(partida)}
         onCancelarSolicitud={() => onCancelarSolicitud(partida)}
         onDesapuntarse={() => onDesapuntarse(partida)}
@@ -135,16 +137,24 @@ function Acciones({
   esCompleta,
   mostrarAccionesCreador,
   onCancelar,
+  onEditar,
   onSolicitarUnirse,
   onCancelarSolicitud,
   onDesapuntarse,
 }) {
   return (
     <View style={styles.acciones}>
+      {/* Creador puede editar */}
+      {esCreador && mostrarAccionesCreador && (
+        <TouchableOpacity style={styles.botonEditar} onPress={onEditar}>
+          <Text style={styles.botonEditarText}>Editar</Text>
+        </TouchableOpacity>
+      )}
+
       {/* Creador puede cancelar */}
       {esCreador && mostrarAccionesCreador && (
         <TouchableOpacity style={styles.botonCancelar} onPress={onCancelar}>
-          <Text style={styles.botonCancelarText}>Cancelar partida</Text>
+          <Text style={styles.botonCancelarText}>Cancelar</Text>
         </TouchableOpacity>
       )}
 
@@ -269,6 +279,19 @@ const styles = StyleSheet.create({
   },
   botonPrimarioText: {
     color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  botonEditar: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  botonEditarText: {
+    color: colors.primary,
     fontWeight: '600',
     fontSize: 14,
   },

@@ -15,7 +15,8 @@ import { formatearFechaLegible } from '../../utils/dateHelpers';
 import JugadoresEditor from './JugadoresEditor';
 
 /**
- * Modal para crear una nueva partida
+ * Modal para crear o editar una partida
+ * Si modoEditar=true, muestra "Editar partida" en vez de "Buscar jugadores"
  */
 export default function CrearPartidaModal({
   visible,
@@ -28,6 +29,7 @@ export default function CrearPartidaModal({
   onRemoveJugador,
   onCrear,
   onCerrar,
+  modoEditar = false,
 }) {
   const { tipo, reservaSeleccionada, mensaje, nivelPreferido, saving } = modalState;
 
@@ -44,7 +46,7 @@ export default function CrearPartidaModal({
     >
       <View style={styles.overlay}>
         <View style={styles.content}>
-          <Text style={styles.titulo}>Buscar jugadores</Text>
+          <Text style={styles.titulo}>{modoEditar ? 'Editar partida' : 'Buscar jugadores'}</Text>
 
           <ScrollView
             style={styles.scrollContent}
@@ -103,7 +105,7 @@ export default function CrearPartidaModal({
               onPress={onCerrar}
               disabled={saving}
             >
-              <Text style={styles.botonCancelarText}>Cancelar</Text>
+              <Text style={styles.botonCancelarText}>Cerrar</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.botonCrear, saving && styles.botonDisabled]}
