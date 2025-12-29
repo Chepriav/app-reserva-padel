@@ -8,7 +8,7 @@
     <title>Reserva Pádel</title>
     <meta name="title" content="Reserva Pádel Urbanización" />
     <meta name="description" content="Gestiona tus reservas de pistas de pádel en la urbanización" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no" />
 
     <!-- PWA Mobile Specific Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes" />
@@ -31,45 +31,149 @@
     <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
 
     <style>
-      /**
-       * Disable body scrolling on web.
-       */
+      /* iOS zoom prevention - force touch-action on ALL elements */
+      *, *::before, *::after {
+        touch-action: pan-y !important;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      html {
+        -webkit-text-size-adjust: 100%;
+        -moz-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+      }
+
       body {
         background-color: #ffffff;
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
       }
-      /* Loading screen */
+
       #root {
         display: flex;
         flex-direction: column;
         height: 100%;
-      }
-      html, body, #root {
         width: 100%;
-        height: 100%;
-        -webkit-overflow-scrolling: touch;
-      }
-      html {
-        height: 100%;
         overflow: hidden;
       }
-      body {
-        margin: 0;
-        overflow: hidden;
-        overscroll-behavior-y: none;
-        text-rendering: optimizeLegibility;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        -ms-overflow-style: scrollbar;
+
+      /* Allow text selection in inputs */
+      input, textarea {
+        -webkit-user-select: text !important;
+        user-select: text !important;
+        font-size: 16px !important;
       }
-      /* Loading animation */
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+
+      select {
+        font-size: 16px !important;
+      }
+
+      /* Force pan-y on scrollable containers */
+      [data-testid], [class*="scroll"], [class*="Scroll"] {
+        touch-action: pan-y !important;
       }
     </style>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+    <script>
+      (function() {
+        'use strict';
+
+        // Prevent ALL multi-touch gestures
+        document.addEventListener('touchstart', function(e) {
+          if (e.touches.length > 1) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+          }
+        }, { passive: false, capture: true });
+
+        document.addEventListener('touchmove', function(e) {
+          if (e.touches.length > 1) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+          }
+        }, { passive: false, capture: true });
+
+        // Prevent gesture events (Safari pinch zoom)
+        ['gesturestart', 'gesturechange', 'gestureend'].forEach(function(eventName) {
+          document.addEventListener(eventName, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+          }, { passive: false, capture: true });
+        });
+
+        // Prevent double-tap zoom
+        var lastTouchEnd = 0;
+        document.addEventListener('touchend', function(e) {
+          var now = Date.now();
+          if (now - lastTouchEnd <= 300) {
+            e.preventDefault();
+          }
+          lastTouchEnd = now;
+        }, { passive: false });
+
+        // Prevent ctrl+wheel zoom (desktop)
+        document.addEventListener('wheel', function(e) {
+          if (e.ctrlKey) {
+            e.preventDefault();
+          }
+        }, { passive: false });
+
+        // Prevent keyboard zoom shortcuts
+        document.addEventListener('keydown', function(e) {
+          if ((e.ctrlKey || e.metaKey) &&
+              (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0')) {
+            e.preventDefault();
+          }
+        });
+
+        // Handle orientation change
+        window.addEventListener('orientationchange', function() {
+          // Force reset any zoom that might have occurred
+          document.body.style.transform = 'scale(1)';
+          document.body.style.webkitTransform = 'scale(1)';
+
+          setTimeout(function() {
+            window.scrollTo(0, 0);
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+            document.body.style.transform = '';
+            document.body.style.webkitTransform = '';
+          }, 100);
+        });
+
+        // Monitor and reset zoom using visualViewport
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener('resize', function() {
+            if (window.visualViewport.scale > 1.01) {
+              // Zoom detected, try to reset
+              document.body.style.transform = 'scale(1)';
+              setTimeout(function() {
+                document.body.style.transform = '';
+                window.scrollTo(0, 0);
+              }, 50);
+            }
+          });
+        }
+      })();
+    </script>
   </body>
 </html>
