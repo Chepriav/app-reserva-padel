@@ -1,9 +1,10 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Platform } from 'react-native';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
+import { Platform, AppState } from 'react-native';
 import { authService } from '../services/authService.supabase';
 import { reservasService } from '../services/reservasService.supabase';
 import { notificationService } from '../services/notificationService';
 import { navigateFromNotification } from '../navigation/AppNavigator';
+import { supabase, refreshSession } from '../services/supabaseConfig';
 
 const AuthContext = createContext(null);
 
@@ -14,22 +15,36 @@ export const AuthProvider = ({ children }) => {
   const [notificacionesPendientes, setNotificacionesPendientes] = useState([]);
   // Mensaje de notificación para mostrar en pantalla destino
   const [notificationMessage, setNotificationMessage] = useState(null);
+  const appState = useRef(AppState.currentState);
 
+  // Verificar sesión existente y escuchar cambios de autenticación
   useEffect(() => {
     let isMounted = true;
 
     // Verificar sesión existente al cargar
     const checkSession = async () => {
       try {
-        const result = await authService.getCurrentUser();
-        if (isMounted) {
-          if (result.success && result.data) {
+        // Intentar refrescar la sesión primero
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error) {
+          console.log('[Auth] Error getting session:', error.message);
+        }
+
+        if (session) {
+          // Sesión válida, obtener datos del usuario
+          const result = await authService.getCurrentUser();
+          if (isMounted && result.success && result.data) {
             setUser(result.data);
             setIsAuthenticated(true);
           }
+        }
+
+        if (isMounted) {
           setLoading(false);
         }
-      } catch {
+      } catch (err) {
+        console.log('[Auth] Session check error:', err);
         if (isMounted) {
           setLoading(false);
         }
@@ -38,10 +53,74 @@ export const AuthProvider = ({ children }) => {
 
     checkSession();
 
+    // Escuchar cambios de autenticación (login, logout, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('[Auth] Auth state changed:', event);
+
+        if (!isMounted) return;
+
+        if (event === 'SIGNED_OUT' || !session) {
+          setUser(null);
+          setIsAuthenticated(false);
+        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          // Obtener datos actualizados del usuario
+          const result = await authService.getCurrentUser();
+          if (result.success && result.data) {
+            setUser(result.data);
+            setIsAuthenticated(true);
+          }
+        }
+      }
+    );
+
     return () => {
       isMounted = false;
+      subscription.unsubscribe();
     };
   }, []);
+
+  // Refrescar sesión cuando la app vuelve a primer plano
+  useEffect(() => {
+    const handleAppStateChange = async (nextAppState) => {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === 'active'
+      ) {
+        console.log('[Auth] App volvió a primer plano, verificando sesión...');
+
+        try {
+          // Usar refreshSession que maneja el refresh automático si está próximo a expirar
+          const result = await refreshSession();
+
+          if (!result.success || !result.session) {
+            console.log('[Auth] Sesión expirada o inválida');
+            // La sesión expiró, el onAuthStateChange se encargará de limpiar el estado
+            return;
+          }
+
+          // Si hay sesión pero el usuario no está en el estado, recuperarlo
+          if (result.session && !isAuthenticated) {
+            console.log('[Auth] Recuperando datos del usuario...');
+            const userResult = await authService.getCurrentUser();
+            if (userResult.success && userResult.data) {
+              setUser(userResult.data);
+              setIsAuthenticated(true);
+            }
+          }
+        } catch (err) {
+          console.log('[Auth] Error refreshing session:', err);
+        }
+      }
+      appState.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      subscription?.remove();
+    };
+  }, [isAuthenticated]);
 
   // Cargar notificaciones y registrar push token cuando el usuario se autentica
   useEffect(() => {
