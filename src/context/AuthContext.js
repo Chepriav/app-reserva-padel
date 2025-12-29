@@ -157,6 +157,47 @@ export const AuthProvider = ({ children }) => {
         navigateFromNotification('Mis Reservas');
         break;
 
+      // Notificaciones de partidas
+      case 'partida_solicitud':
+        message = {
+          type: 'info',
+          title: 'Nueva solicitud',
+          text: 'Alguien quiere unirse a tu partida.',
+        };
+        setNotificationMessage(message);
+        navigateFromNotification('Partidas');
+        break;
+
+      case 'partida_aceptada':
+        message = {
+          type: 'success',
+          title: 'Solicitud aceptada',
+          text: 'Te han aceptado en una partida.',
+        };
+        setNotificationMessage(message);
+        navigateFromNotification('Partidas');
+        break;
+
+      case 'partida_completa':
+        message = {
+          type: 'success',
+          title: 'Partida completa',
+          text: 'Tu partida ya tiene 4 jugadores.',
+        };
+        setNotificationMessage(message);
+        navigateFromNotification('Partidas');
+        break;
+
+      case 'partida_cancelada':
+        message = {
+          type: 'warning',
+          title: 'Partida cancelada',
+          text: 'Una partida en la que estabas apuntado ha sido cancelada.',
+        };
+        setNotificationMessage(message);
+        navigateFromNotification('Partidas');
+        break;
+
       default:
         console.log('[AuthContext] Tipo de notificación no reconocido:', notificationType);
     }

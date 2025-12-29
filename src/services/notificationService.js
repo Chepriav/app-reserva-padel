@@ -351,6 +351,7 @@ export const notificationService = {
 
   /**
    * Notifica a un usuario sobre desplazamiento de reserva
+   * @deprecated Usar notifyViviendaDisplacement para notificar a toda la vivienda
    */
   async notifyReservationDisplacement(userId, reservaInfo) {
     const title = 'Reserva desplazada';
@@ -360,6 +361,237 @@ export const notificationService = {
       type: 'reservation_displacement',
       ...reservaInfo,
     });
+  },
+
+  /**
+   * Notifica a TODOS los usuarios de una vivienda sobre desplazamiento de reserva
+   * @param {string} vivienda - Vivienda cuyos usuarios serán notificados
+   * @param {Object} reservaInfo - Información de la reserva desplazada
+   */
+  async notifyViviendaDisplacement(vivienda, reservaInfo) {
+    const title = 'Reserva desplazada';
+    const body = `La reserva del ${reservaInfo.fecha} a las ${reservaInfo.horaInicio} en ${reservaInfo.pistaNombre} ha sido desplazada.`;
+
+    return await this.notifyViviendaMembers(vivienda, title, body, {
+      type: 'reservation_displacement',
+      ...reservaInfo,
+    });
+  },
+
+  // ============ NOTIFICACIONES DE PARTIDAS ============
+
+  /**
+   * Notifica al creador que alguien quiere unirse a su partida
+   */
+  async notifyPartidaSolicitud(creadorId, solicitanteNombre, partidaInfo) {
+    const title = 'Nueva solicitud de partida';
+    const body = `${solicitanteNombre} quiere unirse a tu partida${partidaInfo.fecha ? ` del ${partidaInfo.fecha}` : ''}.`;
+
+    return await this.sendPushToUser(creadorId, title, body, {
+      type: 'partida_solicitud',
+      partidaId: partidaInfo.partidaId,
+    });
+  },
+
+  /**
+   * Notifica al usuario que su solicitud fue aceptada
+   */
+  async notifyPartidaAceptada(usuarioId, creadorNombre, partidaInfo) {
+    const title = 'Solicitud aceptada';
+    const body = `${creadorNombre} te ha aceptado en su partida${partidaInfo.fecha ? ` del ${partidaInfo.fecha}` : ''}.`;
+
+    return await this.sendPushToUser(usuarioId, title, body, {
+      type: 'partida_aceptada',
+      partidaId: partidaInfo.partidaId,
+    });
+  },
+
+  /**
+   * Notifica a todos los jugadores que la partida está completa (4/4)
+   */
+  async notifyPartidaCompleta(jugadoresIds, creadorNombre, partidaInfo) {
+    const title = 'Partida completa';
+    const body = partidaInfo.fecha
+      ? `La partida de ${creadorNombre} para el ${partidaInfo.fecha} ya tiene 4 jugadores.`
+      : `La partida de ${creadorNombre} ya tiene 4 jugadores.`;
+
+    const results = await Promise.all(
+      jugadoresIds.map((userId) =>
+        this.sendPushToUser(userId, title, body, {
+          type: 'partida_completa',
+          partidaId: partidaInfo.partidaId,
+        })
+      )
+    );
+
+    return { success: results.some((r) => r.success), results };
+  },
+
+  /**
+   * Notifica a los jugadores que la partida fue cancelada
+   */
+  async notifyPartidaCancelada(jugadoresIds, creadorNombre, partidaInfo) {
+    const title = 'Partida cancelada';
+    const body = partidaInfo.fecha
+      ? `La partida de ${creadorNombre} del ${partidaInfo.fecha} ha sido cancelada.`
+      : `La partida de ${creadorNombre} ha sido cancelada.`;
+
+    const results = await Promise.all(
+      jugadoresIds.map((userId) =>
+        this.sendPushToUser(userId, title, body, {
+          type: 'partida_cancelada',
+          partidaId: partidaInfo.partidaId,
+        })
+      )
+    );
+
+    return { success: results.some((r) => r.success), results };
+  },
+
+  /**
+   * Notifica a todos los usuarios de una vivienda
+   * @param {string} vivienda - Identificador de la vivienda (ej: "1-3-B")
+   * @param {string} title - Título de la notificación
+   * @param {string} body - Cuerpo de la notificación
+   * @param {Object} data - Datos adicionales
+   * @param {string} excludeUserId - ID de usuario a excluir (ej: quien hizo la acción)
+   */
+  async notifyViviendaMembers(vivienda, title, body, data = {}, excludeUserId = null) {
+    try {
+      // Obtener todos los usuarios de la vivienda
+      const { data: usuarios, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('vivienda', vivienda)
+        .eq('estado_aprobacion', 'aprobado');
+
+      if (error || !usuarios?.length) {
+        console.log('[Notificaciones] No se encontraron usuarios de la vivienda:', vivienda);
+        return { success: false, error: 'No se encontraron usuarios' };
+      }
+
+      // Filtrar usuario excluido si se especifica
+      const usuariosANotificar = excludeUserId
+        ? usuarios.filter(u => u.id !== excludeUserId)
+        : usuarios;
+
+      if (usuariosANotificar.length === 0) {
+        return { success: true, results: [] };
+      }
+
+      // Enviar notificación a todos
+      const results = await Promise.all(
+        usuariosANotificar.map((usuario) =>
+          this.sendPushToUser(usuario.id, title, body, data)
+        )
+      );
+
+      console.log(`[Notificaciones] Enviadas a ${usuariosANotificar.length} usuarios de vivienda ${vivienda}`);
+      return { success: results.some((r) => r.success), results };
+    } catch (error) {
+      console.error('[Notificaciones] Error notificando a vivienda:', error);
+      return { success: false, error: 'Error al notificar' };
+    }
+  },
+
+  // ============ NOTIFICACIONES PROGRAMADAS DE PARTIDAS ============
+
+  /**
+   * Programa notificaciones de recordatorio para una partida:
+   * 1. "Match Day" a las 9:00 AM del día de la partida
+   * 2. 10 minutos antes de la partida
+   * @param {Object} partida - Datos de la partida con fecha y hora
+   * @param {string} partida.fecha - Fecha en formato YYYY-MM-DD
+   * @param {string} partida.horaInicio - Hora en formato HH:MM
+   * @param {string} partida.pistaNombre - Nombre de la pista (opcional)
+   * @returns {Promise<{matchDayId: string|null, tenMinId: string|null}>}
+   */
+  async schedulePartidaReminders(partida) {
+    const results = { matchDayId: null, tenMinId: null };
+
+    if (!partida.fecha || !partida.horaInicio) {
+      console.log('[Notificaciones] Partida sin fecha/hora, no se programan recordatorios');
+      return results;
+    }
+
+    const fechaPartida = new Date(`${partida.fecha}T${partida.horaInicio}`);
+    const ahora = new Date();
+
+    // 1. Notificación "Match Day" a las 9:00 AM del día de la partida
+    const matchDayDate = new Date(`${partida.fecha}T09:00:00`);
+    if (matchDayDate > ahora) {
+      const horaFormateada = partida.horaInicio.substring(0, 5);
+
+      if (Platform.OS === 'web') {
+        const delayMs = matchDayDate.getTime() - ahora.getTime();
+        results.matchDayId = webPushService.scheduleNotification(
+          '🎾 ¡Hoy es Match Day!',
+          `Tienes partida a las ${horaFormateada}${partida.pistaNombre ? ` en ${partida.pistaNombre}` : ''}`,
+          delayMs,
+          { type: 'partida_match_day', partidaId: partida.id }
+        );
+      } else {
+        try {
+          results.matchDayId = await Notifications.scheduleNotificationAsync({
+            content: {
+              title: '🎾 ¡Hoy es Match Day!',
+              body: `Tienes partida a las ${horaFormateada}${partida.pistaNombre ? ` en ${partida.pistaNombre}` : ''}`,
+              data: { type: 'partida_match_day', partidaId: partida.id },
+              sound: true,
+            },
+            trigger: { date: matchDayDate },
+          });
+        } catch (error) {
+          console.error('[Notificaciones] Error programando Match Day:', error);
+        }
+      }
+    }
+
+    // 2. Notificación 10 minutos antes
+    const tenMinBefore = new Date(fechaPartida.getTime() - 10 * 60 * 1000);
+    if (tenMinBefore > ahora) {
+      const horaFormateada = partida.horaInicio.substring(0, 5);
+
+      if (Platform.OS === 'web') {
+        const delayMs = tenMinBefore.getTime() - ahora.getTime();
+        results.tenMinId = webPushService.scheduleNotification(
+          '⏰ ¡Tu partida empieza en 10 minutos!',
+          `A las ${horaFormateada}${partida.pistaNombre ? ` en ${partida.pistaNombre}` : ''}`,
+          delayMs,
+          { type: 'partida_10_min', partidaId: partida.id }
+        );
+      } else {
+        try {
+          results.tenMinId = await Notifications.scheduleNotificationAsync({
+            content: {
+              title: '⏰ ¡Tu partida empieza en 10 minutos!',
+              body: `A las ${horaFormateada}${partida.pistaNombre ? ` en ${partida.pistaNombre}` : ''}`,
+              data: { type: 'partida_10_min', partidaId: partida.id },
+              sound: true,
+            },
+            trigger: { date: tenMinBefore },
+          });
+        } catch (error) {
+          console.error('[Notificaciones] Error programando 10 min:', error);
+        }
+      }
+    }
+
+    console.log('[Notificaciones] Recordatorios de partida programados:', results);
+    return results;
+  },
+
+  /**
+   * Cancela los recordatorios programados de una partida
+   * @param {Object} reminderIds - IDs de las notificaciones {matchDayId, tenMinId}
+   */
+  async cancelPartidaReminders(reminderIds) {
+    if (reminderIds?.matchDayId) {
+      await this.cancelScheduledNotification(reminderIds.matchDayId);
+    }
+    if (reminderIds?.tenMinId) {
+      await this.cancelScheduledNotification(reminderIds.tenMinId);
+    }
   },
 
   /**
