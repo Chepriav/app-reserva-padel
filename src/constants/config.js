@@ -13,7 +13,7 @@ export const LIMITES_RESERVA = {
   maxReservasActivas: 2, // Por vivienda
   horasAnticipacionMinima: 0,
   diasAnticipacionMaxima: 7,
-  horasCancelacionMinima: 4,
+  horasCancelacionMinima: 1.5, // 1 hora y media
 };
 
 // Etiquetas de prioridad para UI
