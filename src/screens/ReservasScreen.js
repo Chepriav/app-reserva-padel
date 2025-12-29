@@ -17,7 +17,7 @@ import { CustomAlert } from '../components/CustomAlert';
 export default function ReservasScreen() {
   const { getReservasProximas, getReservasPasadas, cancelarReserva } =
     useReservas();
-  const { notificationMessage, clearNotificationMessage } = useAuth();
+  const { user, notificationMessage, clearNotificationMessage } = useAuth();
   const [tabActiva, setTabActiva] = useState('proximas');
 
   const reservasProximas = getReservasProximas();
@@ -111,6 +111,9 @@ export default function ReservasScreen() {
     // Reserva pasada disfrutada (confirmada que ya pasó)
     const esDisfrutada = esPasada && reserva.estado === 'confirmada';
 
+    // Verificar si la reserva fue hecha por otro usuario de la vivienda
+    const esDeOtroUsuario = reserva.usuarioId !== user?.id;
+
     return (
       <View
         key={reserva.id}
@@ -166,6 +169,13 @@ export default function ReservasScreen() {
           <Text style={styles.horario}>
             {formatearHora(reserva.horaInicio)} - {formatearHora(reserva.horaFin)}
           </Text>
+
+          {/* Mostrar quién hizo la reserva si es de otro usuario */}
+          {esDeOtroUsuario && (
+            <Text style={styles.reservadoPor}>
+              Reservado por: {reserva.usuarioNombre}
+            </Text>
+          )}
 
           {/* Aviso para reservas provisionales */}
           {esProvisional && reserva.estado === 'confirmada' && !esPasada && (
@@ -247,9 +257,9 @@ export default function ReservasScreen() {
             reservasProximas.map(renderReserva)
           ) : (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No tienes reservas próximas</Text>
+              <Text style={styles.emptyText}>No hay reservas próximas</Text>
               <Text style={styles.emptySubtext}>
-                Ve a la pestaña de Inicio para hacer una reserva
+                Tu vivienda no tiene reservas activas.{'\n'}Ve a Inicio para hacer una reserva.
               </Text>
             </View>
           )
@@ -257,7 +267,7 @@ export default function ReservasScreen() {
           reservasPasadas.map(renderReserva)
         ) : (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No tienes reservas pasadas</Text>
+            <Text style={styles.emptyText}>No hay reservas pasadas</Text>
           </View>
         )}
       </ScrollView>
@@ -363,6 +373,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.primary,
     marginBottom: 8,
+  },
+  reservadoPor: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+    marginBottom: 4,
   },
   jugadoresContainer: {
     marginTop: 8,

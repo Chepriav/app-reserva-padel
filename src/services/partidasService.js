@@ -48,6 +48,27 @@ const mapJugadorToCamelCase = (data) => {
   };
 };
 
+/**
+ * Filtra partidas para mostrar solo las futuras (no pasadas)
+ * @param {Array} partidas - Array de partidas en formato snake_case
+ * @returns {Array} - Partidas cuya fecha/hora aún no ha pasado
+ */
+const filtrarPartidasFuturas = (partidas) => {
+  const ahora = new Date();
+  return partidas.filter(p => {
+    // Si no tiene fecha, mostrarla (partida abierta)
+    if (!p.fecha) return true;
+    // Si tiene fecha pero no hora_fin, comparar solo fecha
+    if (!p.hora_fin) {
+      const fechaPartida = new Date(p.fecha + 'T23:59:59');
+      return fechaPartida > ahora;
+    }
+    // Si tiene fecha y hora, comparar con hora_fin
+    const fechaFinPartida = new Date(p.fecha + 'T' + p.hora_fin);
+    return fechaFinPartida > ahora;
+  });
+};
+
 export const partidasService = {
   /**
    * Obtiene foto de perfil de un usuario por ID
@@ -151,7 +172,7 @@ export const partidasService = {
   },
 
   /**
-   * Obtiene las partidas creadas por un usuario
+   * Obtiene las partidas creadas por un usuario (solo futuras)
    */
   async obtenerMisPartidas(usuarioId) {
     try {
@@ -166,12 +187,15 @@ export const partidasService = {
         return { success: false, error: 'Error al obtener tus partidas' };
       }
 
-      // Recolectar IDs de creadores
-      const creadorIds = partidas.map(p => p.creador_id).filter(Boolean);
+      // Filtrar partidas pasadas
+      const partidasFuturas = filtrarPartidasFuturas(partidas);
 
-      // Obtener jugadores de cada partida
+      // Recolectar IDs de creadores (de partidas futuras)
+      const creadorIds = partidasFuturas.map(p => p.creador_id).filter(Boolean);
+
+      // Obtener jugadores de cada partida futura
       const partidasConJugadores = await Promise.all(
-        partidas.map(async (partida) => {
+        partidasFuturas.map(async (partida) => {
           const { data: jugadores } = await supabase
             .from('partidas_jugadores')
             .select('*')
@@ -210,7 +234,7 @@ export const partidasService = {
   },
 
   /**
-   * Obtiene las partidas donde el usuario está apuntado
+   * Obtiene las partidas donde el usuario está apuntado (solo futuras)
    */
   async obtenerPartidasApuntado(usuarioId) {
     try {
@@ -242,12 +266,15 @@ export const partidasService = {
         return { success: false, error: 'Error al obtener partidas' };
       }
 
-      // Recolectar IDs de creadores
-      const creadorIds = partidas.map(p => p.creador_id).filter(Boolean);
+      // Filtrar partidas pasadas
+      const partidasFuturas = filtrarPartidasFuturas(partidas);
 
-      // Obtener jugadores de cada partida
+      // Recolectar IDs de creadores (de partidas futuras)
+      const creadorIds = partidasFuturas.map(p => p.creador_id).filter(Boolean);
+
+      // Obtener jugadores de cada partida futura
       const partidasConJugadores = await Promise.all(
-        partidas.map(async (partida) => {
+        partidasFuturas.map(async (partida) => {
           const { data: jugadores } = await supabase
             .from('partidas_jugadores')
             .select('*')
@@ -349,6 +376,17 @@ export const partidasService = {
           .insert(jugadoresData);
       }
 
+      // Programar recordatorios de Match Day y 10 min antes para el creador
+      // (y los jugadores iniciales internos)
+      if (fecha && horaInicio) {
+        notificationService.schedulePartidaReminders({
+          id: data.id,
+          fecha,
+          horaInicio,
+          pistaNombre,
+        });
+      }
+
       return { success: true, data: mapPartidaToCamelCase(data) };
     } catch (error) {
       return { success: false, error: 'Error al crear la partida' };
@@ -433,7 +471,7 @@ export const partidasService = {
       // Verificar que sea el creador y obtener datos completos
       const { data: partida, error: partidaError } = await supabase
         .from('partidas')
-        .select('creador_id, creador_nombre, fecha, partidas_jugadores(*)')
+        .select('creador_id, creador_nombre, fecha, hora_inicio, pista_nombre, partidas_jugadores(*)')
         .eq('id', partidaId)
         .single();
 
@@ -468,6 +506,16 @@ export const partidasService = {
         partida.creador_nombre,
         { partidaId, fecha: partida.fecha }
       );
+
+      // Programar recordatorios de Match Day y 10 min antes para el jugador aceptado
+      if (partida.fecha && partida.hora_inicio) {
+        notificationService.schedulePartidaReminders({
+          id: partidaId,
+          fecha: partida.fecha,
+          horaInicio: partida.hora_inicio,
+          pistaNombre: partida.pista_nombre,
+        });
+      }
 
       // Si ahora hay 4 jugadores, marcar como completa y notificar a todos
       const nuevoTotalConfirmados = 1 + confirmados.length + 1;
@@ -735,7 +783,7 @@ export const partidasService = {
       // Verificar que sea el creador
       const { data: partida, error: fetchError } = await supabase
         .from('partidas')
-        .select('creador_id, estado, partidas_jugadores(*)')
+        .select('creador_id, estado, fecha, hora_inicio, pista_nombre, partidas_jugadores(*)')
         .eq('id', partidaId)
         .single();
 
@@ -786,6 +834,16 @@ export const partidasService = {
           .from('partidas')
           .update({ estado: 'completa', updated_at: new Date().toISOString() })
           .eq('id', partidaId);
+      }
+
+      // Programar recordatorios para jugadores NO externos
+      if (!jugadorData.esExterno && partida.fecha && partida.hora_inicio) {
+        notificationService.schedulePartidaReminders({
+          id: partidaId,
+          fecha: partida.fecha,
+          horaInicio: partida.hora_inicio,
+          pistaNombre: partida.pista_nombre,
+        });
       }
 
       return { success: true };
