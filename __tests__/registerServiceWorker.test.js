@@ -12,12 +12,14 @@ describe('registerServiceWorker', () => {
     mockRegistration = {
       scope: 'https://example.com/',
       update: jest.fn(),
+      addEventListener: jest.fn(),
     };
 
     // Mock de navigator.serviceWorker
     global.navigator = {
       serviceWorker: {
         register: jest.fn(() => Promise.resolve(mockRegistration)),
+        addEventListener: jest.fn(),
       },
     };
 
@@ -28,6 +30,9 @@ describe('registerServiceWorker', () => {
           callback();
         }
       }),
+      location: {
+        reload: jest.fn(),
+      },
     };
 
     // Mock de document
@@ -78,15 +83,18 @@ describe('registerServiceWorker', () => {
     expect(console.log).toHaveBeenCalledWith('Service Worker registrado:', 'https://example.com/');
   });
 
-  it('debería llamar a registration.update() después del registro', async () => {
+  it('debería configurar intervalo para actualizar después del registro', async () => {
     global.document.readyState = 'complete';
+    const setIntervalSpy = jest.spyOn(global, 'setInterval');
 
     registerServiceWorker = require('../src/services/registerServiceWorker').registerServiceWorker;
     registerServiceWorker();
 
     await new Promise(resolve => setTimeout(resolve, 10));
 
-    expect(mockRegistration.update).toHaveBeenCalled();
+    // Verificar que se configuró el intervalo para actualizaciones
+    expect(setIntervalSpy).toHaveBeenCalled();
+    setIntervalSpy.mockRestore();
   });
 
   it('debería manejar errores de registro', async () => {

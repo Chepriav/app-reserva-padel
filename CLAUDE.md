@@ -590,6 +590,75 @@ Antes de crear o modificar código, verificar:
 - Android: Configurado automáticamente en app.json
 - iOS: Se solicita al primer login
 
+## Persistencia de Sesión
+
+### Descripción
+El sistema mantiene la sesión del usuario activa incluso después de períodos de inactividad mediante:
+- **Auto-refresh de tokens**: Supabase refresca automáticamente el JWT antes de expirar
+- **Listener de cambios de auth**: Detecta cambios de sesión (login, logout, token refresh)
+- **Recuperación al volver de background**: Verifica y refresca sesión cuando la app vuelve a primer plano
+
+### Implementación en AuthContext.js
+
+```javascript
+// Listener de cambios de autenticación
+const { data: { subscription } } = supabase.auth.onAuthStateChange(
+  async (event, session) => {
+    if (event === 'SIGNED_OUT' || !session) {
+      setUser(null);
+      setIsAuthenticated(false);
+    } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      const result = await authService.getCurrentUser();
+      if (result.success && result.data) {
+        setUser(result.data);
+        setIsAuthenticated(true);
+      }
+    }
+  }
+);
+
+// Listener de AppState para detectar background/foreground
+AppState.addEventListener('change', async (nextAppState) => {
+  if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+    const result = await refreshSession();
+    if (!result.success) {
+      // Sesión expirada
+    }
+  }
+});
+```
+
+### Helper refreshSession (supabaseConfig.js)
+
+```javascript
+export const refreshSession = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return { success: false };
+
+  // Refrescar si expira en menos de 5 minutos
+  const timeUntilExpiry = session.expires_at - Math.floor(Date.now() / 1000);
+  if (timeUntilExpiry < 300) {
+    const { data } = await supabase.auth.refreshSession();
+    return { success: true, session: data.session };
+  }
+  return { success: true, session };
+};
+```
+
+### Configuración de Supabase
+
+```javascript
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: Platform.OS === 'web' ? undefined : AsyncStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+    flowType: 'pkce',
+  },
+});
+```
+
 ## Sistema de Web Push (PWA)
 
 ### Descripción
