@@ -180,6 +180,7 @@ export const reservasService = {
   /**
    * Obtiene la disponibilidad de horarios para una pista en una fecha
    * Incluye información de prioridad para el sistema de reservas primera/segunda
+   * Aplica conversión automática P→G si la vivienda solo tiene 1 reserva futura
    */
   async obtenerDisponibilidad(pistaId, fecha) {
     try {
@@ -197,7 +198,46 @@ export const reservasService = {
       }
 
       console.log('[obtenerDisponibilidad] Reservas confirmadas encontradas:', data?.length, data?.map(r => ({ id: r.id, vivienda: r.vivienda, estado: r.estado, prioridad: r.prioridad })));
-      const reservasExistentes = data.map(mapReservaToCamelCase);
+      let reservasExistentes = data.map(mapReservaToCamelCase);
+
+      // Aplicar conversión automática P→G para cada vivienda que tenga reservas
+      // Si una vivienda solo tiene 1 reserva futura confirmada, esa es garantizada
+      const viviendasConReservas = [...new Set(reservasExistentes.map(r => r.vivienda))];
+
+      for (const vivienda of viviendasConReservas) {
+        // Obtener TODAS las reservas futuras de esta vivienda
+        const reservasFuturasVivienda = await this.obtenerReservasActivasVivienda(vivienda);
+
+        // Si solo tiene 1 reserva futura, convertirla a garantizada
+        if (reservasFuturasVivienda.length === 1) {
+          reservasExistentes = reservasExistentes.map(r => {
+            if (r.vivienda === vivienda) {
+              return { ...r, prioridad: 'primera' };
+            }
+            return r;
+          });
+        } else if (reservasFuturasVivienda.length > 1) {
+          // Si tiene más de 1, verificar si hay garantizadas
+          const garantizadas = reservasFuturasVivienda.filter(r => r.prioridad === 'primera');
+          if (garantizadas.length === 0) {
+            // No hay garantizadas, la más próxima se convierte
+            const ordenadas = [...reservasFuturasVivienda].sort((a, b) => {
+              const fechaA = new Date(a.fecha + 'T' + a.horaInicio);
+              const fechaB = new Date(b.fecha + 'T' + b.horaInicio);
+              return fechaA - fechaB;
+            });
+            const primeraId = ordenadas[0].id;
+
+            reservasExistentes = reservasExistentes.map(r => {
+              if (r.id === primeraId) {
+                return { ...r, prioridad: 'primera' };
+              }
+              return r;
+            });
+          }
+        }
+      }
+
       const horariosGenerados = generarHorariosDisponibles();
 
       const horariosDisponibles = horariosGenerados.map((horario) => {
@@ -348,13 +388,13 @@ export const reservasService = {
         console.log('[desplazarReserva] Notificación creada OK');
       }
 
-      // 3. Enviar push notification al usuario desplazado
-      notificationService.notifyReservationDisplacement(reservaADesplazar.usuarioId, {
+      // 3. Enviar push notification a TODOS los usuarios de la vivienda desplazada
+      notificationService.notifyViviendaDisplacement(reservaADesplazar.vivienda, {
         fecha: formatearFechaLegible(reservaADesplazar.fecha),
         horaInicio: reservaADesplazar.horaInicio,
         pistaNombre: reservaADesplazar.pistaNombre,
       });
-      console.log('[desplazarReserva] Push notification enviada');
+      console.log('[desplazarReserva] Push notification enviada a vivienda:', reservaADesplazar.vivienda);
 
       return { success: true };
     } catch (error) {
@@ -584,7 +624,7 @@ export const reservasService = {
   /**
    * Cancela una reserva existente
    */
-  async cancelarReserva(reservaId, usuarioId) {
+  async cancelarReserva(reservaId, usuarioId, viviendaUsuario = null) {
     try {
       // Obtener la reserva
       const { data: reserva, error: getError } = await supabase
@@ -597,8 +637,13 @@ export const reservasService = {
         return { success: false, error: 'Reserva no encontrada' };
       }
 
-      // Verificar propiedad
-      if (reserva.usuario_id !== usuarioId) {
+      // Verificar pertenencia a la vivienda (cualquier usuario de la vivienda puede cancelar)
+      // Si se pasa viviendaUsuario, validar por vivienda; sino, mantener compatibilidad con validación por usuario
+      if (viviendaUsuario) {
+        if (reserva.vivienda !== viviendaUsuario) {
+          return { success: false, error: 'Solo puedes cancelar reservas de tu vivienda' };
+        }
+      } else if (reserva.usuario_id !== usuarioId) {
         return { success: false, error: 'No puedes cancelar una reserva que no es tuya' };
       }
 

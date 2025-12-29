@@ -27,19 +27,65 @@ export const ReservasProvider = ({ children }) => {
   }, []);
 
   const cargarReservas = async () => {
-    if (!user) return;
+    if (!user?.vivienda) return;
 
     setLoading(true);
     try {
-      const response = await reservasService.obtenerReservasUsuario(user.id);
+      // Cargar todas las reservas de la vivienda (no solo del usuario)
+      const response = await reservasService.obtenerReservasPorVivienda(user.vivienda);
       if (response.success) {
-        setReservas(response.data);
+        // Aplicar conversión automática P→G si corresponde
+        const reservasConversion = aplicarConversionAutomatica(response.data);
+        setReservas(reservasConversion);
       }
     } catch (error) {
       console.error('Error al cargar reservas:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  /**
+   * Aplica conversión automática de Provisional a Garantizada
+   * Cuando una reserva Garantizada pasa (ya ocurrió), la Provisional más antigua
+   * se convierte automáticamente en Garantizada
+   */
+  const aplicarConversionAutomatica = (reservasOriginales) => {
+    const ahora = new Date();
+
+    // Separar reservas futuras confirmadas
+    const reservasFuturas = reservasOriginales.filter(r => {
+      const fechaReserva = new Date(r.fecha + 'T' + r.horaInicio);
+      return r.estado === 'confirmada' && fechaReserva > ahora;
+    });
+
+    // Contar reservas garantizadas futuras
+    const garantizadasFuturas = reservasFuturas.filter(r => r.prioridad === 'primera');
+    const provisionalesFuturas = reservasFuturas.filter(r => r.prioridad === 'segunda');
+
+    // Si no hay ninguna garantizada futura pero hay provisionales,
+    // la provisional más antigua se convierte a garantizada
+    if (garantizadasFuturas.length === 0 && provisionalesFuturas.length > 0) {
+      // Ordenar provisionales por fecha/hora (la más próxima primero)
+      const provisionalesOrdenadas = [...provisionalesFuturas].sort((a, b) => {
+        const fechaA = new Date(a.fecha + 'T' + a.horaInicio);
+        const fechaB = new Date(b.fecha + 'T' + b.horaInicio);
+        return fechaA - fechaB;
+      });
+
+      // La primera provisional se convierte a garantizada
+      const aConvertir = provisionalesOrdenadas[0];
+
+      // Devolver reservas con la conversión aplicada
+      return reservasOriginales.map(r => {
+        if (r.id === aConvertir.id) {
+          return { ...r, prioridad: 'primera' };
+        }
+        return r;
+      });
+    }
+
+    return reservasOriginales;
   };
 
   const cargarPistas = async () => {
@@ -96,7 +142,8 @@ export const ReservasProvider = ({ children }) => {
 
   const cancelarReserva = async (reservaId) => {
     try {
-      const response = await reservasService.cancelarReserva(reservaId, user.id);
+      // Pasar vivienda para validar que el usuario puede cancelar reservas de su vivienda
+      const response = await reservasService.cancelarReserva(reservaId, user.id, user.vivienda);
       if (response.success) {
         // Actualizar lista de reservas
         setReservas(
@@ -124,14 +171,47 @@ export const ReservasProvider = ({ children }) => {
     }
   };
 
-  // Filtrar reservas
+  // Filtrar reservas con conversión automática P→G en tiempo real
   const getReservasProximas = () => {
     const ahora = new Date();
-    return reservas.filter(
+
+    // Filtrar solo las futuras confirmadas
+    const proximas = reservas.filter(
       (r) =>
         r.estado === 'confirmada' &&
         new Date(r.fecha + 'T' + r.horaInicio) > ahora
     );
+
+    // Si solo hay 1 reserva futura, siempre es garantizada
+    if (proximas.length === 1) {
+      return proximas.map(r => ({ ...r, prioridad: 'primera' }));
+    }
+
+    // Si hay más de 1, aplicar conversión P→G si no hay garantizadas
+    // Considerar 'primera' como garantizada, cualquier otra cosa (null, undefined, 'segunda') como provisional
+    const garantizadas = proximas.filter(r => r.prioridad === 'primera');
+    const provisionales = proximas.filter(r => r.prioridad !== 'primera');
+
+    if (garantizadas.length === 0 && provisionales.length > 0) {
+      // Ordenar por fecha/hora (la más próxima primero)
+      const provisionalesOrdenadas = [...provisionales].sort((a, b) => {
+        const fechaA = new Date(a.fecha + 'T' + a.horaInicio);
+        const fechaB = new Date(b.fecha + 'T' + b.horaInicio);
+        return fechaA - fechaB;
+      });
+
+      // La primera provisional se convierte a garantizada
+      const aConvertir = provisionalesOrdenadas[0];
+
+      return proximas.map(r => {
+        if (r.id === aConvertir.id) {
+          return { ...r, prioridad: 'primera' };
+        }
+        return r;
+      });
+    }
+
+    return proximas;
   };
 
   const getReservasPasadas = () => {
