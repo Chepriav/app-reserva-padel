@@ -99,7 +99,7 @@ describe('puedeReservar', () => {
 });
 
 describe('puedeCancelar', () => {
-  test('permite cancelar con más de 4 horas de anticipación', () => {
+  test('permite cancelar con más de 1.5 horas de anticipación', () => {
     const reserva = {
       fecha: getFutureDate(1),
       horaInicio: '10:00',
@@ -109,17 +109,21 @@ describe('puedeCancelar', () => {
     expect(result.valido).toBe(true);
   });
 
-  test('rechaza cancelar con menos de 4 horas de anticipación', () => {
+  test('rechaza cancelar con menos de 1.5 horas de anticipación', () => {
     const ahora = new Date();
     const fecha = ahora.toISOString().split('T')[0];
     const horaActual = ahora.getHours();
-    const horaReserva = `${String(horaActual + 1).padStart(2, '0')}:00`;
+    // Reserva en 30 minutos (menos de 1.5 horas)
+    const minutosReserva = ahora.getMinutes() + 30;
+    const horaReserva = minutosReserva >= 60
+      ? `${String(horaActual + 1).padStart(2, '0')}:${String(minutosReserva - 60).padStart(2, '0')}`
+      : `${String(horaActual).padStart(2, '0')}:${String(minutosReserva).padStart(2, '0')}`;
 
     const reserva = { fecha, horaInicio: horaReserva };
 
     const result = puedeCancelar(reserva);
     expect(result.valido).toBe(false);
-    expect(result.error).toContain('4 horas');
+    expect(result.error).toContain('hora');
   });
 });
 
@@ -129,7 +133,7 @@ describe('validarRegistro', () => {
       nombre: 'Juan García',
       email: 'juan@example.com',
       telefono: '612345678',
-      vivienda: 'Casa 42',
+      vivienda: '1-3-B', // Formato escalera-piso-puerta
       password: 'password123',
     };
 
@@ -143,7 +147,7 @@ describe('validarRegistro', () => {
       nombre: 'J',
       email: 'juan@example.com',
       telefono: '612345678',
-      vivienda: 'Casa 42',
+      vivienda: '1-3-B',
       password: 'password123',
     };
 
@@ -157,7 +161,7 @@ describe('validarRegistro', () => {
       nombre: 'Juan García',
       email: 'invalid-email',
       telefono: '612345678',
-      vivienda: 'Casa 42',
+      vivienda: '2-1-A',
       password: 'password123',
     };
 
@@ -171,7 +175,7 @@ describe('validarRegistro', () => {
       nombre: 'Juan García',
       email: 'juan@example.com',
       telefono: '612345678',
-      vivienda: 'Casa 42',
+      vivienda: '3-2-C',
       password: '123',
     };
 
@@ -186,7 +190,7 @@ describe('validarPerfil', () => {
     const datos = {
       nombre: 'Juan García',
       telefono: '612345678',
-      vivienda: 'Casa 42',
+      vivienda: '1-3-B', // Formato escalera-piso-puerta
       nivelJuego: 'intermedio',
     };
 
@@ -198,7 +202,7 @@ describe('validarPerfil', () => {
     const datos = {
       nombre: 'Juan García',
       telefono: '612345678',
-      vivienda: 'Casa 42',
+      vivienda: '2-1-A',
     };
 
     const result = validarPerfil(datos);
@@ -209,7 +213,7 @@ describe('validarPerfil', () => {
     const datos = {
       nombre: 'Juan García',
       telefono: '612345678',
-      vivienda: 'Casa 42',
+      vivienda: '1-2-C',
       nivelJuego: 'experto',
     };
 

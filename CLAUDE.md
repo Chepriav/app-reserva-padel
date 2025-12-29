@@ -118,6 +118,7 @@ Una vivienda puede desplazar la reserva P de otra vivienda si:
 - **RPC `desplazar_reserva_y_crear_nueva`**: Desplazamiento atómico con notificación
 - **RPC `process_pending_conversions`**: Procesa conversiones pendientes (llamado por cron)
 - **Cron Job (pg_cron)**: Ejecuta cada 15 minutos para procesar conversiones
+- **Conversión en tiempo real (Frontend)**: Cuando una vivienda solo tiene 1 reserva futura, se muestra como Garantizada automáticamente sin esperar al cron job
 
 ### Columnas adicionales en `reservas`
 ```sql
@@ -227,7 +228,7 @@ CREATE TABLE public.push_tokens (
 | Máximo reservas activas | 2 |
 | Anticipación mínima para reservar | Sin límite |
 | Anticipación máxima para reservar | 7 días |
-| Anticipación mínima para cancelar | 4 horas |
+| Anticipación mínima para cancelar | 1.5 horas |
 | Protección contra desplazamiento | 24 horas |
 
 ### Flujo de Registro
@@ -805,8 +806,8 @@ USING (
 
 **Funciones principales:**
 - `obtenerPartidasActivas()` - Partidas con estado 'buscando'
-- `obtenerMisPartidas(userId)` - Partidas creadas por el usuario
-- `obtenerPartidasApuntado(userId)` - Partidas donde el usuario está inscrito
+- `obtenerMisPartidas(userId)` - Partidas creadas por el usuario (solo futuras)
+- `obtenerPartidasApuntado(userId)` - Partidas donde el usuario está inscrito (solo futuras)
 - `crearPartida(partidaData)` - Crea partida con jugadores iniciales
 - `solicitarUnirse(partidaId, usuario)` - Envía solicitud (estado 'pendiente')
 - `aceptarSolicitud(usuarioId, partidaId, creadorId)` - Acepta solicitud
