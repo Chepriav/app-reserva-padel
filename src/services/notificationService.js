@@ -3,6 +3,7 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { supabase } from './supabaseConfig';
 import { webPushService } from './webPushService';
+import { tablonService } from './tablonService';
 
 // Configurar comportamiento de notificaciones cuando la app está en primer plano (solo móvil)
 if (Platform.OS !== 'web') {
@@ -372,6 +373,30 @@ export const notificationService = {
     const title = 'Reserva desplazada';
     const body = `La reserva del ${reservaInfo.fecha} a las ${reservaInfo.horaInicio} en ${reservaInfo.pistaNombre} ha sido desplazada.`;
 
+    // Obtener usuarios de la vivienda para crear notificaciones en el tablón
+    try {
+      const { data: usuarios } = await supabase
+        .from('users')
+        .select('id')
+        .eq('vivienda', vivienda)
+        .eq('estado_aprobacion', 'aprobado');
+
+      if (usuarios?.length) {
+        await Promise.all(
+          usuarios.map((u) =>
+            tablonService.crearNotificacion(u.id, 'desplazamiento', title, body, {
+              reservaId: reservaInfo.reservaId,
+              fecha: reservaInfo.fecha,
+              horaInicio: reservaInfo.horaInicio,
+              pistaNombre: reservaInfo.pistaNombre,
+            })
+          )
+        );
+      }
+    } catch (error) {
+      console.error('[Notificaciones] Error creando notificaciones de desplazamiento en tablón:', error);
+    }
+
     return await this.notifyViviendaMembers(vivienda, title, body, {
       type: 'reservation_displacement',
       ...reservaInfo,
@@ -388,9 +413,16 @@ export const notificationService = {
     const tipo = esClase ? 'clase' : 'partida';
     const title = esClase ? 'Nueva solicitud de clase' : 'Nueva solicitud de partida';
     const body = `${solicitanteNombre} quiere unirse a tu ${tipo}${partidaInfo.fecha ? ` del ${partidaInfo.fecha}` : ''}.`;
+    const notifType = esClase ? 'clase_solicitud' : 'partida_solicitud';
+
+    // Crear notificación en el tablón
+    await tablonService.crearNotificacion(creadorId, notifType, title, body, {
+      partidaId: partidaInfo.partidaId,
+      solicitanteNombre,
+    });
 
     return await this.sendPushToUser(creadorId, title, body, {
-      type: esClase ? 'clase_solicitud' : 'partida_solicitud',
+      type: notifType,
       partidaId: partidaInfo.partidaId,
     });
   },
@@ -404,9 +436,16 @@ export const notificationService = {
     const body = esClase
       ? `${creadorNombre} te ha confirmado en su clase${partidaInfo.fecha ? ` del ${partidaInfo.fecha}` : ''}.`
       : `${creadorNombre} te ha aceptado en su partida${partidaInfo.fecha ? ` del ${partidaInfo.fecha}` : ''}.`;
+    const notifType = esClase ? 'clase_aceptada' : 'partida_aceptada';
+
+    // Crear notificación en el tablón
+    await tablonService.crearNotificacion(usuarioId, notifType, title, body, {
+      partidaId: partidaInfo.partidaId,
+      creadorNombre,
+    });
 
     return await this.sendPushToUser(usuarioId, title, body, {
-      type: esClase ? 'clase_aceptada' : 'partida_aceptada',
+      type: notifType,
       partidaId: partidaInfo.partidaId,
     });
   },
@@ -416,6 +455,7 @@ export const notificationService = {
    */
   async notifyPartidaCompleta(jugadoresIds, creadorNombre, partidaInfo) {
     const esClase = partidaInfo.esClase || false;
+    const notifType = esClase ? 'partida_completa' : 'partida_completa';
 
     let title, body;
 
@@ -430,6 +470,16 @@ export const notificationService = {
         ? `La partida de ${creadorNombre} para el ${partidaInfo.fecha} ya tiene 4 jugadores. ¡A jugar!`
         : `La partida de ${creadorNombre} ya tiene 4 jugadores. ¡A jugar!`;
     }
+
+    // Crear notificaciones en el tablón para todos los jugadores
+    await Promise.all(
+      jugadoresIds.map((userId) =>
+        tablonService.crearNotificacion(userId, notifType, title, body, {
+          partidaId: partidaInfo.partidaId,
+          creadorNombre,
+        })
+      )
+    );
 
     const results = await Promise.all(
       jugadoresIds.map((userId) =>
@@ -453,11 +503,22 @@ export const notificationService = {
     const body = partidaInfo.fecha
       ? `La ${tipo} de ${creadorNombre} del ${partidaInfo.fecha} ha sido cancelada.`
       : `La ${tipo} de ${creadorNombre} ha sido cancelada.`;
+    const notifType = esClase ? 'clase_cancelada' : 'partida_cancelada';
+
+    // Crear notificaciones en el tablón para todos los jugadores
+    await Promise.all(
+      jugadoresIds.map((userId) =>
+        tablonService.crearNotificacion(userId, notifType, title, body, {
+          partidaId: partidaInfo.partidaId,
+          creadorNombre,
+        })
+      )
+    );
 
     const results = await Promise.all(
       jugadoresIds.map((userId) =>
         this.sendPushToUser(userId, title, body, {
-          type: esClase ? 'clase_cancelada' : 'partida_cancelada',
+          type: notifType,
           partidaId: partidaInfo.partidaId,
         })
       )
@@ -478,6 +539,7 @@ export const notificationService = {
     const esClase = partidaInfo.esClase || false;
     const tipo = esClase ? 'clase' : 'partida';
     const emoji = esClase ? '📚' : '🎾';
+    const notifType = esClase ? 'clase_cancelada_reserva' : 'partida_cancelada_reserva';
 
     let title, body;
 
@@ -491,10 +553,20 @@ export const notificationService = {
         : `La reserva de la ${tipo} de ${creadorNombre} ha sido cancelada.`;
     }
 
+    // Crear notificaciones en el tablón para todos los jugadores
+    await Promise.all(
+      jugadoresIds.map((userId) =>
+        tablonService.crearNotificacion(userId, notifType, title, body, {
+          creadorNombre,
+          motivo,
+        })
+      )
+    );
+
     const results = await Promise.all(
       jugadoresIds.map((userId) =>
         this.sendPushToUser(userId, title, body, {
-          type: esClase ? 'clase_cancelada_reserva' : 'partida_cancelada_reserva',
+          type: notifType,
           motivo,
         })
       )
