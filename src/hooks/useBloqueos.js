@@ -2,8 +2,8 @@ import { useState, useCallback, useEffect } from 'react';
 import { reservasService } from '../services/reservasService.supabase';
 
 /**
- * Hook para gestionar el bloqueo/desbloqueo de horarios (solo admin)
- * Maneja la selección múltiple y las operaciones de bloqueo
+ * Hook to manage schedule blockouts (admin only)
+ * Handles multi-selection and blockout operations
  */
 export function useBloqueos({ pistaSeleccionada, userId, mostrarAlerta, onRecargarHorarios }) {
   const [modoBloqueo, setModoBloqueo] = useState(false);
@@ -12,7 +12,7 @@ export function useBloqueos({ pistaSeleccionada, userId, mostrarAlerta, onRecarg
   const [modalBloqueo, setModalBloqueo] = useState({ visible: false, motivo: '' });
   const [procesando, setProcesando] = useState(false);
 
-  // Limpiar selección al desactivar modo bloqueo
+  // Clear selection when blockout mode is deactivated
   useEffect(() => {
     if (!modoBloqueo) {
       setBloquesABloquear([]);
@@ -20,7 +20,7 @@ export function useBloqueos({ pistaSeleccionada, userId, mostrarAlerta, onRecarg
     }
   }, [modoBloqueo]);
 
-  // Toggle selección para bloquear
+  // Toggle selection for blocking
   const toggleBloqueABloquear = useCallback((horario, fecha) => {
     const yaSeleccionado = bloquesABloquear.some(b =>
       b.fecha === fecha && b.horaInicio === horario.horaInicio
@@ -39,7 +39,7 @@ export function useBloqueos({ pistaSeleccionada, userId, mostrarAlerta, onRecarg
     }
   }, [bloquesABloquear]);
 
-  // Toggle selección para desbloquear
+  // Toggle selection for unblocking
   const toggleBloqueADesbloquear = useCallback((horario, fecha) => {
     const yaSeleccionado = bloquesADesbloquear.some(b =>
       b.fecha === fecha && b.horaInicio === horario.horaInicio
@@ -59,28 +59,28 @@ export function useBloqueos({ pistaSeleccionada, userId, mostrarAlerta, onRecarg
     }
   }, [bloquesADesbloquear]);
 
-  // Limpiar toda la selección
+  // Clear all selection
   const limpiarSeleccionBloqueo = useCallback(() => {
     setBloquesABloquear([]);
     setBloquesADesbloquear([]);
   }, []);
 
-  // Abrir modal de bloqueo
+  // Open blockout modal
   const abrirModalBloqueo = useCallback(() => {
     setModalBloqueo({ visible: true, motivo: '' });
   }, []);
 
-  // Cerrar modal de bloqueo
+  // Close blockout modal
   const cerrarModalBloqueo = useCallback(() => {
     setModalBloqueo({ visible: false, motivo: '' });
   }, []);
 
-  // Actualizar motivo del modal
+  // Update modal reason
   const setMotivoBloqueo = useCallback((motivo) => {
     setModalBloqueo(prev => ({ ...prev, motivo }));
   }, []);
 
-  // Crear bloqueos múltiples
+  // Create multiple blockouts
   const crearBloqueos = useCallback(async () => {
     if (bloquesABloquear.length === 0 || !pistaSeleccionada) return;
 
@@ -121,7 +121,7 @@ export function useBloqueos({ pistaSeleccionada, userId, mostrarAlerta, onRecarg
     onRecargarHorarios();
   }, [bloquesABloquear, pistaSeleccionada, userId, modalBloqueo.motivo, mostrarAlerta, cerrarModalBloqueo, onRecargarHorarios]);
 
-  // Eliminar bloqueos múltiples
+  // Delete multiple blockouts
   const eliminarBloqueos = useCallback(async () => {
     if (bloquesADesbloquear.length === 0) return;
 
@@ -153,7 +153,7 @@ export function useBloqueos({ pistaSeleccionada, userId, mostrarAlerta, onRecarg
     onRecargarHorarios();
   }, [bloquesADesbloquear, mostrarAlerta, onRecargarHorarios]);
 
-  // Mostrar motivo de bloqueo
+  // Show blockout reason
   const handleTapBloqueado = useCallback((horario) => {
     mostrarAlerta(
       '🔒 Horario Bloqueado',

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/authService.supabase';
 
 /**
- * Hook para cargar y gestionar datos del panel admin
+ * Hook to load and manage admin panel data
  */
 export function useAdminData() {
   const [usuariosPendientes, setUsuariosPendientes] = useState([]);
@@ -58,7 +58,7 @@ export function useAdminData() {
     setRefreshing(false);
   }, [cargarTodosDatos]);
 
-  // Funciones para actualizar estado local
+  // Functions to update local state
   const removeUsuarioPendiente = useCallback((userId) => {
     setUsuariosPendientes((prev) => prev.filter((u) => u.id !== userId));
   }, []);

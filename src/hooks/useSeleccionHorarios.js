@@ -1,13 +1,13 @@
 import { useState, useCallback } from 'react';
 
 /**
- * Hook para gestionar la selección de bloques horarios para reservar
- * Maneja la lógica de selección múltiple y validación de consecutividad
+ * Hook to manage time slot selection for reservations
+ * Handles multi-selection logic and consecutiveness validation
  */
 export function useSeleccionHorarios({ mostrarAlerta }) {
   const [bloquesSeleccionados, setBloquesSeleccionados] = useState([]);
 
-  // Validar que los bloques sean consecutivos
+  // Validate that blocks are consecutive
   const sonBloquesConsecutivos = useCallback((bloques) => {
     if (bloques.length <= 1) return true;
 
@@ -29,7 +29,7 @@ export function useSeleccionHorarios({ mostrarAlerta }) {
     return true;
   }, []);
 
-  // Seleccionar/deseleccionar un bloque horario
+  // Select/deselect a time slot
   const toggleBloqueSeleccionado = useCallback((horario, fechaReserva) => {
     const yaSeleccionado = bloquesSeleccionados.some(b =>
       b.fecha === fechaReserva && b.horaInicio === horario.horaInicio
@@ -71,7 +71,7 @@ export function useSeleccionHorarios({ mostrarAlerta }) {
     setBloquesSeleccionados([]);
   }, []);
 
-  // Obtener datos de la reserva ordenados
+  // Get sorted reservation data
   const getDatosReserva = useCallback(() => {
     if (bloquesSeleccionados.length === 0) return null;
 

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { esFechaValida } from '../utils/dateHelpers';
 
 /**
- * Hook para gestionar la carga de horarios (día y semana)
+ * Hook to manage schedule loading (day and week views)
  */
 export function useHorarios({
   pistaSeleccionada,
@@ -16,7 +16,7 @@ export function useHorarios({
   const [horariosSemanales, setHorariosSemanales] = useState({});
   const [loadingHorarios, setLoadingHorarios] = useState(false);
 
-  // Cargar horarios del día
+  // Load day schedules
   const cargarHorarios = useCallback(async () => {
     if (!pistaSeleccionada) return;
 
@@ -48,7 +48,7 @@ export function useHorarios({
     }
   }, [pistaSeleccionada, fechaSeleccionada, obtenerDisponibilidad, mostrarAlerta]);
 
-  // Cargar horarios de la semana
+  // Load week schedules
   const cargarHorariosSemana = useCallback(async () => {
     if (!pistaSeleccionada) return;
 
@@ -88,7 +88,7 @@ export function useHorarios({
     }
   }, [pistaSeleccionada, fechaSeleccionada, obtenerDisponibilidad, mostrarAlerta]);
 
-  // Recargar horarios según la vista actual
+  // Reload schedules based on current view
   const recargarHorarios = useCallback(() => {
     if (vistaActual === 'dia') {
       cargarHorarios();
@@ -97,7 +97,7 @@ export function useHorarios({
     }
   }, [vistaActual, cargarHorarios, cargarHorariosSemana]);
 
-  // Efecto para cargar horarios cuando cambian las dependencias
+  // Effect to load schedules when dependencies change
   useEffect(() => {
     if (pistaSeleccionada) {
       if (vistaActual === 'dia') {

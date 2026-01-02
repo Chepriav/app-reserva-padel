@@ -5,7 +5,7 @@ import { notificationService } from './notificationService';
 import { partidasService } from './partidasService';
 
 /**
- * Convierte tiempo en formato HH:MM a minutos totales
+ * Converts time in HH:MM format to total minutes
  */
 const timeToMinutes = (time) => {
   const [hours, minutes] = time.split(':').map(Number);
@@ -13,7 +13,7 @@ const timeToMinutes = (time) => {
 };
 
 /**
- * Verifica si dos rangos de tiempo se solapan
+ * Checks if two time ranges overlap
  */
 const rangesOverlap = (start1, end1, start2, end2) => {
   return (start1 >= start2 && start1 < end2) ||
@@ -22,7 +22,7 @@ const rangesOverlap = (start1, end1, start2, end2) => {
 };
 
 /**
- * Límites de reserva (desde config.js)
+ * Reservation limits (from config.js)
  */
 const LIMITS = {
   MIN_HOURS_ADVANCE: LIMITES_RESERVA.horasAnticipacionMinima,
@@ -32,7 +32,7 @@ const LIMITS = {
 };
 
 /**
- * Convierte snake_case a camelCase para reservas
+ * Converts snake_case to camelCase for reservations
  */
 const mapReservaToCamelCase = (data) => {
   if (!data) return null;
@@ -48,9 +48,9 @@ const mapReservaToCamelCase = (data) => {
     horaFin: data.hora_fin,
     duracion: data.duracion,
     estado: data.estado,
-    prioridad: data.prioridad || 'primera', // 'primera' (garantizada) o 'segunda' (provisional)
+    prioridad: data.prioridad || 'primera', // 'primera' (guaranteed) or 'segunda' (provisional)
     jugadores: data.jugadores || [],
-    // Campos de conversión automática P->G
+    // Automatic P->G conversion fields
     conversionTimestamp: data.conversion_timestamp,
     conversionRule: data.conversion_rule,
     convertedAt: data.converted_at,
@@ -60,7 +60,7 @@ const mapReservaToCamelCase = (data) => {
 };
 
 /**
- * Convierte snake_case a camelCase para pistas
+ * Converts snake_case to camelCase for courts
  */
 const mapPistaToCamelCase = (data) => {
   if (!data) return null;
@@ -75,13 +75,13 @@ const mapPistaToCamelCase = (data) => {
 };
 
 /**
- * Servicio de reservas con Supabase
+ * Reservations service with Supabase
  */
 export const reservasService = {
   /**
-   * Obtiene la lista de pistas disponibles
+   * Gets the list of available courts
    */
-  async obtenerPistas() {
+  async getCourts() {
     try {
       const { data, error } = await supabase
         .from('pistas')
@@ -101,9 +101,9 @@ export const reservasService = {
   },
 
   /**
-   * Obtiene las reservas de un usuario específico
+   * Gets reservations for a specific user
    */
-  async obtenerReservasUsuario(userId) {
+  async getUserReservations(userId) {
     try {
       const { data, error } = await supabase
         .from('reservas')
@@ -126,9 +126,9 @@ export const reservasService = {
   },
 
   /**
-   * Obtiene las reservas de una vivienda específica
+   * Gets reservations for a specific apartment
    */
-  async obtenerReservasPorVivienda(vivienda) {
+  async getReservationsByApartment(vivienda) {
     try {
       const { data, error } = await supabase
         .from('reservas')
@@ -138,7 +138,7 @@ export const reservasService = {
         .order('hora_inicio', { ascending: false });
 
       if (error) {
-        // Si la columna vivienda no existe, devolver array vacío
+        // If the apartment column doesn't exist, return empty array
         if (error.code === '42703' || error.message?.includes('vivienda')) {
           return { success: true, data: [] };
         }
@@ -155,9 +155,9 @@ export const reservasService = {
   },
 
   /**
-   * Obtiene las reservas confirmadas para una fecha específica
+   * Gets confirmed reservations for a specific date
    */
-  async obtenerReservasPorFecha(fecha) {
+  async getReservationsByDate(fecha) {
     try {
       const { data, error } = await supabase
         .from('reservas')
@@ -179,16 +179,16 @@ export const reservasService = {
   },
 
   /**
-   * Obtiene la disponibilidad de horarios para una pista en una fecha
-   * Incluye información de prioridad para el sistema de reservas primera/segunda
-   * Aplica conversión automática P→G si la vivienda solo tiene 1 reserva futura
-   * Incluye información de bloqueos administrativos
+   * Gets schedule availability for a court on a specific date
+   * Includes priority information for the first/second reservation system
+   * Applies automatic P→G conversion if apartment only has 1 future reservation
+   * Includes administrative blockout information
    */
-  async obtenerDisponibilidad(pistaId, fecha) {
+  async getAvailability(pistaId, fecha) {
     try {
       console.log('[obtenerDisponibilidad] Consultando pista:', pistaId, 'fecha:', fecha);
 
-      // Obtener reservas y bloqueos en paralelo
+      // Get reservations and blockouts in parallel
       const [reservasResult, bloqueosResult] = await Promise.all([
         supabase
           .from('reservas')
@@ -196,7 +196,7 @@ export const reservasService = {
           .eq('pista_id', pistaId)
           .eq('fecha', fecha)
           .eq('estado', 'confirmada'),
-        this.obtenerBloqueos(pistaId, fecha),
+        this.getBlockouts(pistaId, fecha),
       ]);
 
       const { data, error } = reservasResult;
@@ -213,15 +213,15 @@ export const reservasService = {
 
       let reservasExistentes = data.map(mapReservaToCamelCase);
 
-      // Aplicar conversión automática P→G para cada vivienda que tenga reservas
-      // Si una vivienda solo tiene 1 reserva futura confirmada, esa es garantizada
+      // Apply automatic P→G conversion for each apartment with reservations
+      // If an apartment only has 1 confirmed future reservation, that one is guaranteed
       const viviendasConReservas = [...new Set(reservasExistentes.map(r => r.vivienda))];
 
       for (const vivienda of viviendasConReservas) {
-        // Obtener TODAS las reservas futuras de esta vivienda
-        const reservasFuturasVivienda = await this.obtenerReservasActivasVivienda(vivienda);
+        // Get ALL future reservations for this apartment
+        const reservasFuturasVivienda = await this.getActiveApartmentReservations(vivienda);
 
-        // Si solo tiene 1 reserva futura, convertirla a garantizada
+        // If only has 1 future reservation, convert to guaranteed
         if (reservasFuturasVivienda.length === 1) {
           reservasExistentes = reservasExistentes.map(r => {
             if (r.vivienda === vivienda) {
@@ -230,10 +230,10 @@ export const reservasService = {
             return r;
           });
         } else if (reservasFuturasVivienda.length > 1) {
-          // Si tiene más de 1, verificar si hay garantizadas
+          // If has more than 1, check if there are guaranteed ones
           const garantizadas = reservasFuturasVivienda.filter(r => r.prioridad === 'primera');
           if (garantizadas.length === 0) {
-            // No hay garantizadas, la más próxima se convierte
+            // No guaranteed ones, the nearest one gets converted
             const ordenadas = [...reservasFuturasVivienda].sort((a, b) => {
               const fechaA = new Date(a.fecha + 'T' + a.horaInicio);
               const fechaB = new Date(b.fecha + 'T' + b.horaInicio);
@@ -257,14 +257,14 @@ export const reservasService = {
         const bloqueInicioMin = timeToMinutes(horario.horaInicio);
         const bloqueFinMin = timeToMinutes(horario.horaFin);
 
-        // Verificar si el bloque está bloqueado por admin
+        // Check if slot is blocked by admin
         const bloqueoConflicto = bloqueos.find((bloqueo) => {
           const bloqueoInicioMin = timeToMinutes(bloqueo.horaInicio);
           const bloqueoFinMin = timeToMinutes(bloqueo.horaFin);
           return rangesOverlap(bloqueInicioMin, bloqueFinMin, bloqueoInicioMin, bloqueoFinMin);
         });
 
-        // Si está bloqueado, retornar estado de bloqueo
+        // If blocked, return blockout status
         if (bloqueoConflicto) {
           return {
             horaInicio: horario.horaInicio,
@@ -286,13 +286,13 @@ export const reservasService = {
           return rangesOverlap(bloqueInicioMin, bloqueFinMin, reservaInicioMin, reservaFinMin);
         });
 
-        // Calcular si la reserva está protegida (< 24h antes)
+        // Calculate if reservation is protected (< 24h before)
         let estaProtegida = false;
         let esDesplazable = false;
         if (reservaConflicto) {
           const horasRestantes = horasHasta(fecha, horario.horaInicio);
           estaProtegida = horasRestantes < 24;
-          // Es desplazable si es segunda prioridad Y faltan 24h o más
+          // Is displaceable if second priority AND 24h or more remaining
           esDesplazable = reservaConflicto.prioridad === 'segunda' && !estaProtegida;
         }
 
@@ -304,7 +304,7 @@ export const reservasService = {
           bloqueoId: null,
           motivoBloqueo: null,
           reservaExistente: reservaConflicto || null,
-          // Nuevos campos para sistema de prioridades
+          // New fields for priority system
           prioridad: reservaConflicto?.prioridad || null,
           esDesplazable,
           estaProtegida,
@@ -318,11 +318,11 @@ export const reservasService = {
   },
 
   /**
-   * Obtiene las reservas activas futuras de una vivienda
+   * Gets active future reservations for an apartment
    */
-  async obtenerReservasActivasVivienda(vivienda) {
+  async getActiveApartmentReservations(vivienda) {
     try {
-      const reservasVivienda = await this.obtenerReservasPorVivienda(vivienda);
+      const reservasVivienda = await this.getReservationsByApartment(vivienda);
 
       if (!reservasVivienda.success) {
         return [];
@@ -344,30 +344,30 @@ export const reservasService = {
   },
 
   /**
-   * Determina qué prioridad tendrá una nueva reserva
-   * basándose en las reservas activas de la vivienda
+   * Determines what priority a new reservation will have
+   * based on the apartment's active reservations
    */
-  async obtenerPrioridadParaNuevaReserva(vivienda) {
+  async getPriorityForNewReservation(vivienda) {
     try {
-      const reservasActivas = await this.obtenerReservasActivasVivienda(vivienda);
+      const reservasActivas = await this.getActiveApartmentReservations(vivienda);
 
       if (reservasActivas.length === 0) {
-        return 'primera'; // Sin reservas = primera garantizada
+        return 'primera'; // No reservations = first guaranteed
       }
       if (reservasActivas.length === 1) {
-        return 'segunda'; // Ya tiene una = segunda provisional
+        return 'segunda'; // Already has one = second provisional
       }
-      return null; // Ya tiene 2 = no puede reservar más
+      return null; // Already has 2 = can't reserve more
     } catch (error) {
-      // En caso de error, asumir que puede reservar como primera
+      // In case of error, assume can reserve as first
       return 'primera';
     }
   },
 
   /**
-   * Desplaza (cancela) una reserva secundaria y crea notificación
+   * Displaces (cancels) a secondary reservation and creates notification
    */
-  async desplazarReserva(reservaADesplazar, viviendaDesplazadora) {
+  async displaceReservation(reservaADesplazar, viviendaDesplazadora) {
     console.log('[desplazarReserva] Iniciando...', {
       id: reservaADesplazar.id,
       viviendaOriginal: reservaADesplazar.vivienda,
@@ -377,7 +377,7 @@ export const reservasService = {
     });
 
     try {
-      // 1. Cancelar la reserva existente
+      // 1. Cancel the existing reservation
       const { data: updateData, error: cancelError } = await supabase
         .from('reservas')
         .update({
@@ -392,11 +392,11 @@ export const reservasService = {
         return { success: false, error: 'Error al desplazar la reserva' };
       }
 
-      // Verificar que realmente se actualizó
+      // Verify it was actually updated
       console.log('[desplazarReserva] Resultado UPDATE:', updateData);
       if (!updateData || updateData.length === 0) {
         console.error('[desplazarReserva] UPDATE no afectó ninguna fila - posible problema de RLS');
-        // Intentar verificar el estado actual de la reserva
+        // Try to verify current reservation status
         const { data: checkData } = await supabase
           .from('reservas')
           .select('id, estado, vivienda')
@@ -407,7 +407,7 @@ export const reservasService = {
       }
       console.log('[desplazarReserva] Reserva cancelada en BD OK, nuevo estado:', updateData[0]?.estado);
 
-      // 2. Crear notificación para el usuario desplazado
+      // 2. Create notification for displaced user
       const { error: notifError } = await supabase
         .from('notificaciones_desplazamiento')
         .insert({
@@ -422,12 +422,12 @@ export const reservasService = {
 
       if (notifError) {
         console.error('[desplazarReserva] Error creando notificación:', notifError);
-        // No fallamos aquí, la notificación no es crítica
+        // Don't fail here, notification is not critical
       } else {
         console.log('[desplazarReserva] Notificación creada OK');
       }
 
-      // 3. Enviar push notification a TODOS los usuarios de la vivienda desplazada
+      // 3. Send push notification to ALL users of the displaced apartment
       notificationService.notifyViviendaDisplacement(reservaADesplazar.vivienda, {
         fecha: formatearFechaLegible(reservaADesplazar.fecha),
         horaInicio: reservaADesplazar.horaInicio,
@@ -435,7 +435,7 @@ export const reservasService = {
       });
       console.log('[desplazarReserva] Push notification enviada a vivienda:', reservaADesplazar.vivienda);
 
-      // 4. Cancelar partida vinculada si existe
+      // 4. Cancel linked match if exists
       const partidaResult = await partidasService.cancelarPartidaPorReserva(
         reservaADesplazar.id,
         'reserva_desplazada'
@@ -452,35 +452,35 @@ export const reservasService = {
   },
 
   /**
-   * Crea una nueva reserva con validaciones de negocio
-   * El límite de reservas se aplica por vivienda, no por usuario
-   * Soporta desplazamiento de reservas secundarias
+   * Creates a new reservation with business validations
+   * Reservation limit applies per apartment, not per user
+   * Supports displacement of secondary reservations
    *
-   * Intenta usar el RPC (crear_reserva_con_prioridad) para manejar
-   * automáticamente la prioridad y conversiones P->G.
-   * Si el RPC no existe, usa el método de fallback.
+   * Attempts to use RPC (crear_reserva_con_prioridad) to automatically
+   * handle priority and P->G conversions.
+   * If RPC doesn't exist, uses fallback method.
    */
-  async crearReserva(reservaData) {
+  async createReservation(reservaData) {
     try {
       const { pistaId, usuarioId, usuarioNombre, vivienda, fecha, horaInicio, horaFin, jugadores = [], forzarDesplazamiento = false } = reservaData;
 
-      // Primero intentar crear con RPC (si no hay desplazamiento pendiente)
+      // First try to create with RPC (if no pending displacement)
       if (!forzarDesplazamiento) {
-        const rpcResult = await this.crearReservaConRPC(reservaData);
+        const rpcResult = await this.createReservationWithRPC(reservaData);
 
-        // Si el RPC funcionó, devolver resultado
+        // If RPC worked, return result
         if (rpcResult.success) {
           return rpcResult;
         }
 
-        // Si el RPC no existe, continuar con método fallback
-        // Si hay otro error del RPC, devolverlo
+        // If RPC doesn't exist, continue with fallback method
+        // If there's another RPC error, return it
         if (!rpcResult.rpcNotFound) {
           return rpcResult;
         }
       }
 
-      // Validar que la vivienda esté presente
+      // Validate that apartment is present
       if (!vivienda) {
         return {
           success: false,
@@ -488,7 +488,7 @@ export const reservasService = {
         };
       }
 
-      // Validar anticipación mínima
+      // Validate minimum advance
       const horasAntes = horasHasta(fecha, horaInicio);
       if (horasAntes < LIMITS.MIN_HOURS_ADVANCE) {
         return {
@@ -497,7 +497,7 @@ export const reservasService = {
         };
       }
 
-      // Validar anticipación máxima
+      // Validate maximum advance
       const diasAntes = horasAntes / 24;
       if (diasAntes > LIMITS.MAX_DAYS_ADVANCE) {
         return {
@@ -506,15 +506,15 @@ export const reservasService = {
         };
       }
 
-      // Verificar disponibilidad del horario
-      const disponibilidad = await this.obtenerDisponibilidad(pistaId, fecha);
+      // Check schedule availability
+      const disponibilidad = await this.getAvailability(pistaId, fecha);
       if (!disponibilidad.success) {
         return disponibilidad;
       }
 
       const horarioSeleccionado = disponibilidad.data.find((h) => h.horaInicio === horaInicio);
 
-      // Buscar todos los bloques que se van a reservar (desde horaInicio hasta horaFin)
+      // Find all slots to be reserved (from start time to end time)
       const bloquesAReservar = disponibilidad.data.filter((h) => {
         const bloqueMin = timeToMinutes(h.horaInicio);
         const reservaInicioMin = timeToMinutes(horaInicio);
@@ -522,13 +522,13 @@ export const reservasService = {
         return bloqueMin >= reservaInicioMin && bloqueMin < reservaFinMin;
       });
 
-      // Fase 1: Validar bloques y recopilar reservas ÚNICAS a desplazar
-      // (Una reserva puede ocupar múltiples bloques, evitamos desplazarla varias veces)
+      // Phase 1: Validate slots and collect UNIQUE reservations to displace
+      // (A reservation can occupy multiple slots, we avoid displacing it multiple times)
       const reservasADesplazar = new Map();
 
       for (const bloque of bloquesAReservar) {
         if (!bloque.disponible) {
-          // Verificar si es desplazable
+          // Check if it's displaceable
           if (!bloque.esDesplazable) {
             return {
               success: false,
@@ -536,17 +536,17 @@ export const reservasService = {
             };
           }
 
-          // Verificar que no sea de la misma vivienda
+          // Verify it's not from the same apartment
           if (bloque.reservaExistente?.vivienda === vivienda) {
             return { success: false, error: 'Tu vivienda ya tiene una reserva a esta hora' };
           }
 
-          // Agregar a Map solo si no existe ya (deduplicar por id)
+          // Add to Map only if doesn't exist (deduplicate by id)
           if (bloque.reservaExistente && !reservasADesplazar.has(bloque.reservaExistente.id)) {
             reservasADesplazar.set(bloque.reservaExistente.id, bloque.reservaExistente);
           }
 
-          // Si no hay confirmación de desplazamiento, pedir confirmación
+          // If no displacement confirmation, request confirmation
           if (!forzarDesplazamiento) {
             return {
               success: false,
@@ -558,12 +558,12 @@ export const reservasService = {
         }
       }
 
-      // Fase 2: Desplazar cada reserva UNA SOLA VEZ
+      // Phase 2: Displace each reservation ONLY ONCE
       if (forzarDesplazamiento && reservasADesplazar.size > 0) {
         console.log('[crearReserva] Reservas a desplazar:', reservasADesplazar.size);
         for (const [id, reserva] of reservasADesplazar) {
           console.log('[crearReserva] Desplazando reserva:', id, 'vivienda:', reserva.vivienda);
-          const resultadoDesplazamiento = await this.desplazarReserva(reserva, vivienda);
+          const resultadoDesplazamiento = await this.displaceReservation(reserva, vivienda);
 
           if (!resultadoDesplazamiento.success) {
             console.error('[crearReserva] Error al desplazar:', resultadoDesplazamiento.error);
@@ -573,15 +573,15 @@ export const reservasService = {
         }
       }
 
-      // Determinar prioridad de la nueva reserva
-      // Si es un desplazamiento, la reserva es SIEMPRE garantizada (primera)
-      // porque estás tomando el slot de una reserva provisional de otra vivienda
+      // Determine priority for the new reservation
+      // If it's a displacement, the reservation is ALWAYS guaranteed (first)
+      // because you're taking the slot from another apartment's provisional reservation
       let prioridad;
       if (forzarDesplazamiento) {
         prioridad = 'primera';
         console.log('[crearReserva] Desplazamiento: prioridad forzada a "primera"');
       } else {
-        prioridad = await this.obtenerPrioridadParaNuevaReserva(vivienda);
+        prioridad = await this.getPriorityForNewReservation(vivienda);
         console.log('[crearReserva] Prioridad calculada:', prioridad);
       }
 
@@ -593,14 +593,14 @@ export const reservasService = {
         };
       }
 
-      // Verificar conflicto de horario (de cualquier miembro de la vivienda)
-      const reservasActivas = await this.obtenerReservasActivasVivienda(vivienda);
+      // Check schedule conflict (from any apartment member)
+      const reservasActivas = await this.getActiveApartmentReservations(vivienda);
       const conflicto = reservasActivas.find((r) => r.fecha === fecha && r.horaInicio === horaInicio);
       if (conflicto) {
         return { success: false, error: 'Tu vivienda ya tiene una reserva a esta hora' };
       }
 
-      // Obtener nombre de pista
+      // Get court name
       const { data: pistaData } = await supabase
         .from('pistas')
         .select('nombre')
@@ -609,11 +609,11 @@ export const reservasService = {
 
       const pistaNombre = pistaData?.nombre || 'Pista';
 
-      // Calcular duración en minutos
+      // Calculate duration in minutes
       const duracion = timeToMinutes(horaFin) - timeToMinutes(horaInicio);
 
-      // Crear reserva con prioridad
-      // Preparar datos base de la reserva
+      // Create reservation with priority
+      // Prepare base reservation data
       const reservaInsert = {
         pista_id: pistaId,
         pista_nombre: pistaNombre,
@@ -628,7 +628,7 @@ export const reservasService = {
         jugadores: jugadores || [],
       };
 
-      // Intentar con prioridad primero
+      // Try with priority first
       console.log('[crearReserva] Insertando reserva con prioridad:', prioridad);
       let { data, error } = await supabase
         .from('reservas')
@@ -636,7 +636,7 @@ export const reservasService = {
         .select()
         .single();
 
-      // Si falla por la columna prioridad, intentar sin ella
+      // If fails due to priority column, try without it
       if (error) {
         console.error('[crearReserva] Error al insertar:', error);
         if (error.message?.includes('prioridad') || error.code === '42703') {
@@ -670,9 +670,9 @@ export const reservasService = {
   },
 
   /**
-   * Cancela una reserva existente
+   * Cancels an existing reservation
    */
-  async cancelarReserva(reservaId, usuarioId, viviendaUsuario = null) {
+  async cancelReservation(reservaId, usuarioId, viviendaUsuario = null) {
     try {
       // Obtener la reserva
       const { data: reserva, error: getError } = await supabase
@@ -685,8 +685,8 @@ export const reservasService = {
         return { success: false, error: 'Reserva no encontrada' };
       }
 
-      // Verificar pertenencia a la vivienda (cualquier usuario de la vivienda puede cancelar)
-      // Si se pasa viviendaUsuario, validar por vivienda; sino, mantener compatibilidad con validación por usuario
+      // Verify apartment membership (any user from the apartment can cancel)
+      // If viviendaUsuario is passed, validate by apartment; otherwise, maintain compatibility with user validation
       if (viviendaUsuario) {
         if (reserva.vivienda !== viviendaUsuario) {
           return { success: false, error: 'Solo puedes cancelar reservas de tu vivienda' };
@@ -695,12 +695,12 @@ export const reservasService = {
         return { success: false, error: 'No puedes cancelar una reserva que no es tuya' };
       }
 
-      // Verificar estado
+      // Verify status
       if (reserva.estado !== 'confirmada') {
         return { success: false, error: 'Esta reserva ya fue cancelada' };
       }
 
-      // Verificar tiempo de anticipación
+      // Verify advance time
       const horasAntes = horasHasta(reserva.fecha, reserva.hora_inicio);
       if (horasAntes < LIMITS.MIN_HOURS_TO_CANCEL) {
         return {
@@ -709,7 +709,7 @@ export const reservasService = {
         };
       }
 
-      // Actualizar estado
+      // Update status
       const { error: updateError } = await supabase
         .from('reservas')
         .update({ estado: 'cancelada' })
@@ -722,7 +722,7 @@ export const reservasService = {
         return { success: false, error: 'Error al cancelar la reserva' };
       }
 
-      // Cancelar partida vinculada si existe
+      // Cancel linked match if exists
       try {
         console.log('[cancelarReserva] Buscando partida vinculada a reserva:', reservaId);
         const partidaResult = await partidasService.cancelarPartidaPorReserva(reservaId, 'reserva_cancelada');
@@ -742,9 +742,9 @@ export const reservasService = {
   },
 
   /**
-   * Obtiene todas las reservas (solo admin)
+   * Gets all reservations (admin only)
    */
-  async obtenerTodasReservas() {
+  async getAllReservations() {
     try {
       const { data, error } = await supabase
         .from('reservas')
@@ -766,9 +766,9 @@ export const reservasService = {
   },
 
   /**
-   * Obtiene estadísticas de reservas (solo admin)
+   * Gets reservation statistics (admin only)
    */
-  async obtenerEstadisticas() {
+  async getStatistics() {
     try {
       const { data, error } = await supabase
         .from('reservas')
@@ -805,9 +805,9 @@ export const reservasService = {
   },
 
   /**
-   * Obtiene notificaciones de desplazamiento no leídas del usuario
+   * Gets unread displacement notifications for user
    */
-  async obtenerNotificacionesPendientes(usuarioId) {
+  async getPendingNotifications(usuarioId) {
     try {
       const { data, error } = await supabase
         .from('notificaciones_desplazamiento')
@@ -817,7 +817,7 @@ export const reservasService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        // Si la tabla no existe, devolver array vacío sin error
+        // If table doesn't exist, return empty array without error
         if (error.code === 'PGRST205' || error.message?.includes('notificaciones_desplazamiento')) {
           return { success: true, data: [] };
         }
@@ -837,14 +837,14 @@ export const reservasService = {
         })),
       };
     } catch (error) {
-      return { success: true, data: [] }; // Devolver vacío en caso de error
+      return { success: true, data: [] }; // Return empty on error
     }
   },
 
   /**
-   * Marca todas las notificaciones del usuario como leídas
+   * Marks all user's notifications as read
    */
-  async marcarNotificacionesLeidas(usuarioId) {
+  async markNotificationsAsRead(usuarioId) {
     try {
       const { error } = await supabase
         .from('notificaciones_desplazamiento')
@@ -853,7 +853,7 @@ export const reservasService = {
         .eq('leida', false);
 
       if (error) {
-        // Si la tabla no existe, ignorar
+        // If table doesn't exist, ignore
         if (error.code === 'PGRST205' || error.message?.includes('notificaciones_desplazamiento')) {
           return { success: true };
         }
@@ -862,28 +862,28 @@ export const reservasService = {
 
       return { success: true };
     } catch (error) {
-      return { success: true }; // No fallar por esto
+      return { success: true }; // Don't fail because of this
     }
   },
 
   // ============================================================================
-  // MÉTODOS RPC - Sistema de Conversión Automática P->G
+  // RPC METHODS - Automatic P->G Conversion System
   // ============================================================================
 
   /**
-   * Crea una reserva usando el RPC que maneja automáticamente:
-   * - Prioridad (primera/segunda)
-   * - Detección de continuidad para conversión inmediata
-   * - Cálculo de tiempo de conversión P->G
+   * Creates a reservation using RPC that automatically handles:
+   * - Priority (first/second)
+   * - Continuity detection for immediate conversion
+   * - P->G conversion time calculation
    */
-  async crearReservaConRPC(reservaData) {
+  async createReservationWithRPC(reservaData) {
     try {
       const { pistaId, usuarioId, usuarioNombre, vivienda, fecha, horaInicio, horaFin, jugadores = [] } = reservaData;
 
-      // Calcular duración
+      // Calculate duration
       const duracion = timeToMinutes(horaFin) - timeToMinutes(horaInicio);
 
-      // Llamar al RPC
+      // Call the RPC
       const { data, error } = await supabase.rpc('crear_reserva_con_prioridad', {
         p_pista_id: pistaId,
         p_usuario_id: usuarioId,
@@ -897,7 +897,7 @@ export const reservasService = {
       });
 
       if (error) {
-        // Si el RPC no existe, devolver indicador para usar fallback
+        // If RPC doesn't exist, return indicator to use fallback
         if (error.code === 'PGRST202' || error.message?.includes('function')) {
           return { success: false, rpcNotFound: true };
         }
@@ -908,7 +908,7 @@ export const reservasService = {
         return { success: false, error: data.error };
       }
 
-      // Obtener la reserva completa
+      // Get the complete reservation
       const { data: reserva } = await supabase
         .from('reservas')
         .select('*')
@@ -928,10 +928,10 @@ export const reservasService = {
   },
 
   /**
-   * Desplaza una reserva provisional y crea una nueva garantizada de forma atómica
-   * Usa el RPC para garantizar atomicidad y evitar race conditions
+   * Displaces a provisional reservation and creates a new guaranteed one atomically
+   * Uses RPC to guarantee atomicity and avoid race conditions
    */
-  async desplazarReservaYCrear(reservaADesplazar, nuevaReservaData) {
+  async displaceAndCreateReservation(reservaADesplazar, nuevaReservaData) {
     try {
       const { pistaId, usuarioId, usuarioNombre, vivienda, fecha, horaInicio, horaFin, jugadores = [] } = nuevaReservaData;
       const duracion = timeToMinutes(horaFin) - timeToMinutes(horaInicio);
@@ -950,7 +950,7 @@ export const reservasService = {
       });
 
       if (error) {
-        // Si el RPC no existe, usar método de fallback
+        // If RPC doesn't exist, use fallback method
         if (error.code === 'PGRST202' || error.message?.includes('function')) {
           return { success: false, rpcNotFound: true };
         }
@@ -961,7 +961,7 @@ export const reservasService = {
         return { success: false, error: data.error };
       }
 
-      // Obtener la nueva reserva
+      // Get the new reservation
       const { data: reserva } = await supabase
         .from('reservas')
         .select('*')
@@ -979,10 +979,10 @@ export const reservasService = {
   },
 
   /**
-   * Obtiene información de conversión para una reserva provisional
-   * Útil para mostrar countdown en la UI
+   * Gets conversion information for a provisional reservation
+   * Useful for showing countdown in the UI
    */
-  async obtenerInfoConversion(reservaId) {
+  async getConversionInfo(reservaId) {
     try {
       const { data, error } = await supabase
         .from('reservas')
@@ -1013,17 +1013,17 @@ export const reservasService = {
   },
 
   /**
-   * Fuerza el recálculo de conversiones para una vivienda
-   * Útil después de cancelar una reserva G
+   * Forces recalculation of conversions for an apartment
+   * Useful after canceling a G reservation
    */
-  async recalcularConversionesVivienda(vivienda) {
+  async recalculateApartmentConversions(vivienda) {
     try {
       const { data, error } = await supabase.rpc('recalculate_vivienda_conversions', {
         p_vivienda: vivienda,
       });
 
       if (error) {
-        // Si el RPC no existe, ignorar silenciosamente
+        // If RPC doesn't exist, ignore silently
         if (error.code === 'PGRST202' || error.message?.includes('function')) {
           return { success: true, data: { updated: 0 } };
         }
@@ -1037,13 +1037,13 @@ export const reservasService = {
   },
 
   // ============================================================================
-  // MÉTODOS DE BLOQUEO DE HORARIOS (Solo Admin)
+  // SCHEDULE BLOCKOUT METHODS (Admin Only)
   // ============================================================================
 
   /**
-   * Obtiene los bloqueos de horarios para una pista en una fecha
+   * Gets schedule blockouts for a court on a specific date
    */
-  async obtenerBloqueos(pistaId, fecha) {
+  async getBlockouts(pistaId, fecha) {
     try {
       const { data, error } = await supabase
         .from('bloqueos_horarios')
@@ -1052,7 +1052,7 @@ export const reservasService = {
         .eq('fecha', fecha);
 
       if (error) {
-        // Si la tabla no existe, devolver array vacío
+        // If table doesn't exist, return empty array
         if (error.code === '42P01' || error.message?.includes('bloqueos_horarios')) {
           return { success: true, data: [] };
         }
@@ -1080,12 +1080,12 @@ export const reservasService = {
   },
 
   /**
-   * Crea un bloqueo de horario (solo admin)
+   * Creates a schedule blockout (admin only)
    */
-  async crearBloqueo(pistaId, fecha, horaInicio, horaFin, motivo, creadoPor) {
+  async createBlockout(pistaId, fecha, horaInicio, horaFin, motivo, creadoPor) {
     try {
-      // Verificar que no haya reserva confirmada en ese horario
-      const disponibilidad = await this.obtenerDisponibilidad(pistaId, fecha);
+      // Verify there's no confirmed reservation at that time
+      const disponibilidad = await this.getAvailability(pistaId, fecha);
       if (disponibilidad.success) {
         const bloqueInicio = timeToMinutes(horaInicio);
         const bloqueFin = timeToMinutes(horaFin);
@@ -1145,9 +1145,9 @@ export const reservasService = {
   },
 
   /**
-   * Elimina un bloqueo de horario (solo admin)
+   * Deletes a schedule blockout (admin only)
    */
-  async eliminarBloqueo(bloqueoId) {
+  async deleteBlockout(bloqueoId) {
     try {
       const { error } = await supabase
         .from('bloqueos_horarios')
@@ -1165,4 +1165,29 @@ export const reservasService = {
       return { success: false, error: 'Error al eliminar bloqueo' };
     }
   },
+
+  // ============================================================================
+  // LEGACY ALIASES - For backwards compatibility
+  // ============================================================================
+  obtenerPistas(...args) { return this.getCourts(...args); },
+  obtenerReservasUsuario(...args) { return this.getUserReservations(...args); },
+  obtenerReservasPorVivienda(...args) { return this.getReservationsByApartment(...args); },
+  obtenerReservasPorFecha(...args) { return this.getReservationsByDate(...args); },
+  obtenerDisponibilidad(...args) { return this.getAvailability(...args); },
+  obtenerReservasActivasVivienda(...args) { return this.getActiveApartmentReservations(...args); },
+  obtenerPrioridadParaNuevaReserva(...args) { return this.getPriorityForNewReservation(...args); },
+  desplazarReserva(...args) { return this.displaceReservation(...args); },
+  crearReserva(...args) { return this.createReservation(...args); },
+  cancelarReserva(...args) { return this.cancelReservation(...args); },
+  obtenerTodasReservas(...args) { return this.getAllReservations(...args); },
+  obtenerEstadisticas(...args) { return this.getStatistics(...args); },
+  obtenerNotificacionesPendientes(...args) { return this.getPendingNotifications(...args); },
+  marcarNotificacionesLeidas(...args) { return this.markNotificationsAsRead(...args); },
+  crearReservaConRPC(...args) { return this.createReservationWithRPC(...args); },
+  desplazarReservaYCrear(...args) { return this.displaceAndCreateReservation(...args); },
+  obtenerInfoConversion(...args) { return this.getConversionInfo(...args); },
+  recalcularConversionesVivienda(...args) { return this.recalculateApartmentConversions(...args); },
+  obtenerBloqueos(...args) { return this.getBlockouts(...args); },
+  crearBloqueo(...args) { return this.createBlockout(...args); },
+  eliminarBloqueo(...args) { return this.deleteBlockout(...args); },
 };

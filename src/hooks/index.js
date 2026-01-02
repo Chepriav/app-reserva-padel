@@ -14,13 +14,13 @@ export {
   useContadorTablon,
 } from './useTablon';
 
-// Hooks de HomeScreen
+// HomeScreen hooks
 export { useAlert } from './useAlert';
 export { useSeleccionHorarios } from './useSeleccionHorarios';
 export { useBloqueos } from './useBloqueos';
 export { useHorarios } from './useHorarios';
 
-// Hooks de AdminScreen
+// AdminScreen hooks
 export { useAdminData } from './useAdminData';
 export { useAdminActions } from './useAdminActions';
 export { useEditViviendaModal } from './useEditViviendaModal';

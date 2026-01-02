@@ -2,7 +2,7 @@ import { supabase } from './supabaseConfig';
 import { storageService } from './storageService.supabase';
 
 /**
- * Mensajes de error traducidos al español
+ * Error messages translated to Spanish (for UI)
  */
 const ERROR_MESSAGES = {
   'Invalid login credentials': 'Email o contraseña incorrectos',
@@ -14,7 +14,7 @@ const ERROR_MESSAGES = {
 };
 
 /**
- * Obtiene el mensaje de error traducido
+ * Gets the translated error message
  */
 const getErrorMessage = (error, defaultMessage) => {
   if (!error) return defaultMessage || ERROR_MESSAGES.default;
@@ -24,7 +24,7 @@ const getErrorMessage = (error, defaultMessage) => {
 };
 
 /**
- * Verifica el estado de aprobación del usuario
+ * Checks the user's approval status
  */
 const checkApprovalStatus = (estadoAprobacion) => {
   if (estadoAprobacion === true || estadoAprobacion === 'aprobado') {
@@ -45,7 +45,7 @@ const checkApprovalStatus = (estadoAprobacion) => {
 };
 
 /**
- * Convierte snake_case a camelCase para campos de usuario
+ * Converts snake_case to camelCase for user fields
  */
 const mapUserToCamelCase = (data) => {
   if (!data) return null;
@@ -67,7 +67,7 @@ const mapUserToCamelCase = (data) => {
 };
 
 /**
- * Convierte camelCase a snake_case para actualizar usuario
+ * Converts camelCase to snake_case for updating user
  */
 const mapUserToSnakeCase = (data) => {
   const mapped = {};
@@ -80,11 +80,11 @@ const mapUserToSnakeCase = (data) => {
 };
 
 /**
- * Servicio de autenticación con Supabase
+ * Authentication service with Supabase
  */
 export const authService = {
   /**
-   * Inicia sesión con email y contraseña
+   * Signs in with email and password
    */
   async login(email, password) {
     try {
@@ -97,7 +97,7 @@ export const authService = {
         return { success: false, error: getErrorMessage(error, 'Error al iniciar sesión') };
       }
 
-      // Obtener datos del perfil
+      // Get profile data
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
@@ -109,7 +109,7 @@ export const authService = {
         return { success: false, error: 'Usuario no encontrado en la base de datos' };
       }
 
-      // Verificar aprobación
+      // Verify approval
       const approvalCheck = checkApprovalStatus(userData.estado_aprobacion);
       if (!approvalCheck.approved) {
         await supabase.auth.signOut();
@@ -126,13 +126,13 @@ export const authService = {
   },
 
   /**
-   * Cierra la sesión del usuario
+   * Signs out the user
    */
   async logout() {
     try {
       const { error } = await supabase.auth.signOut();
 
-      // En web, limpiar localStorage manualmente para asegurar logout
+      // On web, manually clear localStorage to ensure logout
       if (typeof window !== 'undefined' && window.localStorage) {
         const keysToRemove = [];
         for (let i = 0; i < localStorage.length; i++) {
@@ -145,12 +145,12 @@ export const authService = {
       }
 
       if (error) {
-        // Aunque haya error en Supabase, ya limpiamos localStorage
+        // Even if there's an error in Supabase, we already cleaned localStorage
         console.error('Error en signOut:', error);
       }
       return { success: true };
     } catch (error) {
-      // En caso de error, intentar limpiar localStorage de todas formas
+      // In case of error, try to clean localStorage anyway
       if (typeof window !== 'undefined' && window.localStorage) {
         const keysToRemove = [];
         for (let i = 0; i < localStorage.length; i++) {
@@ -166,15 +166,15 @@ export const authService = {
   },
 
   /**
-   * Obtiene el usuario actualmente autenticado
+   * Gets the currently authenticated user
    */
   async getCurrentUser() {
     try {
-      // Leer sesión directamente de localStorage para evitar bloqueos
+      // Read session directly from localStorage to avoid blocking
       let session = null;
 
       if (typeof window !== 'undefined' && window.localStorage) {
-        // Buscar la key de Supabase en localStorage
+        // Find the Supabase key in localStorage
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
           if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
@@ -185,7 +185,7 @@ export const authService = {
                 break;
               }
             } catch {
-              // Ignorar errores de parsing
+              // Ignore parsing errors
             }
           }
         }
@@ -195,7 +195,7 @@ export const authService = {
         return { success: true, data: null };
       }
 
-      // Usar fetch directo en lugar del cliente Supabase para evitar bloqueos
+      // Use direct fetch instead of Supabase client to avoid blocking
       const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
       const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -230,11 +230,11 @@ export const authService = {
   },
 
   /**
-   * Registra un nuevo usuario (quedará pendiente de aprobación)
+   * Registers a new user (will be pending approval)
    */
   async register(userData) {
     try {
-      // Crear usuario en Supabase Auth
+      // Create user in Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
@@ -244,7 +244,7 @@ export const authService = {
         return { success: false, error: getErrorMessage(error, 'Error al registrarse') };
       }
 
-      // Crear perfil en tabla users
+      // Create profile in users table
       const { error: insertError } = await supabase
         .from('users')
         .insert({
@@ -261,7 +261,7 @@ export const authService = {
         return { success: false, error: 'Error al crear perfil de usuario' };
       }
 
-      // Cerrar sesión para que espere aprobación
+      // Sign out so user waits for approval
       await supabase.auth.signOut();
 
       return {
@@ -275,9 +275,9 @@ export const authService = {
   },
 
   /**
-   * Obtiene usuarios pendientes de aprobación (solo admin)
+   * Gets users pending approval (admin only)
    */
-  async getUsuariosPendientes() {
+  async getPendingUsers() {
     try {
       const { data, error } = await supabase
         .from('users')
@@ -299,9 +299,9 @@ export const authService = {
   },
 
   /**
-   * Obtiene todos los usuarios aprobados (solo admin)
+   * Gets all approved users (admin only)
    */
-  async getTodosUsuarios() {
+  async getAllUsers() {
     try {
       const { data, error } = await supabase
         .from('users')
@@ -323,7 +323,7 @@ export const authService = {
   },
 
   /**
-   * Cambia el rol de admin de un usuario (solo admin)
+   * Toggles the admin role for a user (admin only)
    */
   async toggleAdminRole(userId, esAdmin) {
     try {
@@ -344,11 +344,11 @@ export const authService = {
   },
 
   /**
-   * Elimina un usuario (solo admin/manager) - solo de la tabla users
+   * Deletes a user (admin/manager only) - only from users table
    */
   async deleteUser(userId) {
     try {
-      // Primero eliminar de la tabla users
+      // First delete from users table
       const { error } = await supabase
         .from('users')
         .delete()
@@ -365,13 +365,13 @@ export const authService = {
   },
 
   /**
-   * Elimina la cuenta del usuario actual (auto-eliminación)
-   * Elimina reservas y tabla users. El trigger on_user_deleted
-   * se encarga de eliminar automáticamente de auth.users.
+   * Deletes the current user's account (self-deletion)
+   * Deletes reservations and users table entry. The on_user_deleted
+   * trigger automatically removes from auth.users.
    */
   async deleteOwnAccount(userId) {
     try {
-      // 1. Eliminar reservas del usuario
+      // 1. Delete user's reservations
       const { error: reservasError } = await supabase
         .from('reservas')
         .delete()
@@ -381,8 +381,8 @@ export const authService = {
         console.log('Error eliminando reservas:', reservasError.message);
       }
 
-      // 2. Eliminar de la tabla users
-      // El trigger on_user_deleted elimina automáticamente de auth.users
+      // 2. Delete from users table
+      // The on_user_deleted trigger automatically removes from auth.users
       const { error: userError } = await supabase
         .from('users')
         .delete()
@@ -393,7 +393,7 @@ export const authService = {
         return { success: false, error: `Error al eliminar la cuenta: ${userError.message}` };
       }
 
-      // 3. Cerrar sesión
+      // 3. Sign out
       await supabase.auth.signOut();
 
       return { success: true };
@@ -404,9 +404,9 @@ export const authService = {
   },
 
   /**
-   * Aprueba un usuario pendiente (solo admin)
+   * Approves a pending user (admin only)
    */
-  async aprobarUsuario(userId) {
+  async approveUser(userId) {
     try {
       const { data, error } = await supabase
         .from('users')
@@ -425,9 +425,9 @@ export const authService = {
   },
 
   /**
-   * Rechaza un usuario pendiente (solo admin)
+   * Rejects a pending user (admin only)
    */
-  async rechazarUsuario(userId) {
+  async rejectUser(userId) {
     try {
       const { data, error } = await supabase
         .from('users')
@@ -446,14 +446,14 @@ export const authService = {
   },
 
   /**
-   * Actualiza el perfil del usuario
+   * Updates the user's profile
    */
   async updateProfile(userId, updates) {
     try {
-      // Filtrar campos protegidos
+      // Filter protected fields
       const { esAdmin, estadoAprobacion, ...safeUpdates } = updates;
 
-      // Subir foto si es URI local
+      // Upload photo if it's a local URI
       if (storageService.isLocalImageUri(safeUpdates.fotoPerfil)) {
         try {
           safeUpdates.fotoPerfil = await storageService.uploadAvatar(userId, safeUpdates.fotoPerfil);
@@ -465,7 +465,7 @@ export const authService = {
         }
       }
 
-      // Convertir a snake_case y actualizar
+      // Convert to snake_case and update
       const mappedUpdates = mapUserToSnakeCase(safeUpdates);
 
       const { error } = await supabase
@@ -477,7 +477,7 @@ export const authService = {
         return { success: false, error: 'Error al actualizar perfil' };
       }
 
-      // Obtener datos actualizados
+      // Get updated data
       const { data: userData } = await supabase
         .from('users')
         .select('*')
@@ -494,7 +494,7 @@ export const authService = {
   },
 
   /**
-   * Verifica si hay un usuario autenticado
+   * Checks if there's an authenticated user
    */
   async isAuthenticated() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -502,7 +502,7 @@ export const authService = {
   },
 
   /**
-   * Envía email para recuperar contraseña
+   * Sends password recovery email
    */
   async resetPassword(email) {
     try {
@@ -525,9 +525,9 @@ export const authService = {
   },
 
   /**
-   * Solicita cambio de vivienda (usuario)
+   * Requests apartment change (user)
    */
-  async solicitarCambioVivienda(userId, nuevaVivienda) {
+  async requestApartmentChange(userId, nuevaVivienda) {
     try {
       const { error } = await supabase
         .from('users')
@@ -545,9 +545,9 @@ export const authService = {
   },
 
   /**
-   * Cancela solicitud de cambio de vivienda propia (usuario)
+   * Cancels own apartment change request (user)
    */
-  async cancelarSolicitudVivienda(userId) {
+  async cancelApartmentRequest(userId) {
     try {
       const { error } = await supabase
         .from('users')
@@ -565,9 +565,9 @@ export const authService = {
   },
 
   /**
-   * Obtiene usuarios con solicitudes de cambio de vivienda pendientes (solo admin)
+   * Gets users with pending apartment change requests (admin only)
    */
-  async getSolicitudesCambioVivienda() {
+  async getApartmentChangeRequests() {
     try {
       const { data, error } = await supabase
         .from('users')
@@ -589,11 +589,11 @@ export const authService = {
   },
 
   /**
-   * Aprueba solicitud de cambio de vivienda (solo admin)
+   * Approves apartment change request (admin only)
    */
-  async aprobarCambioVivienda(userId) {
+  async approveApartmentChange(userId) {
     try {
-      // Primero obtener la vivienda solicitada
+      // First get the requested apartment
       const { data: userData, error: fetchError } = await supabase
         .from('users')
         .select('vivienda_solicitada')
@@ -604,7 +604,7 @@ export const authService = {
         return { success: false, error: 'No hay solicitud pendiente para este usuario' };
       }
 
-      // Actualizar vivienda y limpiar solicitud
+      // Update apartment and clear request
       const { error } = await supabase
         .from('users')
         .update({
@@ -624,9 +624,9 @@ export const authService = {
   },
 
   /**
-   * Rechaza solicitud de cambio de vivienda (solo admin)
+   * Rejects apartment change request (admin only)
    */
-  async rechazarCambioVivienda(userId) {
+  async rejectApartmentChange(userId) {
     try {
       const { error } = await supabase
         .from('users')
@@ -644,8 +644,8 @@ export const authService = {
   },
 
   /**
-   * Suscribe a cambios de autenticación
-   * @returns {Function} Función para cancelar la suscripción
+   * Subscribes to authentication changes
+   * @returns {Function} Function to cancel the subscription
    */
   onAuthChange(callback) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -677,9 +677,9 @@ export const authService = {
   },
 
   /**
-   * Obtiene los usuarios que pertenecen a la misma vivienda
+   * Gets users that belong to the same apartment
    */
-  async getUsuariosMismaVivienda(vivienda) {
+  async getUsersBySameApartment(vivienda) {
     try {
       if (!vivienda) {
         return { success: false, error: 'Vivienda no especificada' };
@@ -710,4 +710,18 @@ export const authService = {
       return { success: false, error: 'Error al obtener usuarios de la vivienda' };
     }
   },
+
+  // ============================================================================
+  // LEGACY ALIASES - For backwards compatibility
+  // ============================================================================
+  getUsuariosPendientes(...args) { return this.getPendingUsers(...args); },
+  getTodosUsuarios(...args) { return this.getAllUsers(...args); },
+  aprobarUsuario(...args) { return this.approveUser(...args); },
+  rechazarUsuario(...args) { return this.rejectUser(...args); },
+  solicitarCambioVivienda(...args) { return this.requestApartmentChange(...args); },
+  cancelarSolicitudVivienda(...args) { return this.cancelApartmentRequest(...args); },
+  getSolicitudesCambioVivienda(...args) { return this.getApartmentChangeRequests(...args); },
+  aprobarCambioVivienda(...args) { return this.approveApartmentChange(...args); },
+  rechazarCambioVivienda(...args) { return this.rejectApartmentChange(...args); },
+  getUsuariosMismaVivienda(...args) { return this.getUsersBySameApartment(...args); },
 };

@@ -13,18 +13,18 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [notificacionesPendientes, setNotificacionesPendientes] = useState([]);
-  // Mensaje de notificación para mostrar en pantalla destino
+  // Notification message to show on destination screen
   const [notificationMessage, setNotificationMessage] = useState(null);
   const appState = useRef(AppState.currentState);
 
-  // Verificar sesión existente y escuchar cambios de autenticación
+  // Check existing session and listen for auth state changes
   useEffect(() => {
     let isMounted = true;
 
-    // Verificar sesión existente al cargar
+    // Check existing session on load
     const checkSession = async () => {
       try {
-        // Intentar refrescar la sesión primero
+        // Try to get the session first
         const { data: { session }, error } = await supabase.auth.getSession();
 
         if (error) {
@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
         }
 
         if (session) {
-          // Sesión válida, obtener datos del usuario
+          // Valid session, get user data
           const result = await authService.getCurrentUser();
           if (isMounted && result.success && result.data) {
             setUser(result.data);
@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
 
     checkSession();
 
-    // Escuchar cambios de autenticación (login, logout, token refresh)
+    // Listen for auth state changes (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('[Auth] Auth state changed:', event);
@@ -64,7 +64,7 @@ export const AuthProvider = ({ children }) => {
           setUser(null);
           setIsAuthenticated(false);
         } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          // Obtener datos actualizados del usuario
+          // Get updated user data
           const result = await authService.getCurrentUser();
           if (result.success && result.data) {
             setUser(result.data);
@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
-  // Refrescar sesión cuando la app vuelve a primer plano
+  // Refresh session when app returns to foreground
   useEffect(() => {
     const handleAppStateChange = async (nextAppState) => {
       if (
@@ -90,16 +90,16 @@ export const AuthProvider = ({ children }) => {
         console.log('[Auth] App volvió a primer plano, verificando sesión...');
 
         try {
-          // Usar refreshSession que maneja el refresh automático si está próximo a expirar
+          // Use refreshSession which handles auto-refresh if close to expiry
           const result = await refreshSession();
 
           if (!result.success || !result.session) {
             console.log('[Auth] Sesión expirada o inválida');
-            // La sesión expiró, el onAuthStateChange se encargará de limpiar el estado
+            // Session expired, onAuthStateChange will handle cleaning the state
             return;
           }
 
-          // Si hay sesión pero el usuario no está en el estado, recuperarlo
+          // If there's a session but user is not in state, recover it
           if (result.session && !isAuthenticated) {
             console.log('[Auth] Recuperando datos del usuario...');
             const userResult = await authService.getCurrentUser();
@@ -122,24 +122,24 @@ export const AuthProvider = ({ children }) => {
     };
   }, [isAuthenticated]);
 
-  // Cargar notificaciones y registrar push token cuando el usuario se autentica
+  // Load notifications and register push token when user authenticates
   useEffect(() => {
     let notificationCleanup = null;
 
     if (isAuthenticated && user) {
       cargarNotificaciones();
 
-      // Registrar para push notifications
+      // Register for push notifications
       notificationService.registerForPushNotifications(user.id);
 
-      // Configurar listeners de notificaciones (móvil)
+      // Configure notification listeners (mobile)
       notificationCleanup = notificationService.addNotificationListeners(
         (notification) => {
-          // Notificación recibida en primer plano
+          // Notification received in foreground
           console.log('Notificación recibida:', notification);
         },
         (response) => {
-          // Usuario tocó la notificación (móvil)
+          // User tapped the notification (mobile)
           const data = response.notification.request.content.data;
           console.log('Notificación tocada:', data);
           handleNotificationNavigation(data.type, data);
@@ -156,7 +156,7 @@ export const AuthProvider = ({ children }) => {
     };
   }, [isAuthenticated, user]);
 
-  // Listener para mensajes del Service Worker (Web Push)
+  // Listener for Service Worker messages (Web Push)
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
@@ -178,13 +178,13 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   /**
-   * Navega a la pantalla correspondiente según el tipo de notificación
-   * y establece un mensaje para mostrar al usuario
+   * Navigates to the corresponding screen based on notification type
+   * and sets a message to show to the user
    */
   const handleNotificationNavigation = (notificationType, notificationData = {}) => {
     console.log('[AuthContext] Navegando por notificación:', notificationType, notificationData);
 
-    // Crear mensaje contextual según el tipo
+    // Create contextual message based on type
     let message = null;
 
     switch (notificationType) {
@@ -236,7 +236,7 @@ export const AuthProvider = ({ children }) => {
         navigateFromNotification('Mis Reservas');
         break;
 
-      // Notificaciones de partidas
+      // Match notifications
       case 'partida_solicitud':
         message = {
           type: 'info',
@@ -283,7 +283,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
-   * Limpia el mensaje de notificación (llamar después de mostrarlo)
+   * Clears the notification message (call after showing it)
    */
   const clearNotificationMessage = () => {
     setNotificationMessage(null);
@@ -329,23 +329,23 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      // Primero actualizar el estado para que la UI cambie inmediatamente
+      // First update state so UI changes immediately
       const currentUser = user;
       setUser(null);
       setIsAuthenticated(false);
 
-      // Luego hacer las operaciones de limpieza en segundo plano
-      // Eliminar push token (no bloquear si falla)
+      // Then do cleanup operations in background
+      // Remove push token (don't block if it fails)
       if (currentUser) {
         notificationService.removePushToken(currentUser.id).catch(() => {});
       }
 
-      // Cerrar sesión en Supabase
+      // Sign out from Supabase
       authService.logout().catch(() => {});
 
       return { success: true };
     } catch (error) {
-      // Asegurar que siempre se cierra sesión en la UI
+      // Ensure session is always closed in UI
       setUser(null);
       setIsAuthenticated(false);
       return { success: true };
@@ -356,8 +356,8 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authService.register(userData);
       if (response.success) {
-        // No establecer usuario porque Firebase cierra sesión después del registro
-        // El usuario debe ser aprobado primero
+        // Don't set user because Supabase signs out after registration
+        // User must be approved first
         return { success: true, message: response.message };
       }
       return { success: false, error: response.error };
@@ -389,8 +389,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
-   * Recargar datos del usuario desde el servidor
-   * Útil después de recibir notificaciones de cambios
+   * Reload user data from server
+   * Useful after receiving change notifications
    */
   const refreshUser = async () => {
     try {

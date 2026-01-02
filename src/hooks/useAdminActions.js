@@ -5,7 +5,7 @@ import { formatearVivienda, combinarVivienda } from '../constants/config';
 import { validarViviendaComponentes } from '../utils/validators';
 
 /**
- * Hook para acciones de admin (aprobar, rechazar, toggle admin, etc.)
+ * Hook for admin actions (approve, reject, toggle admin, etc.)
  */
 export function useAdminActions({
   currentUserId,
@@ -16,7 +16,7 @@ export function useAdminActions({
   updateUsuario,
   removeUsuario,
 }) {
-  // Aprobar usuario pendiente
+  // Approve pending user
   const handleAprobar = useCallback((usuario) => {
     mostrarConfirmacion({
       title: 'Aprobar Usuario',
@@ -32,7 +32,7 @@ export function useAdminActions({
     });
   }, [mostrarConfirmacion, mostrarAlerta, removeUsuarioPendiente]);
 
-  // Rechazar usuario pendiente
+  // Reject pending user
   const handleRechazar = useCallback((usuario) => {
     mostrarConfirmacion({
       title: 'Rechazar Usuario',
@@ -50,18 +50,18 @@ export function useAdminActions({
     });
   }, [mostrarConfirmacion, mostrarAlerta, removeUsuarioPendiente]);
 
-  // Toggle rol admin
+  // Toggle admin role
   const handleToggleAdmin = useCallback((usuario) => {
     const nuevoRol = !usuario.esAdmin;
     const accion = nuevoRol ? 'dar permisos de administrador a' : 'quitar permisos de administrador a';
 
-    // No permitir quitar admin a uno mismo
+    // Don't allow removing admin from oneself
     if (usuario.id === currentUserId && !nuevoRol) {
       mostrarAlerta('No permitido', 'No puedes quitarte los permisos de administrador a ti mismo');
       return;
     }
 
-    // No permitir quitar admin a un manager
+    // Don't allow removing admin from a manager
     if (usuario.esManager && !nuevoRol) {
       mostrarAlerta('No permitido', 'No puedes quitar los permisos de administrador a un manager');
       return;
@@ -81,15 +81,15 @@ export function useAdminActions({
     });
   }, [currentUserId, mostrarAlerta, mostrarConfirmacion, updateUsuario]);
 
-  // Eliminar usuario
+  // Delete user
   const handleDeleteUser = useCallback((usuario) => {
-    // No permitir eliminar a uno mismo
+    // Don't allow deleting oneself
     if (usuario.id === currentUserId) {
       mostrarAlerta('No permitido', 'No puedes eliminarte a ti mismo');
       return;
     }
 
-    // No permitir eliminar a un manager
+    // Don't allow deleting a manager
     if (usuario.esManager) {
       mostrarAlerta('No permitido', 'No puedes eliminar a un manager');
       return;
@@ -111,7 +111,7 @@ export function useAdminActions({
     });
   }, [currentUserId, mostrarAlerta, mostrarConfirmacion, removeUsuario]);
 
-  // Aprobar cambio de vivienda
+  // Approve apartment change
   const handleAprobarCambioVivienda = useCallback((usuario) => {
     mostrarConfirmacion({
       title: 'Aprobar Cambio de Vivienda',
@@ -136,7 +136,7 @@ export function useAdminActions({
     });
   }, [mostrarAlerta, mostrarConfirmacion, removeSolicitudCambio]);
 
-  // Rechazar cambio de vivienda
+  // Reject apartment change
   const handleRechazarCambioVivienda = useCallback((usuario) => {
     mostrarConfirmacion({
       title: 'Rechazar Cambio de Vivienda',
@@ -155,7 +155,7 @@ export function useAdminActions({
     });
   }, [mostrarAlerta, mostrarConfirmacion, removeSolicitudCambio]);
 
-  // Guardar cambio de vivienda (admin directo)
+  // Save apartment change (direct admin edit)
   const handleSaveVivienda = useCallback(async (usuario, escalera, piso, puerta) => {
     const validacion = validarViviendaComponentes(escalera, piso, puerta);
     if (!validacion.valido) {

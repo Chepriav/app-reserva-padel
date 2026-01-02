@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { tablonService } from '../services/tablonService';
 
 /**
- * Hook para gestionar notificaciones del usuario
+ * Hook to manage user notifications
  */
 export function useNotificaciones(userId) {
   const [notificaciones, setNotificaciones] = useState([]);
@@ -74,7 +74,7 @@ export function useNotificaciones(userId) {
 }
 
 /**
- * Hook para gestionar anuncios (vista usuario)
+ * Hook to manage announcements (user view)
  */
 export function useAnuncios(userId) {
   const [anuncios, setAnuncios] = useState([]);
@@ -106,14 +106,14 @@ export function useAnuncios(userId) {
   const verAnuncio = async (anuncio) => {
     setAnuncioSeleccionado(anuncio);
 
-    // Marcar como leído si no lo está
+    // Mark as read if not already
     if (!anuncio.leido) {
       const result = await tablonService.marcarAnuncioLeido(anuncio.id, userId);
       if (result.success) {
         setAnuncios(prev =>
           prev.map(a => a.id === anuncio.id ? { ...a, leido: true } : a)
         );
-        // Actualizar también el anuncio seleccionado
+        // Also update the selected announcement
         setAnuncioSeleccionado(prev => prev ? { ...prev, leido: true } : null);
       }
     }
@@ -141,7 +141,7 @@ export function useAnuncios(userId) {
 }
 
 /**
- * Hook para acciones de admin (gestión de anuncios)
+ * Hook for admin actions (announcement management)
  */
 export function useAnunciosAdmin(userId, userName, onSuccess) {
   const [anuncios, setAnuncios] = useState([]);
@@ -183,7 +183,7 @@ export function useAnunciosAdmin(userId, userName, onSuccess) {
     );
 
     if (result.success) {
-      // Enviar push notification
+      // Send push notification
       const { notificationService } = require('../services/notificationService');
 
       if (destinatarios === 'todos') {
@@ -222,7 +222,7 @@ export function useAnunciosAdmin(userId, userName, onSuccess) {
 }
 
 /**
- * Hook para contar notificaciones/anuncios no leídos (para badge del tab)
+ * Hook to count unread notifications/announcements (for tab badge)
  */
 export function useContadorTablon(userId) {
   const [contadorAnuncios, setContadorAnuncios] = useState(0);
@@ -247,7 +247,7 @@ export function useContadorTablon(userId) {
   useEffect(() => {
     actualizarContadores();
 
-    // Actualizar cada 30 segundos
+    // Update every 30 seconds
     const interval = setInterval(actualizarContadores, 30000);
     return () => clearInterval(interval);
   }, [actualizarContadores]);

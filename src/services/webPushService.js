@@ -2,16 +2,16 @@ import { Platform } from 'react-native';
 import { supabase } from './supabaseConfig';
 
 /**
- * Servicio de Web Push Notifications para PWA
- * Solo funciona en navegadores web que soporten Push API
+ * Web Push Notifications service for PWA
+ * Only works in web browsers that support Push API
  */
 
-// Clave pública VAPID para Web Push (debes generar la tuya)
-// Puedes generarla en: https://vapidkeys.com/
+// VAPID public key for Web Push (you must generate your own)
+// You can generate it at: https://vapidkeys.com/
 const VAPID_PUBLIC_KEY = process.env.EXPO_PUBLIC_VAPID_PUBLIC_KEY || '';
 
 /**
- * Convierte la clave VAPID de base64 a Uint8Array
+ * Converts VAPID key from base64 to Uint8Array
  */
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -30,7 +30,7 @@ function urlBase64ToUint8Array(base64String) {
 
 export const webPushService = {
   /**
-   * Verifica si el navegador soporta Web Push
+   * Checks if the browser supports Web Push
    */
   isSupported() {
     return (
@@ -42,7 +42,7 @@ export const webPushService = {
   },
 
   /**
-   * Solicita permisos de notificación
+   * Requests notification permissions
    */
   async requestPermission() {
     if (!this.isSupported()) {
@@ -63,7 +63,7 @@ export const webPushService = {
   },
 
   /**
-   * Registra el Service Worker y obtiene la suscripción push
+   * Registers the Service Worker and gets the push subscription
    */
   async subscribe(userId) {
     if (!this.isSupported()) {
@@ -120,7 +120,7 @@ export const webPushService = {
   },
 
   /**
-   * Guarda la suscripción en Supabase
+   * Saves the subscription to Supabase
    */
   async saveSubscription(userId, subscription) {
     try {
@@ -150,7 +150,7 @@ export const webPushService = {
   },
 
   /**
-   * Elimina la suscripción al cerrar sesión
+   * Removes subscription on logout
    */
   async unsubscribe(userId) {
     if (!this.isSupported()) return { success: true };
@@ -189,8 +189,8 @@ export const webPushService = {
   },
 
   /**
-   * Muestra una notificación local inmediata (sin push server)
-   * Útil para notificaciones que no necesitan servidor
+   * Shows an immediate local notification (without push server)
+   * Useful for notifications that don't need a server
    */
   async showLocalNotification(title, body, data = {}) {
     if (!this.isSupported()) return null;
@@ -218,7 +218,7 @@ export const webPushService = {
   },
 
   /**
-   * Obtiene las suscripciones de un usuario
+   * Gets a user's subscriptions
    */
   async getUserSubscriptions(userId) {
     try {
@@ -238,10 +238,10 @@ export const webPushService = {
   },
 
   /**
-   * Programa una notificación para más tarde usando setTimeout
-   * Nota: Solo funciona mientras la página esté abierta
-   * Para notificaciones programadas cuando el usuario no está en la app,
-   * se necesitaría una Edge Function de Supabase
+   * Schedules a notification for later using setTimeout
+   * Note: Only works while the page is open
+   * For scheduled notifications when user is not in the app,
+   * a Supabase Edge Function would be needed
    */
   scheduleNotification(title, body, delayMs, data = {}) {
     if (!this.isSupported()) return null;
@@ -254,7 +254,7 @@ export const webPushService = {
   },
 
   /**
-   * Cancela una notificación programada
+   * Cancels a scheduled notification
    */
   cancelScheduledNotification(timeoutId) {
     if (timeoutId) {

@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { parseVivienda } from '../constants/config';
 
 /**
- * Hook para gestionar el modal de editar vivienda
+ * Hook to manage the edit apartment modal
  */
 export function useEditViviendaModal() {
   const [modalState, setModalState] = useState({

@@ -2,7 +2,7 @@ import { supabase } from './supabaseConfig';
 import { notificationService } from './notificationService';
 
 /**
- * Mapea partida de snake_case a camelCase
+ * Maps match from snake_case to camelCase
  */
 const mapPartidaToCamelCase = (data) => {
   if (!data) return null;
@@ -31,13 +31,13 @@ const mapPartidaToCamelCase = (data) => {
     maxParticipantes: data.max_participantes || 4,
     precioAlumno: data.precio_alumno,
     precioGrupo: data.precio_grupo,
-    // Jugadores si vienen incluidos
+    // Players if included
     jugadores: data.jugadores || [],
   };
 };
 
 /**
- * Mapea jugador de partida de snake_case a camelCase
+ * Maps match player from snake_case to camelCase
  */
 const mapJugadorToCamelCase = (data) => {
   if (!data) return null;
@@ -56,21 +56,21 @@ const mapJugadorToCamelCase = (data) => {
 };
 
 /**
- * Filtra partidas para mostrar solo las futuras (no pasadas)
- * @param {Array} partidas - Array de partidas en formato snake_case
- * @returns {Array} - Partidas cuya fecha/hora aún no ha pasado
+ * Filters matches to show only future ones (not past)
+ * @param {Array} partidas - Array of matches in snake_case format
+ * @returns {Array} - Matches whose date/time hasn't passed yet
  */
-const filtrarPartidasFuturas = (partidas) => {
+const filterFutureMatches = (partidas) => {
   const ahora = new Date();
   return partidas.filter(p => {
-    // Si no tiene fecha, mostrarla (partida abierta)
+    // If no date, show it (open match)
     if (!p.fecha) return true;
-    // Si tiene fecha pero no hora_fin, comparar solo fecha
+    // If has date but no end time, compare only date
     if (!p.hora_fin) {
       const fechaPartida = new Date(p.fecha + 'T23:59:59');
       return fechaPartida > ahora;
     }
-    // Si tiene fecha y hora, comparar con hora_fin
+    // If has date and time, compare with end time
     const fechaFinPartida = new Date(p.fecha + 'T' + p.hora_fin);
     return fechaFinPartida > ahora;
   });
@@ -78,9 +78,9 @@ const filtrarPartidasFuturas = (partidas) => {
 
 export const partidasService = {
   /**
-   * Obtiene foto de perfil de un usuario por ID
+   * Gets a user's profile photo by ID
    */
-  async obtenerFotoUsuario(userId) {
+  async getUserPhoto(userId) {
     if (!userId) return null;
     try {
       const { data } = await supabase
@@ -95,9 +95,9 @@ export const partidasService = {
   },
 
   /**
-   * Obtiene datos de múltiples usuarios (foto y nivel)
+   * Gets data for multiple users (photo and level)
    */
-  async obtenerDatosUsuarios(userIds) {
+  async getUsersData(userIds) {
     if (!userIds || userIds.length === 0) return {};
     try {
       const { data } = await supabase
@@ -119,11 +119,11 @@ export const partidasService = {
   },
 
   /**
-   * Obtiene todas las partidas activas (buscando jugadores)
+   * Gets all active matches (looking for players)
    */
-  async obtenerPartidasActivas() {
+  async getActiveMatches() {
     try {
-      // Obtener partidas con estado 'buscando'
+      // Get matches with status 'buscando' (looking)
       const { data: partidas, error } = await supabase
         .from('partidas')
         .select('*')
@@ -134,10 +134,10 @@ export const partidasService = {
         return { success: false, error: 'Error al obtener partidas' };
       }
 
-      // Filtrar partidas pasadas
-      const partidasFuturas = filtrarPartidasFuturas(partidas);
+      // Filter past matches
+      const partidasFuturas = filterFutureMatches(partidas);
 
-      // Recolectar todos los IDs de usuarios para obtener datos en un solo query
+      // Collect all user IDs to get data in a single query
       const creadorIds = partidasFuturas.map(p => p.creador_id).filter(Boolean);
 
       // Obtener jugadores de cada partida
@@ -152,16 +152,16 @@ export const partidasService = {
         })
       );
 
-      // Recolectar IDs de todos los jugadores
+      // Collect all player IDs
       const jugadorIds = partidasConJugadores
         .flatMap(p => p.jugadores.map(j => j.usuario_id))
         .filter(Boolean);
 
-      // Obtener todos los datos de usuarios en un solo query
+      // Get all user data in a single query
       const todosLosIds = [...new Set([...creadorIds, ...jugadorIds])];
-      const datosMap = await this.obtenerDatosUsuarios(todosLosIds);
+      const datosMap = await this.getUsersData(todosLosIds);
 
-      // Mapear partidas con datos de usuarios
+      // Map matches with user data
       const resultado = partidasConJugadores.map(({ partida, jugadores }) => ({
         ...mapPartidaToCamelCase({
           ...partida,
@@ -171,7 +171,7 @@ export const partidasService = {
         jugadores: jugadores.map(j => mapJugadorToCamelCase({
           ...j,
           usuario_foto: datosMap[j.usuario_id]?.foto || null,
-          // El nivel ya viene en partidas_jugadores.nivel_juego
+          // Level already comes from partidas_jugadores.nivel_juego
         })),
       }));
 
@@ -182,9 +182,9 @@ export const partidasService = {
   },
 
   /**
-   * Obtiene las partidas creadas por un usuario (solo futuras)
+   * Gets matches created by a user (future only)
    */
-  async obtenerMisPartidas(usuarioId) {
+  async getMyMatches(usuarioId) {
     try {
       const { data: partidas, error } = await supabase
         .from('partidas')
@@ -197,13 +197,13 @@ export const partidasService = {
         return { success: false, error: 'Error al obtener tus partidas' };
       }
 
-      // Filtrar partidas pasadas
-      const partidasFuturas = filtrarPartidasFuturas(partidas);
+      // Filter past matches
+      const partidasFuturas = filterFutureMatches(partidas);
 
-      // Recolectar IDs de creadores (de partidas futuras)
+      // Collect creator IDs (from future matches)
       const creadorIds = partidasFuturas.map(p => p.creador_id).filter(Boolean);
 
-      // Obtener jugadores de cada partida futura
+      // Get players for each future match
       const partidasConJugadores = await Promise.all(
         partidasFuturas.map(async (partida) => {
           const { data: jugadores } = await supabase
@@ -215,16 +215,16 @@ export const partidasService = {
         })
       );
 
-      // Recolectar IDs de todos los jugadores
+      // Collect all player IDs
       const jugadorIds = partidasConJugadores
         .flatMap(p => p.jugadores.map(j => j.usuario_id))
         .filter(Boolean);
 
-      // Obtener todos los datos de usuarios en un solo query
+      // Get all user data in a single query
       const todosLosIds = [...new Set([...creadorIds, ...jugadorIds])];
-      const datosMap = await this.obtenerDatosUsuarios(todosLosIds);
+      const datosMap = await this.getUsersData(todosLosIds);
 
-      // Mapear partidas con datos de usuarios
+      // Map matches with user data
       const resultado = partidasConJugadores.map(({ partida, jugadores }) => ({
         ...mapPartidaToCamelCase({
           ...partida,
@@ -244,11 +244,11 @@ export const partidasService = {
   },
 
   /**
-   * Obtiene las partidas donde el usuario está apuntado (solo futuras)
+   * Gets matches where the user is enrolled (future only)
    */
-  async obtenerPartidasApuntado(usuarioId) {
+  async getEnrolledMatches(usuarioId) {
     try {
-      // Primero obtener los IDs de partidas donde está apuntado
+      // First get the IDs of matches where user is enrolled
       const { data: inscripciones, error: inscError } = await supabase
         .from('partidas_jugadores')
         .select('partida_id')
@@ -264,7 +264,7 @@ export const partidasService = {
 
       const partidaIds = inscripciones.map((i) => i.partida_id);
 
-      // Obtener las partidas
+      // Get the matches
       const { data: partidas, error } = await supabase
         .from('partidas')
         .select('*')
@@ -276,13 +276,13 @@ export const partidasService = {
         return { success: false, error: 'Error al obtener partidas' };
       }
 
-      // Filtrar partidas pasadas
-      const partidasFuturas = filtrarPartidasFuturas(partidas);
+      // Filter past matches
+      const partidasFuturas = filterFutureMatches(partidas);
 
-      // Recolectar IDs de creadores (de partidas futuras)
+      // Collect creator IDs (from future matches)
       const creadorIds = partidasFuturas.map(p => p.creador_id).filter(Boolean);
 
-      // Obtener jugadores de cada partida futura
+      // Get players for each future match
       const partidasConJugadores = await Promise.all(
         partidasFuturas.map(async (partida) => {
           const { data: jugadores } = await supabase
@@ -294,16 +294,16 @@ export const partidasService = {
         })
       );
 
-      // Recolectar IDs de todos los jugadores
+      // Collect all player IDs
       const jugadorIds = partidasConJugadores
         .flatMap(p => p.jugadores.map(j => j.usuario_id))
         .filter(Boolean);
 
-      // Obtener todos los datos de usuarios en un solo query
+      // Get all user data in a single query
       const todosLosIds = [...new Set([...creadorIds, ...jugadorIds])];
-      const datosMap = await this.obtenerDatosUsuarios(todosLosIds);
+      const datosMap = await this.getUsersData(todosLosIds);
 
-      // Mapear partidas con datos de usuarios
+      // Map matches with user data
       const resultado = partidasConJugadores.map(({ partida, jugadores }) => ({
         ...mapPartidaToCamelCase({
           ...partida,
@@ -323,9 +323,9 @@ export const partidasService = {
   },
 
   /**
-   * Crea una nueva partida/solicitud o clase
+   * Creates a new match/request or class
    */
-  async crearPartida(partidaData) {
+  async createMatch(partidaData) {
     try {
       const {
         creadorId,
@@ -340,7 +340,7 @@ export const partidasService = {
         mensaje,
         nivelPreferido,
         jugadoresIniciales,
-        // Campos de clase
+        // Class fields
         esClase,
         niveles,
         minParticipantes,
@@ -349,10 +349,10 @@ export const partidasService = {
         precioGrupo,
       } = partidaData;
 
-      // Calcular máximo de participantes (4 para partidas, configurable para clases)
+      // Calculate max participants (4 for matches, configurable for classes)
       const maxPart = esClase ? (maxParticipantes || 8) : 4;
 
-      // Calcular si la partida/clase estará completa desde el inicio
+      // Calculate if match/class will be complete from the start
       const totalJugadores = 1 + (jugadoresIniciales?.length || 0);
       const estadoInicial = totalJugadores >= maxPart ? 'completa' : 'buscando';
 
@@ -371,7 +371,7 @@ export const partidasService = {
           mensaje: mensaje || null,
           nivel_preferido: nivelPreferido || null,
           estado: estadoInicial,
-          // Campos de clase
+          // Class fields
           es_clase: esClase || false,
           niveles: niveles?.length > 0 ? niveles : null,
           min_participantes: esClase ? (minParticipantes || 2) : 4,
@@ -386,7 +386,7 @@ export const partidasService = {
         return { success: false, error: 'Error al crear la partida' };
       }
 
-      // Si hay jugadores iniciales, añadirlos (internos y externos)
+      // If there are initial players, add them (internal and external)
       if (jugadoresIniciales && jugadoresIniciales.length > 0) {
         const jugadoresData = jugadoresIniciales.map((j) => ({
           partida_id: data.id,
@@ -403,8 +403,8 @@ export const partidasService = {
           .insert(jugadoresData);
       }
 
-      // Programar recordatorios de Match Day y 10 min antes para el creador
-      // (y los jugadores iniciales internos)
+      // Schedule Match Day and 10 min before reminders for the creator
+      // (and internal initial players)
       if (fecha && horaInicio) {
         notificationService.schedulePartidaReminders({
           id: data.id,
@@ -421,11 +421,11 @@ export const partidasService = {
   },
 
   /**
-   * Solicitar unirse a una partida (crea solicitud pendiente)
+   * Request to join a match (creates pending request)
    */
-  async solicitarUnirse(partidaId, usuario) {
+  async requestToJoin(partidaId, usuario) {
     try {
-      // Verificar que la partida existe y está buscando
+      // Verify match exists and is looking for players
       const { data: partida, error: partidaError } = await supabase
         .from('partidas')
         .select('*, partidas_jugadores(*)')
@@ -440,7 +440,7 @@ export const partidasService = {
         return { success: false, error: 'Esta partida ya no está buscando jugadores' };
       }
 
-      // Verificar que no esté ya apuntado o tenga solicitud
+      // Verify not already enrolled or has a request
       const yaApuntado = partida.partidas_jugadores?.some(
         (j) => j.usuario_id === usuario.id
       );
@@ -448,19 +448,19 @@ export const partidasService = {
         return { success: false, error: 'Ya tienes una solicitud o estás apuntado a esta partida' };
       }
 
-      // Verificar que no sea el creador
+      // Verify not the creator
       if (partida.creador_id === usuario.id) {
         return { success: false, error: 'No puedes unirte a tu propia partida' };
       }
 
-      // Contar jugadores confirmados (creador + confirmados)
+      // Count confirmed players (creator + confirmed)
       const jugadoresConfirmados = partida.partidas_jugadores?.filter(j => j.estado === 'confirmado') || [];
       const maxParticipantes = partida.max_participantes || 4;
       if (1 + jugadoresConfirmados.length >= maxParticipantes) {
         return { success: false, error: partida.es_clase ? 'La clase ya está completa' : 'La partida ya está completa' };
       }
 
-      // Crear solicitud pendiente
+      // Create pending request
       const { error: insertError } = await supabase
         .from('partidas_jugadores')
         .insert({
@@ -477,7 +477,7 @@ export const partidasService = {
         return { success: false, error: 'Error al solicitar unirse' };
       }
 
-      // Notificar al creador de la partida/clase
+      // Notify the match/class creator
       notificationService.notifyPartidaSolicitud(
         partida.creador_id,
         usuario.nombre,
@@ -491,12 +491,12 @@ export const partidasService = {
   },
 
   /**
-   * Aceptar solicitud de un jugador (solo creador)
-   * Nota: jugadorId aquí es el usuario_id del jugador que solicitó unirse
+   * Accept a player's request (creator only)
+   * Note: jugadorId here is the usuario_id of the player who requested to join
    */
-  async aceptarSolicitud(jugadorId, partidaId, creadorId) {
+  async acceptRequest(jugadorId, partidaId, creadorId) {
     try {
-      // Verificar que sea el creador y obtener datos completos
+      // Verify is the creator and get complete data
       const { data: partida, error: partidaError } = await supabase
         .from('partidas')
         .select('creador_id, creador_nombre, fecha, hora_inicio, pista_nombre, es_clase, max_participantes, partidas_jugadores(*)')
@@ -511,14 +511,14 @@ export const partidasService = {
         return { success: false, error: 'Solo el creador puede aceptar solicitudes' };
       }
 
-      // Contar confirmados actuales
+      // Count current confirmed players
       const confirmados = partida.partidas_jugadores?.filter(j => j.estado === 'confirmado') || [];
       const maxParticipantes = partida.max_participantes || 4;
       if (1 + confirmados.length >= maxParticipantes) {
         return { success: false, error: partida.es_clase ? 'La clase ya está completa' : 'La partida ya está completa' };
       }
 
-      // Aceptar solicitud - usar partida_id + usuario_id para identificar la fila
+      // Accept request - use partida_id + usuario_id to identify the row
       const { error } = await supabase
         .from('partidas_jugadores')
         .update({ estado: 'confirmado' })
@@ -529,14 +529,14 @@ export const partidasService = {
         return { success: false, error: 'Error al aceptar solicitud' };
       }
 
-      // Notificar al jugador que fue aceptado
+      // Notify the player they were accepted
       notificationService.notifyPartidaAceptada(
         jugadorId,
         partida.creador_nombre,
         { partidaId, fecha: partida.fecha, esClase: partida.es_clase }
       );
 
-      // Programar recordatorios de Match Day y 10 min antes para el jugador aceptado
+      // Schedule Match Day and 10 min before reminders for the accepted player
       if (partida.fecha && partida.hora_inicio) {
         notificationService.schedulePartidaReminders({
           id: partidaId,
@@ -546,7 +546,7 @@ export const partidasService = {
         });
       }
 
-      // Si ahora hay suficientes jugadores, marcar como completa y notificar a todos
+      // If there are now enough players, mark as complete and notify everyone
       const nuevoTotalConfirmados = 1 + confirmados.length + 1;
       if (nuevoTotalConfirmados >= maxParticipantes) {
         await supabase
@@ -554,14 +554,14 @@ export const partidasService = {
           .update({ estado: 'completa', updated_at: new Date().toISOString() })
           .eq('id', partidaId);
 
-        // Obtener IDs de todos los jugadores (creador + confirmados + el recién aceptado)
+        // Get IDs of all players (creator + confirmed + the newly accepted)
         const jugadoresIds = [
           creadorId,
           ...confirmados.map(j => j.usuario_id).filter(Boolean),
           jugadorId,
         ];
 
-        // Notificar a todos que la partida/clase está completa
+        // Notify everyone that the match/class is complete
         notificationService.notifyPartidaCompleta(
           jugadoresIds,
           partida.creador_nombre,
@@ -576,10 +576,10 @@ export const partidasService = {
   },
 
   /**
-   * Rechazar solicitud de un jugador (solo creador)
-   * Nota: jugadorId aquí es el usuario_id del jugador
+   * Reject a player's request (creator only)
+   * Note: jugadorId here is the usuario_id of the player
    */
-  async rechazarSolicitud(jugadorId, partidaId) {
+  async rejectRequest(jugadorId, partidaId) {
     try {
       const { error } = await supabase
         .from('partidas_jugadores')
@@ -598,11 +598,11 @@ export const partidasService = {
   },
 
   /**
-   * Desapuntarse de una partida
+   * Leave a match
    */
-  async desapuntarsePartida(partidaId, usuarioId) {
+  async leaveMatch(partidaId, usuarioId) {
     try {
-      // Eliminar al jugador
+      // Remove the player
       const { error: deleteError } = await supabase
         .from('partidas_jugadores')
         .delete()
@@ -616,15 +616,15 @@ export const partidasService = {
 
       console.log('[Partidas] Jugador eliminado exitosamente');
 
-      // Llamar a la función RPC para actualizar el estado de la partida
-      // Esta función usa SECURITY DEFINER para bypassear RLS
+      // Call the RPC function to update the match status
+      // This function uses SECURITY DEFINER to bypass RLS
       const { data: rpcResult, error: rpcError } = await supabase
         .rpc('actualizar_estado_partida_tras_salida', { p_partida_id: partidaId });
 
       if (rpcError) {
         console.error('[Partidas] Error llamando RPC:', rpcError);
-        // Aún así devolvemos success porque el jugador ya fue eliminado
-        // La próxima vez que alguien consulte la partida, el estado se puede recalcular
+        // Still return success because the player was already removed
+        // Next time someone queries the match, the status can be recalculated
       } else {
         console.log('[Partidas] RPC ejecutado correctamente, resultado:', rpcResult);
       }
@@ -637,11 +637,11 @@ export const partidasService = {
   },
 
   /**
-   * Cancelar una partida (solo el creador)
+   * Cancel a match (creator only)
    */
-  async cancelarPartida(partidaId, creadorId) {
+  async cancelMatch(partidaId, creadorId) {
     try {
-      // Obtener datos de la partida y jugadores antes de cancelar
+      // Get match data and players before canceling
       const { data: partida, error: fetchError } = await supabase
         .from('partidas')
         .select('creador_id, creador_nombre, fecha, es_clase, partidas_jugadores(*)')
@@ -666,7 +666,7 @@ export const partidasService = {
         return { success: false, error: 'Error al cancelar la partida' };
       }
 
-      // Notificar a todos los jugadores (excepto externos que no tienen usuario_id)
+      // Notify all players (except external ones who don't have usuario_id)
       const jugadoresIds = (partida.partidas_jugadores || [])
         .filter(j => j.usuario_id)
         .map(j => j.usuario_id);
@@ -686,9 +686,9 @@ export const partidasService = {
   },
 
   /**
-   * Eliminar una partida (solo el creador)
+   * Delete a match (creator only)
    */
-  async eliminarPartida(partidaId, creadorId) {
+  async deleteMatch(partidaId, creadorId) {
     try {
       const { error } = await supabase
         .from('partidas')
@@ -707,9 +707,9 @@ export const partidasService = {
   },
 
   /**
-   * Obtiene IDs de reservas que ya tienen partida asociada
+   * Gets IDs of reservations that already have an associated match
    */
-  async obtenerReservasConPartida(usuarioId) {
+  async getReservationsWithMatch(usuarioId) {
     try {
       const { data, error } = await supabase
         .from('partidas')
@@ -732,9 +732,9 @@ export const partidasService = {
   },
 
   /**
-   * Cancelar solicitud propia
+   * Cancel own request
    */
-  async cancelarSolicitud(partidaId, usuarioId) {
+  async cancelRequest(partidaId, usuarioId) {
     try {
       const { error } = await supabase
         .from('partidas_jugadores')
@@ -754,11 +754,11 @@ export const partidasService = {
   },
 
   /**
-   * Editar partida (solo el creador)
+   * Edit a match (creator only)
    */
-  async editarPartida(partidaId, creadorId, updates) {
+  async editMatch(partidaId, creadorId, updates) {
     try {
-      // Verificar que sea el creador
+      // Verify is the creator
       const { data: partida, error: fetchError } = await supabase
         .from('partidas')
         .select('creador_id')
@@ -773,7 +773,7 @@ export const partidasService = {
         return { success: false, error: 'Solo el creador puede editar la partida' };
       }
 
-      // Preparar datos para actualizar
+      // Prepare data to update
       const updateData = {
         updated_at: new Date().toISOString(),
       };
@@ -789,7 +789,7 @@ export const partidasService = {
       if (updates.horaFin !== undefined) updateData.hora_fin = updates.horaFin;
       if (updates.pistaNombre !== undefined) updateData.pista_nombre = updates.pistaNombre;
 
-      // Campos de clase
+      // Class fields
       if (updates.niveles !== undefined) updateData.niveles = updates.niveles;
       if (updates.minParticipantes !== undefined) updateData.min_participantes = updates.minParticipantes;
       if (updates.maxParticipantes !== undefined) updateData.max_participantes = updates.maxParticipantes;
@@ -812,11 +812,11 @@ export const partidasService = {
   },
 
   /**
-   * Añadir jugador a una partida existente (solo el creador puede añadir)
+   * Add a player to an existing match (creator only)
    */
-  async anadirJugadorAPartida(partidaId, creadorId, jugadorData) {
+  async addPlayerToMatch(partidaId, creadorId, jugadorData) {
     try {
-      // Verificar que sea el creador
+      // Verify is the creator
       const { data: partida, error: fetchError } = await supabase
         .from('partidas')
         .select('creador_id, estado, fecha, hora_inicio, pista_nombre, es_clase, max_participantes, partidas_jugadores(*)')
@@ -831,14 +831,14 @@ export const partidasService = {
         return { success: false, error: 'Solo el creador puede añadir jugadores' };
       }
 
-      // Contar jugadores confirmados
+      // Count confirmed players
       const jugadoresConfirmados = partida.partidas_jugadores?.filter(j => j.estado === 'confirmado') || [];
       const maxParticipantes = partida.max_participantes || 4;
       if (1 + jugadoresConfirmados.length >= maxParticipantes) {
         return { success: false, error: partida.es_clase ? 'La clase ya está completa' : 'La partida ya está completa' };
       }
 
-      // Verificar que el jugador no esté ya en la partida
+      // Verify player is not already in the match
       if (jugadorData.usuarioId) {
         const yaExiste = partida.partidas_jugadores?.some(j => j.usuario_id === jugadorData.usuarioId);
         if (yaExiste) {
@@ -846,7 +846,7 @@ export const partidasService = {
         }
       }
 
-      // Añadir jugador
+      // Add player
       const { error: insertError } = await supabase
         .from('partidas_jugadores')
         .insert({
@@ -864,7 +864,7 @@ export const partidasService = {
         return { success: false, error: 'Error al añadir jugador' };
       }
 
-      // Verificar si ahora está completa
+      // Check if now complete
       const nuevoTotal = 1 + jugadoresConfirmados.length + 1;
       if (nuevoTotal >= maxParticipantes) {
         await supabase
@@ -873,7 +873,7 @@ export const partidasService = {
           .eq('id', partidaId);
       }
 
-      // Programar recordatorios para jugadores NO externos
+      // Schedule reminders for NON-external players
       if (!jugadorData.esExterno && partida.fecha && partida.hora_inicio) {
         notificationService.schedulePartidaReminders({
           id: partidaId,
@@ -891,11 +891,11 @@ export const partidasService = {
   },
 
   /**
-   * Eliminar jugador de una partida (solo el creador puede eliminar a otros)
+   * Remove a player from a match (creator only can remove others)
    */
-  async eliminarJugador(jugadorId, partidaId, creadorId) {
+  async removePlayer(jugadorId, partidaId, creadorId) {
     try {
-      // Verificar que sea el creador
+      // Verify is the creator
       const { data: partida, error: fetchError } = await supabase
         .from('partidas')
         .select('creador_id')
@@ -910,7 +910,7 @@ export const partidasService = {
         return { success: false, error: 'Solo el creador puede eliminar jugadores' };
       }
 
-      // Eliminar el jugador
+      // Delete the player
       const { error } = await supabase
         .from('partidas_jugadores')
         .delete()
@@ -921,7 +921,7 @@ export const partidasService = {
         return { success: false, error: 'Error al eliminar jugador' };
       }
 
-      // Actualizar estado usando RPC (recalcula basándose en jugadores restantes)
+      // Update status using RPC (recalculates based on remaining players)
       await supabase.rpc('actualizar_estado_partida_tras_salida', { p_partida_id: partidaId });
 
       return { success: true };
@@ -931,12 +931,12 @@ export const partidasService = {
   },
 
   /**
-   * Cerrar inscripciones de una clase manualmente (solo el creador)
-   * Permite cerrar aunque no esté completa
+   * Close class registrations manually (creator only)
+   * Allows closing even if not complete
    */
-  async cerrarClase(partidaId, creadorId) {
+  async closeClass(partidaId, creadorId) {
     try {
-      // Verificar que sea el creador y que sea una clase
+      // Verify is the creator y que sea una clase
       const { data: partida, error: fetchError } = await supabase
         .from('partidas')
         .select('creador_id, creador_nombre, es_clase, estado, fecha, partidas_jugadores(*)')
@@ -959,7 +959,7 @@ export const partidasService = {
         return { success: false, error: 'La clase ya no está abierta' };
       }
 
-      // Cerrar la clase (cambiar estado a 'completa')
+      // Close the class (change status to 'completa')
       const { error } = await supabase
         .from('partidas')
         .update({ estado: 'completa', updated_at: new Date().toISOString() })
@@ -969,7 +969,7 @@ export const partidasService = {
         return { success: false, error: 'Error al cerrar la clase' };
       }
 
-      // Notificar a todos los jugadores confirmados
+      // Notify all confirmed players
       const jugadoresIds = (partida.partidas_jugadores || [])
         .filter(j => j.usuario_id && j.estado === 'confirmado')
         .map(j => j.usuario_id);
@@ -989,16 +989,16 @@ export const partidasService = {
   },
 
   /**
-   * Cancela una partida vinculada a una reserva
-   * Se llama cuando la reserva es cancelada o desplazada
-   * @param {string} reservaId - ID de la reserva
-   * @param {string} motivo - 'reserva_cancelada' o 'reserva_desplazada'
+   * Cancels a match linked to a reservation
+   * Called when the reservation is canceled or displaced
+   * @param {string} reservaId - Reservation ID
+   * @param {string} motivo - 'reserva_cancelada' or 'reserva_desplazada'
    */
-  async cancelarPartidaPorReserva(reservaId, motivo = 'reserva_cancelada') {
+  async cancelMatchByReservation(reservaId, motivo = 'reserva_cancelada') {
     try {
       console.log('[cancelarPartidaPorReserva] Buscando partida con reserva_id:', reservaId);
 
-      // 1. Buscar partida vinculada a esta reserva
+      // 1. Find match linked to this reservation
       const { data: partidas, error: findError } = await supabase
         .from('partidas')
         .select('*, partidas_jugadores(*)')
@@ -1007,7 +1007,7 @@ export const partidasService = {
 
       console.log('[cancelarPartidaPorReserva] Resultado búsqueda:', { partidas, findError });
 
-      // Si no hay partida vinculada, no hay nada que hacer
+      // If no linked match, nothing to do
       if (findError) {
         console.error('[cancelarPartidaPorReserva] Error en búsqueda:', findError);
         return { success: true, hadPartida: false };
@@ -1020,7 +1020,7 @@ export const partidasService = {
 
       const partida = partidas[0];
 
-      // 2. Cambiar estado de la partida a 'cancelada'
+      // 2. Change match status to 'cancelada'
       const { error: updateError } = await supabase
         .from('partidas')
         .update({ estado: 'cancelada', updated_at: new Date().toISOString() })
@@ -1031,15 +1031,15 @@ export const partidasService = {
         return { success: false, error: 'Error al cancelar la partida' };
       }
 
-      // 3. Obtener IDs de todos los jugadores confirmados + creador
+      // 3. Get IDs of all confirmed players + creator
       const jugadoresIds = (partida.partidas_jugadores || [])
         .filter(j => j.estado === 'confirmado' && j.usuario_id)
         .map(j => j.usuario_id);
 
-      // Incluir creador
+      // Include creator
       const todosLosIds = [...new Set([partida.creador_id, ...jugadoresIds])];
 
-      // 4. Notificar a todos
+      // 4. Notify everyone
       if (todosLosIds.length > 0) {
         await notificationService.notifyPartidaCanceladaPorReserva(
           todosLosIds,
@@ -1060,4 +1060,27 @@ export const partidasService = {
       return { success: false, error: 'Error al cancelar la partida vinculada' };
     }
   },
+
+  // ============================================================================
+  // LEGACY ALIASES - For backwards compatibility
+  // ============================================================================
+  obtenerFotoUsuario(...args) { return this.getUserPhoto(...args); },
+  obtenerDatosUsuarios(...args) { return this.getUsersData(...args); },
+  obtenerPartidasActivas(...args) { return this.getActiveMatches(...args); },
+  obtenerMisPartidas(...args) { return this.getMyMatches(...args); },
+  obtenerPartidasApuntado(...args) { return this.getEnrolledMatches(...args); },
+  crearPartida(...args) { return this.createMatch(...args); },
+  solicitarUnirse(...args) { return this.requestToJoin(...args); },
+  aceptarSolicitud(...args) { return this.acceptRequest(...args); },
+  rechazarSolicitud(...args) { return this.rejectRequest(...args); },
+  desapuntarsePartida(...args) { return this.leaveMatch(...args); },
+  cancelarPartida(...args) { return this.cancelMatch(...args); },
+  eliminarPartida(...args) { return this.deleteMatch(...args); },
+  obtenerReservasConPartida(...args) { return this.getReservationsWithMatch(...args); },
+  cancelarSolicitud(...args) { return this.cancelRequest(...args); },
+  editarPartida(...args) { return this.editMatch(...args); },
+  anadirJugadorAPartida(...args) { return this.addPlayerToMatch(...args); },
+  eliminarJugador(...args) { return this.removePlayer(...args); },
+  cerrarClase(...args) { return this.closeClass(...args); },
+  cancelarPartidaPorReserva(...args) { return this.cancelMatchByReservation(...args); },
 };

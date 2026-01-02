@@ -1,7 +1,7 @@
 import { supabase } from './supabaseConfig';
 
 /**
- * Mapeo de notificación snake_case a camelCase
+ * Maps notification from snake_case to camelCase
  */
 const mapNotificacionToCamelCase = (data) => {
   if (!data) return null;
@@ -19,7 +19,7 @@ const mapNotificacionToCamelCase = (data) => {
 };
 
 /**
- * Mapeo de anuncio snake_case a camelCase
+ * Maps announcement from snake_case to camelCase
  */
 const mapAnuncioToCamelCase = (data, leido = false) => {
   if (!data) return null;
@@ -38,12 +38,12 @@ const mapAnuncioToCamelCase = (data, leido = false) => {
 };
 
 export const tablonService = {
-  // ============ NOTIFICACIONES DE USUARIO ============
+  // ============ USER NOTIFICATIONS ============
 
   /**
-   * Obtiene las notificaciones del usuario (no expiradas)
+   * Gets user notifications (non-expired)
    */
-  async obtenerNotificaciones(usuarioId) {
+  async getNotifications(usuarioId) {
     try {
       const { data, error } = await supabase
         .from('notificaciones_usuario')
@@ -71,9 +71,9 @@ export const tablonService = {
   },
 
   /**
-   * Cuenta notificaciones no leídas
+   * Counts unread notifications
    */
-  async contarNotificacionesNoLeidas(usuarioId) {
+  async countUnreadNotifications(usuarioId) {
     try {
       const { count, error } = await supabase
         .from('notificaciones_usuario')
@@ -90,9 +90,9 @@ export const tablonService = {
   },
 
   /**
-   * Marca una notificación como leída
+   * Marks a notification as read
    */
-  async marcarNotificacionLeida(notificacionId) {
+  async markNotificationAsRead(notificacionId) {
     try {
       const { error } = await supabase
         .from('notificaciones_usuario')
@@ -110,9 +110,9 @@ export const tablonService = {
   },
 
   /**
-   * Marca todas las notificaciones como leídas
+   * Marks all notifications as read
    */
-  async marcarTodasLeidas(usuarioId) {
+  async markAllAsRead(usuarioId) {
     try {
       const { error } = await supabase
         .from('notificaciones_usuario')
@@ -128,9 +128,9 @@ export const tablonService = {
   },
 
   /**
-   * Elimina una notificación
+   * Deletes a notification
    */
-  async eliminarNotificacion(notificacionId) {
+  async deleteNotification(notificacionId) {
     try {
       const { error } = await supabase
         .from('notificaciones_usuario')
@@ -148,9 +148,9 @@ export const tablonService = {
   },
 
   /**
-   * Crea una notificación de usuario
+   * Creates a user notification
    */
-  async crearNotificacion(usuarioId, tipo, titulo, mensaje, datos = {}) {
+  async createNotification(usuarioId, tipo, titulo, mensaje, datos = {}) {
     try {
       const { data, error } = await supabase
         .from('notificaciones_usuario')
@@ -174,16 +174,16 @@ export const tablonService = {
     }
   },
 
-  // ============ ANUNCIOS DE ADMIN - LECTURA (usuarios) ============
+  // ============ ADMIN ANNOUNCEMENTS - READ (users) ============
 
   /**
-   * Obtiene anuncios para un usuario específico
-   * - Si el anuncio es para "todos", lo incluye
-   * - Si el anuncio es "seleccionados", solo si está en destinatarios
+   * Gets announcements for a specific user
+   * - If announcement is for "todos" (all), includes it
+   * - If announcement is "seleccionados" (selected), only if user is a recipient
    */
-  async obtenerAnunciosParaUsuario(usuarioId) {
+  async getAnnouncementsForUser(usuarioId) {
     try {
-      // 1. Obtener anuncios para "todos" no expirados
+      // 1. Get non-expired announcements for "todos" (all)
       const { data: anunciosTodos, error: errorTodos } = await supabase
         .from('anuncios_admin')
         .select('*')
@@ -195,7 +195,7 @@ export const tablonService = {
         console.error('[tablonService] Error obteniendo anuncios todos:', errorTodos);
       }
 
-      // 2. Obtener anuncios específicos para este usuario
+      // 2. Get announcements specific to this user
       const { data: destinatarios, error: errorDest } = await supabase
         .from('anuncios_destinatarios')
         .select('anuncio_id, leido')
@@ -205,7 +205,7 @@ export const tablonService = {
         console.error('[tablonService] Error obteniendo destinatarios:', errorDest);
       }
 
-      // 3. Si hay destinatarios, obtener esos anuncios
+      // 3. If there are recipients, get those announcements
       let anunciosSeleccionados = [];
       const destinatariosMap = new Map();
 
@@ -223,25 +223,25 @@ export const tablonService = {
         anunciosSeleccionados = anunciosSel || [];
       }
 
-      // 4. Combinar y mapear
+      // 4. Combine and map
       const todosAnuncios = [...(anunciosTodos || []), ...anunciosSeleccionados];
 
-      // Eliminar duplicados por ID
+      // Remove duplicates by ID
       const anunciosUnicos = Array.from(
         new Map(todosAnuncios.map(a => [a.id, a])).values()
       );
 
-      // Ordenar por fecha
+      // Sort by date
       anunciosUnicos.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-      // Mapear con estado de lectura
+      // Map with read status
       const resultado = anunciosUnicos.map(anuncio => {
-        // Para anuncios "todos", necesitamos verificar si hay registro de lectura
+        // For "todos" announcements, we need to check if there's a read record
         let leido = false;
         if (anuncio.destinatarios === 'seleccionados') {
           leido = destinatariosMap.get(anuncio.id) || false;
         } else {
-          // Para "todos", verificar en la tabla de destinatarios
+          // For "todos", check in the recipients table
           leido = destinatariosMap.has(anuncio.id) ? destinatariosMap.get(anuncio.id) : false;
         }
         return mapAnuncioToCamelCase(anuncio, leido);
@@ -255,11 +255,11 @@ export const tablonService = {
   },
 
   /**
-   * Cuenta anuncios no leídos para un usuario
+   * Counts unread announcements for a user
    */
-  async contarAnunciosNoLeidos(usuarioId) {
+  async countUnreadAnnouncements(usuarioId) {
     try {
-      const result = await this.obtenerAnunciosParaUsuario(usuarioId);
+      const result = await this.getAnnouncementsForUser(usuarioId);
       if (!result.success) return { success: true, count: 0 };
 
       const noLeidos = result.data.filter(a => !a.leido).length;
@@ -270,11 +270,11 @@ export const tablonService = {
   },
 
   /**
-   * Marca un anuncio como leído para un usuario
+   * Marks an announcement as read for a user
    */
-  async marcarAnuncioLeido(anuncioId, usuarioId) {
+  async markAnnouncementAsRead(anuncioId, usuarioId) {
     try {
-      // Usar upsert para crear o actualizar el registro
+      // Use upsert to create or update the record
       const { error } = await supabase
         .from('anuncios_destinatarios')
         .upsert(
@@ -297,12 +297,12 @@ export const tablonService = {
     }
   },
 
-  // ============ ANUNCIOS DE ADMIN - GESTIÓN (admins) ============
+  // ============ ADMIN ANNOUNCEMENTS - MANAGEMENT (admins) ============
 
   /**
-   * Obtiene todos los anuncios (para admin)
+   * Gets all announcements (for admin)
    */
-  async obtenerTodosAnuncios() {
+  async getAllAnnouncements() {
     try {
       const { data, error } = await supabase
         .from('anuncios_admin')
@@ -325,18 +325,18 @@ export const tablonService = {
   },
 
   /**
-   * Crea un anuncio (solo admins)
-   * @param {string} creadorId - ID del admin
-   * @param {string} creadorNombre - Nombre del admin
-   * @param {string} titulo - Título del anuncio
-   * @param {string} mensaje - Contenido del anuncio
-   * @param {string} tipo - Tipo: 'info', 'aviso', 'urgente', 'mantenimiento'
-   * @param {string} destinatarios - 'todos' o 'seleccionados'
-   * @param {string[]} usuariosIds - IDs de usuarios si es 'seleccionados'
+   * Creates an announcement (admin only)
+   * @param {string} creadorId - Admin ID
+   * @param {string} creadorNombre - Admin name
+   * @param {string} titulo - Announcement title
+   * @param {string} mensaje - Announcement content
+   * @param {string} tipo - Type: 'info', 'aviso', 'urgente', 'mantenimiento'
+   * @param {string} destinatarios - 'todos' (all) or 'seleccionados' (selected)
+   * @param {string[]} usuariosIds - User IDs if 'seleccionados'
    */
-  async crearAnuncio(creadorId, creadorNombre, titulo, mensaje, tipo = 'info', destinatarios = 'todos', usuariosIds = []) {
+  async createAnnouncement(creadorId, creadorNombre, titulo, mensaje, tipo = 'info', destinatarios = 'todos', usuariosIds = []) {
     try {
-      // 1. Crear el anuncio
+      // 1. Create the announcement
       const { data: anuncio, error: anuncioError } = await supabase
         .from('anuncios_admin')
         .insert({
@@ -358,7 +358,7 @@ export const tablonService = {
         return { success: false, error: 'Error al crear anuncio' };
       }
 
-      // 2. Si es para usuarios seleccionados, crear registros de destinatarios
+      // 2. If for selected users, create recipient records
       if (destinatarios === 'seleccionados' && usuariosIds.length > 0) {
         const destinatariosData = usuariosIds.map(userId => ({
           anuncio_id: anuncio.id,
@@ -387,9 +387,9 @@ export const tablonService = {
   },
 
   /**
-   * Elimina un anuncio (solo admins)
+   * Deletes an announcement (admin only)
    */
-  async eliminarAnuncio(anuncioId) {
+  async deleteAnnouncement(anuncioId) {
     try {
       const { error } = await supabase
         .from('anuncios_admin')
@@ -407,9 +407,9 @@ export const tablonService = {
   },
 
   /**
-   * Obtiene lista de usuarios aprobados (para selector de destinatarios)
+   * Gets list of approved users (for recipient selector)
    */
-  async obtenerUsuariosAprobados() {
+  async getApprovedUsers() {
     try {
       const { data, error } = await supabase
         .from('users')
@@ -435,4 +435,21 @@ export const tablonService = {
       return { success: false, error: 'Error al obtener usuarios' };
     }
   },
+
+  // ============================================================================
+  // LEGACY ALIASES - For backwards compatibility
+  // ============================================================================
+  obtenerNotificaciones(...args) { return this.getNotifications(...args); },
+  contarNotificacionesNoLeidas(...args) { return this.countUnreadNotifications(...args); },
+  marcarNotificacionLeida(...args) { return this.markNotificationAsRead(...args); },
+  marcarTodasLeidas(...args) { return this.markAllAsRead(...args); },
+  eliminarNotificacion(...args) { return this.deleteNotification(...args); },
+  crearNotificacion(...args) { return this.createNotification(...args); },
+  obtenerAnunciosParaUsuario(...args) { return this.getAnnouncementsForUser(...args); },
+  contarAnunciosNoLeidos(...args) { return this.countUnreadAnnouncements(...args); },
+  marcarAnuncioLeido(...args) { return this.markAnnouncementAsRead(...args); },
+  obtenerTodosAnuncios(...args) { return this.getAllAnnouncements(...args); },
+  crearAnuncio(...args) { return this.createAnnouncement(...args); },
+  eliminarAnuncio(...args) { return this.deleteAnnouncement(...args); },
+  obtenerUsuariosAprobados(...args) { return this.getApprovedUsers(...args); },
 };

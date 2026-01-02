@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { authService } from '../services/authService.supabase';
 
 /**
- * Hook para cargar usuarios de la urbanización
+ * Hook to load community users
+ * Fetches all approved users from the community, excluding the current user
  */
 export function useUsuariosUrbanizacion(usuarioActualId) {
   const [usuarios, setUsuarios] = useState([]);
@@ -15,7 +16,7 @@ export function useUsuariosUrbanizacion(usuarioActualId) {
     setLoading(true);
     const result = await authService.getTodosUsuarios();
     if (result.success) {
-      // Filtrar el usuario actual
+      // Filter out the current user
       setUsuarios(result.data.filter(u => u.id !== usuarioActualId));
     }
     setLoading(false);

@@ -5,7 +5,7 @@ import { supabase } from './supabaseConfig';
 import { webPushService } from './webPushService';
 import { tablonService } from './tablonService';
 
-// Configurar comportamiento de notificaciones cuando la app está en primer plano (solo móvil)
+// Configure notification behavior when app is in foreground (mobile only)
 if (Platform.OS !== 'web') {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -18,9 +18,9 @@ if (Platform.OS !== 'web') {
 
 export const notificationService = {
   /**
-   * Solicita permisos de notificación y registra el push token
-   * Funciona tanto en móvil (Expo) como en web (Web Push)
-   * @param {string} userId - ID del usuario autenticado
+   * Requests notification permissions and registers the push token
+   * Works on both mobile (Expo) and web (Web Push)
+   * @param {string} userId - Authenticated user ID
    * @returns {Promise<{success: boolean, token?: string, error?: string}>}
    */
   async registerForPushNotifications(userId) {
@@ -29,17 +29,17 @@ export const notificationService = {
       return await webPushService.subscribe(userId);
     }
 
-    // En móvil, solo funciona en dispositivos físicos
+    // On mobile, only works on physical devices
     if (!Device.isDevice) {
       return { success: false, error: 'Push notifications requieren dispositivo físico' };
     }
 
     try {
-      // Verificar permisos existentes
+      // Check existing permissions
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
-      // Si no hay permisos, solicitarlos
+      // If no permissions, request them
       if (existingStatus !== 'granted') {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
@@ -49,13 +49,13 @@ export const notificationService = {
         return { success: false, error: 'Permisos de notificación denegados' };
       }
 
-      // Obtener el Expo Push Token
+      // Get the Expo Push Token
       const tokenData = await Notifications.getExpoPushTokenAsync({
         projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
       });
       const token = tokenData.data;
 
-      // Configuración específica para Android
+      // Android-specific configuration
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('default', {
           name: 'default',
@@ -65,7 +65,7 @@ export const notificationService = {
         });
       }
 
-      // Guardar token en Supabase
+      // Save token in Supabase
       await this.savePushToken(userId, token);
 
       return { success: true, token };
@@ -76,11 +76,11 @@ export const notificationService = {
   },
 
   /**
-   * Guarda el push token en Supabase (para móvil)
+   * Saves the push token in Supabase (for mobile)
    */
   async savePushToken(userId, token) {
     try {
-      // Upsert: actualizar si existe, crear si no
+      // Upsert: update if exists, create if not
       const { error } = await supabase
         .from('push_tokens')
         .upsert(
@@ -106,7 +106,7 @@ export const notificationService = {
   },
 
   /**
-   * Elimina el push token al cerrar sesión
+   * Removes the push token on logout
    */
   async removePushToken(userId) {
     // En web, usar Web Push
@@ -138,13 +138,13 @@ export const notificationService = {
   },
 
   /**
-   * Programa una notificación local de recordatorio
-   * @param {Object} reserva - Datos de la reserva
-   * @param {number} minutosAntes - Minutos antes de la reserva para notificar
-   * @returns {Promise<string|null>} ID de la notificación programada
+   * Schedules a local reminder notification
+   * @param {Object} reserva - Reservation data
+   * @param {number} minutosAntes - Minutes before reservation to notify
+   * @returns {Promise<string|null>} Scheduled notification ID
    */
   async scheduleReservationReminder(reserva, minutosAntes = 60) {
-    // En web, programar con setTimeout (solo funciona mientras la página está abierta)
+    // On web, schedule with setTimeout (only works while page is open)
     if (Platform.OS === 'web') {
       const fechaReserva = new Date(`${reserva.fecha}T${reserva.horaInicio}`);
       const fechaNotificacion = new Date(fechaReserva.getTime() - minutosAntes * 60 * 1000);
@@ -161,11 +161,11 @@ export const notificationService = {
     }
 
     try {
-      // Calcular fecha/hora de la notificación
+      // Calculate notification date/time
       const fechaReserva = new Date(`${reserva.fecha}T${reserva.horaInicio}`);
       const fechaNotificacion = new Date(fechaReserva.getTime() - minutosAntes * 60 * 1000);
 
-      // Solo programar si la fecha es futura
+      // Only schedule if date is in the future
       if (fechaNotificacion <= new Date()) {
         return null;
       }
@@ -193,7 +193,7 @@ export const notificationService = {
   },
 
   /**
-   * Cancela una notificación programada
+   * Cancels a scheduled notification
    */
   async cancelScheduledNotification(notificationId) {
     if (!notificationId) return;
@@ -211,7 +211,7 @@ export const notificationService = {
   },
 
   /**
-   * Cancela todas las notificaciones programadas
+   * Cancels all scheduled notifications
    */
   async cancelAllScheduledNotifications() {
     if (Platform.OS === 'web') return;
@@ -224,19 +224,19 @@ export const notificationService = {
   },
 
   /**
-   * Envía push notification a un usuario
-   * Usa la Edge Function de Supabase para Web Push
-   * Usa Expo API para móvil
-   * @param {string} userId - ID del usuario destinatario
-   * @param {string} title - Título de la notificación
-   * @param {string} body - Cuerpo de la notificación
-   * @param {Object} data - Datos adicionales
+   * Sends push notification to a user
+   * Uses Supabase Edge Function for Web Push
+   * Uses Expo API for mobile
+   * @param {string} userId - Recipient user ID
+   * @param {string} title - Notification title
+   * @param {string} body - Notification body
+   * @param {Object} data - Additional data
    */
   async sendPushToUser(userId, title, body, data = {}) {
-    // Intentar enviar por Web Push (Edge Function)
+    // Try to send via Web Push (Edge Function)
     const webPushResult = await this.sendWebPush(userId, title, body, data);
 
-    // Intentar enviar por Expo Push (móvil)
+    // Try to send via Expo Push (mobile)
     const expoPushResult = await this.sendExpoPush(userId, title, body, data);
 
     return {
@@ -247,8 +247,8 @@ export const notificationService = {
   },
 
   /**
-   * Envía Web Push via Edge Function de Supabase
-   * Usa fetch directo para evitar problemas de autenticación JWT
+   * Sends Web Push via Supabase Edge Function
+   * Uses direct fetch to avoid JWT authentication issues
    */
   async sendWebPush(userId, title, body, data = {}) {
     try {
@@ -262,7 +262,7 @@ export const notificationService = {
         return { success: false, error: 'Configuración incompleta' };
       }
 
-      // Llamar a la Edge Function directamente con fetch
+      // Call the Edge Function directly with fetch
       const response = await fetch(
         `${supabaseUrl}/functions/v1/send-push-notification`,
         {
@@ -292,11 +292,11 @@ export const notificationService = {
   },
 
   /**
-   * Envía Expo Push notification (para dispositivos móviles)
+   * Sends Expo Push notification (for mobile devices)
    */
   async sendExpoPush(userId, title, body, data = {}) {
     try {
-      // Obtener tokens de Expo del usuario
+      // Get user's Expo tokens
       const { data: tokens, error } = await supabase
         .from('push_tokens')
         .select('token')
@@ -333,7 +333,7 @@ export const notificationService = {
   },
 
   /**
-   * Notifica a un usuario sobre cambio de vivienda aprobado/rechazado
+   * Notifies a user about apartment change approved/rejected
    */
   async notifyViviendaChange(userId, aprobado, viviendaNueva) {
     const title = aprobado
@@ -351,8 +351,8 @@ export const notificationService = {
   },
 
   /**
-   * Notifica a un usuario sobre desplazamiento de reserva
-   * @deprecated Usar notifyViviendaDisplacement para notificar a toda la vivienda
+   * Notifies a user about reservation displacement
+   * @deprecated Use notifyViviendaDisplacement to notify the entire apartment
    */
   async notifyReservationDisplacement(userId, reservaInfo) {
     const title = 'Reserva desplazada';
@@ -365,15 +365,15 @@ export const notificationService = {
   },
 
   /**
-   * Notifica a TODOS los usuarios de una vivienda sobre desplazamiento de reserva
-   * @param {string} vivienda - Vivienda cuyos usuarios serán notificados
-   * @param {Object} reservaInfo - Información de la reserva desplazada
+   * Notifies ALL users of an apartment about reservation displacement
+   * @param {string} vivienda - Apartment whose users will be notified
+   * @param {Object} reservaInfo - Information about the displaced reservation
    */
   async notifyViviendaDisplacement(vivienda, reservaInfo) {
     const title = 'Reserva desplazada';
     const body = `La reserva del ${reservaInfo.fecha} a las ${reservaInfo.horaInicio} en ${reservaInfo.pistaNombre} ha sido desplazada.`;
 
-    // Obtener usuarios de la vivienda para crear notificaciones en el tablón
+    // Get apartment users to create bulletin notifications
     try {
       const { data: usuarios } = await supabase
         .from('users')
@@ -403,10 +403,10 @@ export const notificationService = {
     });
   },
 
-  // ============ NOTIFICACIONES DE PARTIDAS ============
+  // ============ MATCH NOTIFICATIONS ============
 
   /**
-   * Notifica al creador que alguien quiere unirse a su partida/clase
+   * Notifies the creator that someone wants to join their match/class
    */
   async notifyPartidaSolicitud(creadorId, solicitanteNombre, partidaInfo) {
     const esClase = partidaInfo.esClase || false;
@@ -428,7 +428,7 @@ export const notificationService = {
   },
 
   /**
-   * Notifica al usuario que su solicitud fue aceptada
+   * Notifies the user that their request was accepted
    */
   async notifyPartidaAceptada(usuarioId, creadorNombre, partidaInfo) {
     const esClase = partidaInfo.esClase || false;
@@ -451,7 +451,7 @@ export const notificationService = {
   },
 
   /**
-   * Notifica a todos los jugadores que la partida/clase está completa
+   * Notifies all players that the match/class is complete
    */
   async notifyPartidaCompleta(jugadoresIds, creadorNombre, partidaInfo) {
     const esClase = partidaInfo.esClase || false;
@@ -494,7 +494,7 @@ export const notificationService = {
   },
 
   /**
-   * Notifica a los jugadores que la partida/clase fue cancelada
+   * Notifies players that the match/class was canceled
    */
   async notifyPartidaCancelada(jugadoresIds, creadorNombre, partidaInfo) {
     const esClase = partidaInfo.esClase || false;
@@ -528,12 +528,12 @@ export const notificationService = {
   },
 
   /**
-   * Notifica a los jugadores que la partida/clase fue cancelada por la reserva
-   * Se usa cuando la reserva vinculada es cancelada o desplazada
-   * @param {string[]} jugadoresIds - IDs de usuarios a notificar
-   * @param {string} creadorNombre - Nombre del creador de la partida
+   * Notifies players that the match/class was canceled due to the reservation
+   * Used when the linked reservation is canceled or displaced
+   * @param {string[]} jugadoresIds - User IDs to notify
+   * @param {string} creadorNombre - Name of the match creator
    * @param {Object} partidaInfo - { fecha, horaInicio, esClase }
-   * @param {string} motivo - 'reserva_cancelada' o 'reserva_desplazada'
+   * @param {string} motivo - 'reserva_cancelada' or 'reserva_desplazada'
    */
   async notifyPartidaCanceladaPorReserva(jugadoresIds, creadorNombre, partidaInfo, motivo) {
     const esClase = partidaInfo.esClase || false;
@@ -576,16 +576,16 @@ export const notificationService = {
   },
 
   /**
-   * Notifica a todos los usuarios de una vivienda
-   * @param {string} vivienda - Identificador de la vivienda (ej: "1-3-B")
-   * @param {string} title - Título de la notificación
-   * @param {string} body - Cuerpo de la notificación
-   * @param {Object} data - Datos adicionales
-   * @param {string} excludeUserId - ID de usuario a excluir (ej: quien hizo la acción)
+   * Notifies all users of an apartment
+   * @param {string} vivienda - Apartment identifier (e.g., "1-3-B")
+   * @param {string} title - Notification title
+   * @param {string} body - Notification body
+   * @param {Object} data - Additional data
+   * @param {string} excludeUserId - User ID to exclude (e.g., who performed the action)
    */
   async notifyViviendaMembers(vivienda, title, body, data = {}, excludeUserId = null) {
     try {
-      // Obtener todos los usuarios de la vivienda
+      // Get all users of the apartment
       const { data: usuarios, error } = await supabase
         .from('users')
         .select('id')
@@ -597,7 +597,7 @@ export const notificationService = {
         return { success: false, error: 'No se encontraron usuarios' };
       }
 
-      // Filtrar usuario excluido si se especifica
+      // Filter excluded user if specified
       const usuariosANotificar = excludeUserId
         ? usuarios.filter(u => u.id !== excludeUserId)
         : usuarios;
@@ -606,7 +606,7 @@ export const notificationService = {
         return { success: true, results: [] };
       }
 
-      // Enviar notificación a todos
+      // Send notification to everyone
       const results = await Promise.all(
         usuariosANotificar.map((usuario) =>
           this.sendPushToUser(usuario.id, title, body, data)
@@ -621,16 +621,16 @@ export const notificationService = {
     }
   },
 
-  // ============ NOTIFICACIONES PROGRAMADAS DE PARTIDAS ============
+  // ============ SCHEDULED MATCH NOTIFICATIONS ============
 
   /**
-   * Programa notificaciones de recordatorio para una partida:
-   * 1. "Match Day" a las 9:00 AM del día de la partida
-   * 2. 10 minutos antes de la partida
-   * @param {Object} partida - Datos de la partida con fecha y hora
-   * @param {string} partida.fecha - Fecha en formato YYYY-MM-DD
-   * @param {string} partida.horaInicio - Hora en formato HH:MM
-   * @param {string} partida.pistaNombre - Nombre de la pista (opcional)
+   * Schedules reminder notifications for a match:
+   * 1. "Match Day" at 9:00 AM on the match day
+   * 2. 10 minutes before the match
+   * @param {Object} partida - Match data with date and time
+   * @param {string} partida.fecha - Date in YYYY-MM-DD format
+   * @param {string} partida.horaInicio - Time in HH:MM format
+   * @param {string} partida.pistaNombre - Court name (optional)
    * @returns {Promise<{matchDayId: string|null, tenMinId: string|null}>}
    */
   async schedulePartidaReminders(partida) {
@@ -644,7 +644,7 @@ export const notificationService = {
     const fechaPartida = new Date(`${partida.fecha}T${partida.horaInicio}`);
     const ahora = new Date();
 
-    // 1. Notificación "Match Day" a las 9:00 AM del día de la partida
+    // 1. "Match Day" notification at 9:00 AM on match day
     const matchDayDate = new Date(`${partida.fecha}T09:00:00`);
     if (matchDayDate > ahora) {
       const horaFormateada = partida.horaInicio.substring(0, 5);
@@ -674,7 +674,7 @@ export const notificationService = {
       }
     }
 
-    // 2. Notificación 10 minutos antes
+    // 2. Notification 10 minutes before
     const tenMinBefore = new Date(fechaPartida.getTime() - 10 * 60 * 1000);
     if (tenMinBefore > ahora) {
       const horaFormateada = partida.horaInicio.substring(0, 5);
@@ -709,8 +709,8 @@ export const notificationService = {
   },
 
   /**
-   * Cancela los recordatorios programados de una partida
-   * @param {Object} reminderIds - IDs de las notificaciones {matchDayId, tenMinId}
+   * Cancels scheduled reminders for a match
+   * @param {Object} reminderIds - Notification IDs {matchDayId, tenMinId}
    */
   async cancelPartidaReminders(reminderIds) {
     if (reminderIds?.matchDayId) {
@@ -722,14 +722,14 @@ export const notificationService = {
   },
 
   /**
-   * Añade listeners para notificaciones (solo móvil)
-   * @param {Function} onNotificationReceived - Callback cuando se recibe notificación
-   * @param {Function} onNotificationResponse - Callback cuando usuario toca notificación
-   * @returns {Function} Función para limpiar listeners
+   * Adds notification listeners (mobile only)
+   * @param {Function} onNotificationReceived - Callback when notification is received
+   * @param {Function} onNotificationResponse - Callback when user taps notification
+   * @returns {Function} Function to cleanup listeners
    */
   addNotificationListeners(onNotificationReceived, onNotificationResponse) {
     if (Platform.OS === 'web') {
-      // En web los listeners están en el Service Worker
+      // On web, listeners are in the Service Worker
       return () => {};
     }
 
@@ -741,26 +741,26 @@ export const notificationService = {
       onNotificationResponse
     );
 
-    // Retornar función de limpieza
+    // Return cleanup function
     return () => {
       receivedSubscription.remove();
       responseSubscription.remove();
     };
   },
 
-  // ============ NOTIFICACIONES DE ANUNCIOS ============
+  // ============ ANNOUNCEMENT NOTIFICATIONS ============
 
   /**
-   * Notifica a usuarios sobre un nuevo anuncio de admin
-   * @param {string} titulo - Título del anuncio
-   * @param {string} mensaje - Mensaje del anuncio (se trunca para la notificación)
-   * @param {string} anuncioId - ID del anuncio
-   * @param {string[]} usuariosIds - IDs de usuarios destinatarios (vacío = todos)
+   * Notifies users about a new admin announcement
+   * @param {string} titulo - Announcement title
+   * @param {string} mensaje - Announcement message (truncated for notification)
+   * @param {string} anuncioId - Announcement ID
+   * @param {string[]} usuariosIds - Recipient user IDs (empty = all)
    */
   async notifyNuevoAnuncio(titulo, mensaje, anuncioId, usuariosIds = []) {
     const body = mensaje.length > 100 ? mensaje.substring(0, 97) + '...' : mensaje;
 
-    // Si usuariosIds está vacío, enviar a todos los usuarios aprobados
+    // If usuariosIds is empty, send to all approved users
     if (!usuariosIds || usuariosIds.length === 0) {
       try {
         const { data: usuarios, error } = await supabase
@@ -780,7 +780,7 @@ export const notificationService = {
       }
     }
 
-    // Enviar a todos los usuarios especificados
+    // Send to all specified users
     const results = await Promise.all(
       usuariosIds.map((userId) =>
         this.sendPushToUser(userId, `📢 ${titulo}`, body, {

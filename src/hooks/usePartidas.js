@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { partidasService } from '../services/partidasService';
 
 /**
- * Hook para gestionar la lógica de partidas
+ * Hook to manage match/game logic
  */
 export function usePartidas(userId, tabActivo) {
   const [partidas, setPartidas] = useState([]);
@@ -17,7 +17,7 @@ export function usePartidas(userId, tabActivo) {
       if (tabActivo === 'disponibles') {
         const result = await partidasService.obtenerPartidasActivas();
         if (result.success) {
-          // Filtrar: solo partidas de OTROS usuarios (no las mías)
+          // Filter: only matches from OTHER users (not mine)
           const partidasDeOtros = result.data.filter((p) => p.creadorId !== userId);
           setPartidas(partidasDeOtros.map((p) => ({ ...p, esCreador: false })));
         }
@@ -45,7 +45,7 @@ export function usePartidas(userId, tabActivo) {
         setPartidas(todas);
       }
     } catch (error) {
-      // Error silencioso, el usuario verá lista vacía
+      // Silent error, user will see empty list
     }
     setLoading(false);
   }, [userId, tabActivo]);
@@ -70,7 +70,7 @@ export function usePartidas(userId, tabActivo) {
 }
 
 /**
- * Hook para las acciones sobre partidas
+ * Hook for match actions
  */
 export function usePartidasActions(userId, onSuccess) {
   const [actionLoading, setActionLoading] = useState(false);
@@ -129,7 +129,7 @@ export function usePartidasActions(userId, onSuccess) {
   const desapuntarse = async (partidaId) => {
     const result = await partidasService.desapuntarsePartida(partidaId, userId);
     if (result.success) {
-      // Pequeño delay para que Supabase propague el cambio
+      // Small delay for Supabase to propagate the change
       await new Promise(resolve => setTimeout(resolve, 300));
       onSuccess?.();
     }
@@ -187,7 +187,7 @@ export function usePartidasActions(userId, onSuccess) {
 }
 
 /**
- * Hook para gestionar el modal de crear partida/clase
+ * Hook to manage the create match/class modal
  */
 export function useCrearPartidaModal(userId) {
   const [visible, setVisible] = useState(false);
@@ -197,7 +197,7 @@ export function useCrearPartidaModal(userId) {
     mensaje: '',
     nivelPreferido: null,
     saving: false,
-    // Campos de clase
+    // Class fields
     esClase: false,
     niveles: [],
     minParticipantes: 2,
@@ -216,7 +216,7 @@ export function useCrearPartidaModal(userId) {
       mensaje: '',
       nivelPreferido: null,
       saving: false,
-      // Campos de clase
+      // Class fields
       esClase: false,
       niveles: [],
       minParticipantes: 2,
@@ -225,7 +225,7 @@ export function useCrearPartidaModal(userId) {
       precioGrupo: '',
     });
 
-    // Cargar reservas que ya tienen partida
+    // Load reservations that already have a match
     const result = await partidasService.obtenerReservasConPartida(userId);
     if (result.success) {
       setReservasConPartida(result.data);
@@ -239,8 +239,8 @@ export function useCrearPartidaModal(userId) {
   };
 
   const addJugador = (jugador) => {
-    // Para clases: max es maxParticipantes - 1 (creador cuenta como 1)
-    // Para partidas: max es 3 (creador + 3 = 4)
+    // For classes: max is maxParticipantes - 1 (creator counts as 1)
+    // For matches: max is 3 (creator + 3 = 4)
     const maxJugadores = modalState.esClase ? modalState.maxParticipantes - 1 : 3;
     if (jugadores.length >= maxJugadores) return false;
     setJugadores(prev => [...prev, jugador]);
@@ -270,7 +270,7 @@ export function useCrearPartidaModal(userId) {
 }
 
 /**
- * Hook para gestionar el modal de añadir jugador
+ * Hook to manage the add player modal
  */
 export function useAddJugadorModal(onAddJugador) {
   const [visible, setVisible] = useState(false);
