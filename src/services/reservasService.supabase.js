@@ -182,23 +182,35 @@ export const reservasService = {
    * Obtiene la disponibilidad de horarios para una pista en una fecha
    * Incluye información de prioridad para el sistema de reservas primera/segunda
    * Aplica conversión automática P→G si la vivienda solo tiene 1 reserva futura
+   * Incluye información de bloqueos administrativos
    */
   async obtenerDisponibilidad(pistaId, fecha) {
     try {
       console.log('[obtenerDisponibilidad] Consultando pista:', pistaId, 'fecha:', fecha);
-      const { data, error } = await supabase
-        .from('reservas')
-        .select('*')
-        .eq('pista_id', pistaId)
-        .eq('fecha', fecha)
-        .eq('estado', 'confirmada');
+
+      // Obtener reservas y bloqueos en paralelo
+      const [reservasResult, bloqueosResult] = await Promise.all([
+        supabase
+          .from('reservas')
+          .select('*')
+          .eq('pista_id', pistaId)
+          .eq('fecha', fecha)
+          .eq('estado', 'confirmada'),
+        this.obtenerBloqueos(pistaId, fecha),
+      ]);
+
+      const { data, error } = reservasResult;
 
       if (error) {
         console.error('[obtenerDisponibilidad] Error:', error);
         return { success: false, error: 'Error al verificar disponibilidad' };
       }
 
+      const bloqueos = bloqueosResult.success ? bloqueosResult.data : [];
+
       console.log('[obtenerDisponibilidad] Reservas confirmadas encontradas:', data?.length, data?.map(r => ({ id: r.id, vivienda: r.vivienda, estado: r.estado, prioridad: r.prioridad })));
+      console.log('[obtenerDisponibilidad] Bloqueos encontrados:', bloqueos.length);
+
       let reservasExistentes = data.map(mapReservaToCamelCase);
 
       // Aplicar conversión automática P→G para cada vivienda que tenga reservas
@@ -245,6 +257,29 @@ export const reservasService = {
         const bloqueInicioMin = timeToMinutes(horario.horaInicio);
         const bloqueFinMin = timeToMinutes(horario.horaFin);
 
+        // Verificar si el bloque está bloqueado por admin
+        const bloqueoConflicto = bloqueos.find((bloqueo) => {
+          const bloqueoInicioMin = timeToMinutes(bloqueo.horaInicio);
+          const bloqueoFinMin = timeToMinutes(bloqueo.horaFin);
+          return rangesOverlap(bloqueInicioMin, bloqueFinMin, bloqueoInicioMin, bloqueoFinMin);
+        });
+
+        // Si está bloqueado, retornar estado de bloqueo
+        if (bloqueoConflicto) {
+          return {
+            horaInicio: horario.horaInicio,
+            horaFin: horario.horaFin,
+            disponible: false,
+            bloqueado: true,
+            bloqueoId: bloqueoConflicto.id,
+            motivoBloqueo: bloqueoConflicto.motivo || 'Bloqueado por administración',
+            reservaExistente: null,
+            prioridad: null,
+            esDesplazable: false,
+            estaProtegida: true,
+          };
+        }
+
         const reservaConflicto = reservasExistentes.find((reserva) => {
           const reservaInicioMin = timeToMinutes(reserva.horaInicio);
           const reservaFinMin = timeToMinutes(reserva.horaFin);
@@ -265,6 +300,9 @@ export const reservasService = {
           horaInicio: horario.horaInicio,
           horaFin: horario.horaFin,
           disponible: !reservaConflicto,
+          bloqueado: false,
+          bloqueoId: null,
+          motivoBloqueo: null,
           reservaExistente: reservaConflicto || null,
           // Nuevos campos para sistema de prioridades
           prioridad: reservaConflicto?.prioridad || null,
@@ -995,6 +1033,136 @@ export const reservasService = {
       return { success: true, data };
     } catch (error) {
       return { success: true, data: { updated: 0 } };
+    }
+  },
+
+  // ============================================================================
+  // MÉTODOS DE BLOQUEO DE HORARIOS (Solo Admin)
+  // ============================================================================
+
+  /**
+   * Obtiene los bloqueos de horarios para una pista en una fecha
+   */
+  async obtenerBloqueos(pistaId, fecha) {
+    try {
+      const { data, error } = await supabase
+        .from('bloqueos_horarios')
+        .select('*')
+        .eq('pista_id', pistaId)
+        .eq('fecha', fecha);
+
+      if (error) {
+        // Si la tabla no existe, devolver array vacío
+        if (error.code === '42P01' || error.message?.includes('bloqueos_horarios')) {
+          return { success: true, data: [] };
+        }
+        console.error('[obtenerBloqueos] Error:', error);
+        return { success: false, error: 'Error al obtener bloqueos' };
+      }
+
+      return {
+        success: true,
+        data: (data || []).map(b => ({
+          id: b.id,
+          pistaId: b.pista_id,
+          fecha: b.fecha,
+          horaInicio: b.hora_inicio,
+          horaFin: b.hora_fin,
+          motivo: b.motivo,
+          creadoPor: b.creado_por,
+          createdAt: b.created_at,
+        })),
+      };
+    } catch (error) {
+      console.error('[obtenerBloqueos] Error:', error);
+      return { success: true, data: [] };
+    }
+  },
+
+  /**
+   * Crea un bloqueo de horario (solo admin)
+   */
+  async crearBloqueo(pistaId, fecha, horaInicio, horaFin, motivo, creadoPor) {
+    try {
+      // Verificar que no haya reserva confirmada en ese horario
+      const disponibilidad = await this.obtenerDisponibilidad(pistaId, fecha);
+      if (disponibilidad.success) {
+        const bloqueInicio = timeToMinutes(horaInicio);
+        const bloqueFin = timeToMinutes(horaFin);
+
+        const hayReserva = disponibilidad.data.some(h => {
+          if (h.disponible || h.bloqueado) return false;
+          const hInicio = timeToMinutes(h.horaInicio);
+          return hInicio >= bloqueInicio && hInicio < bloqueFin;
+        });
+
+        if (hayReserva) {
+          return {
+            success: false,
+            error: 'No se puede bloquear: hay una reserva confirmada en ese horario',
+          };
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('bloqueos_horarios')
+        .insert({
+          pista_id: pistaId,
+          fecha,
+          hora_inicio: horaInicio,
+          hora_fin: horaFin,
+          motivo: motivo || null,
+          creado_por: creadoPor,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[crearBloqueo] Error:', error);
+        if (error.code === '23505') {
+          return { success: false, error: 'Este horario ya está bloqueado' };
+        }
+        return { success: false, error: 'Error al crear bloqueo' };
+      }
+
+      return {
+        success: true,
+        data: {
+          id: data.id,
+          pistaId: data.pista_id,
+          fecha: data.fecha,
+          horaInicio: data.hora_inicio,
+          horaFin: data.hora_fin,
+          motivo: data.motivo,
+          creadoPor: data.creado_por,
+          createdAt: data.created_at,
+        },
+      };
+    } catch (error) {
+      console.error('[crearBloqueo] Error:', error);
+      return { success: false, error: 'Error al crear bloqueo' };
+    }
+  },
+
+  /**
+   * Elimina un bloqueo de horario (solo admin)
+   */
+  async eliminarBloqueo(bloqueoId) {
+    try {
+      const { error } = await supabase
+        .from('bloqueos_horarios')
+        .delete()
+        .eq('id', bloqueoId);
+
+      if (error) {
+        console.error('[eliminarBloqueo] Error:', error);
+        return { success: false, error: 'Error al eliminar bloqueo' };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('[eliminarBloqueo] Error:', error);
+      return { success: false, error: 'Error al eliminar bloqueo' };
     }
   },
 };

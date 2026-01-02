@@ -28,4 +28,6 @@ export const colors = {
   anuncioMantenimiento: '#616161', // Gris - tipo mantenimiento
   notificacionLeida: '#f0f0f0',   // Gris claro - notificación leída
   badgeRojo: '#e53e3e',           // Rojo para badges de contador
+  // Colores para sistema de bloqueos
+  bloqueado: '#e53e3e',           // Rojo - borde de bloque bloqueado
 };

@@ -1,60 +1,50 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Platform,
-  RefreshControl,
-  Switch,
-  Modal,
-  FlatList,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { authService } from '../services/authService.supabase';
-import { notificationService } from '../services/notificationService';
+import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { useAnunciosAdmin } from '../hooks';
+import {
+  useAnunciosAdmin,
+  useAdminData,
+  useAdminActions,
+  useEditViviendaModal,
+  useAlert,
+} from '../hooks';
 import { colors } from '../constants/colors';
-import { formatearFechaLegible } from '../utils/dateHelpers';
 import { CustomAlert } from '../components/CustomAlert';
-import { ViviendaSelector } from '../components/ViviendaSelector';
-import { CrearAnuncioModal, AnuncioAdminCard } from '../components/admin';
-import { parseVivienda, combinarVivienda, formatearVivienda } from '../constants/config';
-import { validarViviendaComponentes } from '../utils/validators';
+import {
+  CrearAnuncioModal,
+  EditViviendaModal,
+  AdminHeader,
+  AdminTabs,
+  SolicitudesContent,
+  UsuariosContent,
+  MensajesContent,
+  LoadingContent,
+} from '../components/admin';
 
 export default function AdminScreen() {
   const { user } = useAuth();
   const [tabActiva, setTabActiva] = useState('solicitudes');
-  const [usuariosPendientes, setUsuariosPendientes] = useState([]);
-  const [todosUsuarios, setTodosUsuarios] = useState([]);
-  const [solicitudesCambio, setSolicitudesCambio] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const [alertConfig, setAlertConfig] = useState({
-    visible: false,
-    title: '',
-    message: '',
-    buttons: [],
-  });
-
-  // Estado para modal de editar vivienda
-  const [editViviendaModal, setEditViviendaModal] = useState({
-    visible: false,
-    usuario: null,
-    escalera: '',
-    piso: '',
-    puerta: '',
-    saving: false,
-  });
-
-  // Estado para modal de crear anuncio
   const [crearAnuncioVisible, setCrearAnuncioVisible] = useState(false);
 
-  // Hook para gestión de anuncios admin
+  // Hook de alertas
+  const { alertConfig, mostrarAlerta, mostrarConfirmacion, cerrarAlerta } = useAlert();
+
+  // Hook de datos
+  const {
+    usuariosPendientes,
+    todosUsuarios,
+    solicitudesCambio,
+    loading,
+    refreshing,
+    cargarDatosTab,
+    onRefresh,
+    removeUsuarioPendiente,
+    removeSolicitudCambio,
+    updateUsuario,
+    removeUsuario,
+  } = useAdminData();
+
+  // Hook de anuncios admin
   const {
     anuncios,
     usuarios: usuariosParaAnuncios,
@@ -66,582 +56,123 @@ export default function AdminScreen() {
     eliminarAnuncio,
   } = useAnunciosAdmin(user?.id, user?.nombre, () => {
     setCrearAnuncioVisible(false);
-    setAlertConfig({
-      visible: true,
-      title: 'Mensaje enviado',
-      message: 'El mensaje ha sido enviado correctamente',
-      buttons: [{ text: 'OK', onPress: () => {} }],
-    });
+    mostrarAlerta('Mensaje enviado', 'El mensaje ha sido enviado correctamente');
   });
 
-  const openEditVivienda = (usuario) => {
-    const parsed = parseVivienda(usuario.vivienda);
-    setEditViviendaModal({
-      visible: true,
-      usuario,
-      escalera: parsed.escalera,
-      piso: parsed.piso,
-      puerta: parsed.puerta,
-      saving: false,
-    });
-  };
+  // Hook de acciones admin
+  const {
+    handleAprobar,
+    handleRechazar,
+    handleToggleAdmin,
+    handleDeleteUser,
+    handleAprobarCambioVivienda,
+    handleRechazarCambioVivienda,
+    handleSaveVivienda,
+  } = useAdminActions({
+    currentUserId: user?.id,
+    mostrarAlerta,
+    mostrarConfirmacion,
+    removeUsuarioPendiente,
+    removeSolicitudCambio,
+    updateUsuario,
+    removeUsuario,
+  });
 
-  const closeEditVivienda = () => {
-    setEditViviendaModal({
-      visible: false,
-      usuario: null,
-      escalera: '',
-      piso: '',
-      puerta: '',
-      saving: false,
-    });
-  };
+  // Hook de modal editar vivienda
+  const editViviendaModal = useEditViviendaModal();
 
-  const handleSaveVivienda = async () => {
-    const { usuario, escalera, piso, puerta } = editViviendaModal;
+  // Cargar datos cuando cambia la tab
+  useEffect(() => {
+    cargarDatosTab(tabActiva, cargarAnuncios, cargarUsuarios);
+  }, [tabActiva, cargarDatosTab, cargarAnuncios, cargarUsuarios]);
 
-    // Validar componentes
-    const validacion = validarViviendaComponentes(escalera, piso, puerta);
-    if (!validacion.valido) {
-      const errorMsg = Object.values(validacion.errores).join('\n');
-      setAlertConfig({
-        visible: true,
-        title: 'Error de validación',
-        message: errorMsg,
-        buttons: [{ text: 'OK', onPress: () => {} }],
-      });
-      return;
-    }
-
-    setEditViviendaModal((prev) => ({ ...prev, saving: true }));
-
-    const nuevaVivienda = combinarVivienda(escalera, piso, puerta);
-    const result = await authService.updateProfile(usuario.id, {
-      vivienda: nuevaVivienda,
-    });
-
+  // Handler para guardar vivienda
+  const onSaveVivienda = useCallback(async () => {
+    const { usuario, escalera, piso, puerta } = editViviendaModal.modalState;
+    editViviendaModal.setSaving(true);
+    const result = await handleSaveVivienda(usuario, escalera, piso, puerta);
     if (result.success) {
-      // Actualizar lista local
-      setTodosUsuarios((prev) =>
-        prev.map((u) =>
-          u.id === usuario.id ? { ...u, vivienda: nuevaVivienda } : u
-        )
-      );
-      closeEditVivienda();
-      setAlertConfig({
-        visible: true,
-        title: 'Vivienda actualizada',
-        message: `La vivienda de ${usuario.nombre} ha sido cambiada a ${formatearVivienda(nuevaVivienda)}`,
-        buttons: [{ text: 'OK', onPress: () => {} }],
-      });
+      editViviendaModal.cerrar();
     } else {
-      setEditViviendaModal((prev) => ({ ...prev, saving: false }));
-      setAlertConfig({
-        visible: true,
-        title: 'Error',
-        message: result.error || 'Error al actualizar la vivienda',
-        buttons: [{ text: 'OK', onPress: () => {} }],
-      });
+      editViviendaModal.setSaving(false);
     }
-  };
+  }, [editViviendaModal, handleSaveVivienda]);
 
-  useEffect(() => {
-    cargarTodosDatos();
-  }, []);
+  // Handler para nuevo mensaje
+  const onNuevoMensaje = useCallback(() => {
+    cargarUsuarios();
+    setCrearAnuncioVisible(true);
+  }, [cargarUsuarios]);
 
-  useEffect(() => {
-    cargarDatosTab();
-  }, [tabActiva]);
-
-  const cargarTodosDatos = async () => {
-    setLoading(true);
-    const [pendientesResult, usuariosResult, cambiosResult] = await Promise.all([
-      authService.getUsuariosPendientes(),
-      authService.getTodosUsuarios(),
-      authService.getSolicitudesCambioVivienda(),
-    ]);
-    if (pendientesResult.success) {
-      setUsuariosPendientes(pendientesResult.data);
+  // Handler para crear anuncio
+  const onCrearAnuncio = useCallback(async (data) => {
+    const result = await crearAnuncio(
+      data.titulo,
+      data.mensaje,
+      data.tipo,
+      data.destinatarios,
+      data.usuariosIds
+    );
+    if (!result.success) {
+      mostrarAlerta('Error', result.error || 'No se pudo enviar el mensaje');
     }
-    if (usuariosResult.success) {
-      setTodosUsuarios(usuariosResult.data);
-    }
-    if (cambiosResult.success) {
-      setSolicitudesCambio(cambiosResult.data);
-    }
-    setLoading(false);
-  };
+  }, [crearAnuncio, mostrarAlerta]);
 
-  const cargarDatosTab = async () => {
-    if (tabActiva === 'solicitudes') {
-      const [pendientesResult, cambiosResult] = await Promise.all([
-        authService.getUsuariosPendientes(),
-        authService.getSolicitudesCambioVivienda(),
-      ]);
-      if (pendientesResult.success) {
-        setUsuariosPendientes(pendientesResult.data);
-      }
-      if (cambiosResult.success) {
-        setSolicitudesCambio(cambiosResult.data);
-      }
-    } else if (tabActiva === 'usuarios') {
-      const result = await authService.getTodosUsuarios();
-      if (result.success) {
-        setTodosUsuarios(result.data);
-      }
-    } else if (tabActiva === 'mensajes') {
-      await Promise.all([cargarAnuncios(), cargarUsuarios()]);
-    }
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await cargarTodosDatos();
-    setRefreshing(false);
-  };
-
-  const handleAprobar = (usuario) => {
-    setAlertConfig({
-      visible: true,
-      title: 'Aprobar Usuario',
-      message: `¿Aprobar el registro de ${usuario.nombre}?\n\nVivienda: ${usuario.vivienda}\nEmail: ${usuario.email}`,
-      buttons: [
-        { text: 'Cancelar', style: 'cancel', onPress: () => {} },
-        {
-          text: 'Aprobar',
-          onPress: async () => {
-            const result = await authService.aprobarUsuario(usuario.id);
-            if (result.success) {
-              setUsuariosPendientes((prev) =>
-                prev.filter((u) => u.id !== usuario.id)
-              );
-            } else {
-              setAlertConfig({
-                visible: true,
-                title: 'Error',
-                message: result.error,
-                buttons: [{ text: 'OK', onPress: () => {} }],
-              });
-            }
-          },
-        },
-      ],
-    });
-  };
-
-  const handleRechazar = (usuario) => {
-    setAlertConfig({
-      visible: true,
-      title: 'Rechazar Usuario',
-      message: `¿Rechazar el registro de ${usuario.nombre}?\n\nVivienda: ${usuario.vivienda}\nEmail: ${usuario.email}`,
-      buttons: [
-        { text: 'Cancelar', style: 'cancel', onPress: () => {} },
-        {
-          text: 'Rechazar',
-          style: 'destructive',
-          onPress: async () => {
-            const result = await authService.rechazarUsuario(usuario.id);
-            if (result.success) {
-              setUsuariosPendientes((prev) =>
-                prev.filter((u) => u.id !== usuario.id)
-              );
-            } else {
-              setAlertConfig({
-                visible: true,
-                title: 'Error',
-                message: result.error,
-                buttons: [{ text: 'OK', onPress: () => {} }],
-              });
-            }
-          },
-        },
-      ],
-    });
-  };
-
-  const handleToggleAdmin = (usuario) => {
-    const nuevoRol = !usuario.esAdmin;
-    const accion = nuevoRol ? 'dar permisos de administrador a' : 'quitar permisos de administrador a';
-
-    // No permitir quitar admin a uno mismo
-    if (usuario.id === user.id && !nuevoRol) {
-      setAlertConfig({
-        visible: true,
-        title: 'No permitido',
-        message: 'No puedes quitarte los permisos de administrador a ti mismo',
-        buttons: [{ text: 'OK', onPress: () => {} }],
-      });
-      return;
+  // Renderizar contenido según tab activa
+  const renderContent = () => {
+    if (loading) {
+      return <LoadingContent />;
     }
 
-    // No permitir quitar admin a un manager
-    if (usuario.esManager && !nuevoRol) {
-      setAlertConfig({
-        visible: true,
-        title: 'No permitido',
-        message: 'No puedes quitar los permisos de administrador a un manager',
-        buttons: [{ text: 'OK', onPress: () => {} }],
-      });
-      return;
+    switch (tabActiva) {
+      case 'solicitudes':
+        return (
+          <SolicitudesContent
+            usuariosPendientes={usuariosPendientes}
+            solicitudesCambio={solicitudesCambio}
+            onAprobar={handleAprobar}
+            onRechazar={handleRechazar}
+            onAprobarCambio={handleAprobarCambioVivienda}
+            onRechazarCambio={handleRechazarCambioVivienda}
+          />
+        );
+
+      case 'usuarios':
+        return (
+          <UsuariosContent
+            usuarios={todosUsuarios}
+            currentUserId={user?.id}
+            onToggleAdmin={handleToggleAdmin}
+            onEditVivienda={editViviendaModal.abrir}
+            onDelete={handleDeleteUser}
+          />
+        );
+
+      case 'mensajes':
+        return (
+          <MensajesContent
+            anuncios={anuncios}
+            loadingAnuncios={loadingAnuncios}
+            onNuevoMensaje={onNuevoMensaje}
+            onEliminar={eliminarAnuncio}
+          />
+        );
+
+      default:
+        return null;
     }
-
-    setAlertConfig({
-      visible: true,
-      title: nuevoRol ? 'Hacer Administrador' : 'Quitar Administrador',
-      message: `¿Deseas ${accion} ${usuario.nombre}?`,
-      buttons: [
-        { text: 'Cancelar', style: 'cancel', onPress: () => {} },
-        {
-          text: 'Confirmar',
-          onPress: async () => {
-            const result = await authService.toggleAdminRole(usuario.id, nuevoRol);
-            if (result.success) {
-              setTodosUsuarios((prev) =>
-                prev.map((u) =>
-                  u.id === usuario.id ? { ...u, esAdmin: nuevoRol } : u
-                )
-              );
-            } else {
-              setAlertConfig({
-                visible: true,
-                title: 'Error',
-                message: result.error,
-                buttons: [{ text: 'OK', onPress: () => {} }],
-              });
-            }
-          },
-        },
-      ],
-    });
   };
-
-  const handleDeleteUser = (usuario) => {
-    // No permitir eliminar a uno mismo
-    if (usuario.id === user.id) {
-      setAlertConfig({
-        visible: true,
-        title: 'No permitido',
-        message: 'No puedes eliminarte a ti mismo',
-        buttons: [{ text: 'OK', onPress: () => {} }],
-      });
-      return;
-    }
-
-    // No permitir eliminar a un manager
-    if (usuario.esManager) {
-      setAlertConfig({
-        visible: true,
-        title: 'No permitido',
-        message: 'No puedes eliminar a un manager',
-        buttons: [{ text: 'OK', onPress: () => {} }],
-      });
-      return;
-    }
-
-    setAlertConfig({
-      visible: true,
-      title: 'Eliminar Usuario',
-      message: `¿Estás seguro de eliminar a ${usuario.nombre}?\n\nEsta acción no se puede deshacer.`,
-      buttons: [
-        { text: 'Cancelar', style: 'cancel', onPress: () => {} },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            const result = await authService.deleteUser(usuario.id);
-            if (result.success) {
-              setTodosUsuarios((prev) =>
-                prev.filter((u) => u.id !== usuario.id)
-              );
-            } else {
-              setAlertConfig({
-                visible: true,
-                title: 'Error',
-                message: result.error,
-                buttons: [{ text: 'OK', onPress: () => {} }],
-              });
-            }
-          },
-        },
-      ],
-    });
-  };
-
-  const handleAprobarCambioVivienda = (usuario) => {
-    setAlertConfig({
-      visible: true,
-      title: 'Aprobar Cambio de Vivienda',
-      message: `¿Aprobar el cambio de vivienda de ${usuario.nombre}?\n\nActual: ${formatearVivienda(usuario.vivienda)}\nNueva: ${formatearVivienda(usuario.viviendaSolicitada)}`,
-      buttons: [
-        { text: 'Cancelar', style: 'cancel', onPress: () => {} },
-        {
-          text: 'Aprobar',
-          onPress: async () => {
-            const result = await authService.aprobarCambioVivienda(usuario.id);
-            if (result.success) {
-              setSolicitudesCambio((prev) =>
-                prev.filter((u) => u.id !== usuario.id)
-              );
-
-              // Enviar notificación push al usuario
-              await notificationService.notifyViviendaChange(
-                usuario.id,
-                true,
-                formatearVivienda(usuario.viviendaSolicitada)
-              );
-
-              setAlertConfig({
-                visible: true,
-                title: 'Cambio Aprobado',
-                message: `La vivienda de ${usuario.nombre} ha sido cambiada a ${formatearVivienda(usuario.viviendaSolicitada)}`,
-                buttons: [{ text: 'OK', onPress: () => {} }],
-              });
-            } else {
-              setAlertConfig({
-                visible: true,
-                title: 'Error',
-                message: result.error,
-                buttons: [{ text: 'OK', onPress: () => {} }],
-              });
-            }
-          },
-        },
-      ],
-    });
-  };
-
-  const handleRechazarCambioVivienda = (usuario) => {
-    setAlertConfig({
-      visible: true,
-      title: 'Rechazar Cambio de Vivienda',
-      message: `¿Rechazar la solicitud de cambio de vivienda de ${usuario.nombre}?\n\nSolicita: ${formatearVivienda(usuario.viviendaSolicitada)}`,
-      buttons: [
-        { text: 'Cancelar', style: 'cancel', onPress: () => {} },
-        {
-          text: 'Rechazar',
-          style: 'destructive',
-          onPress: async () => {
-            const result = await authService.rechazarCambioVivienda(usuario.id);
-            if (result.success) {
-              setSolicitudesCambio((prev) =>
-                prev.filter((u) => u.id !== usuario.id)
-              );
-
-              // Enviar notificación push al usuario
-              await notificationService.notifyViviendaChange(usuario.id, false, null);
-            } else {
-              setAlertConfig({
-                visible: true,
-                title: 'Error',
-                message: result.error,
-                buttons: [{ text: 'OK', onPress: () => {} }],
-              });
-            }
-          },
-        },
-      ],
-    });
-  };
-
-  const renderSolicitud = (usuario) => (
-    <View key={usuario.id} style={styles.usuarioCard}>
-      <View style={styles.usuarioHeader}>
-        <Text style={styles.usuarioNombre}>{usuario.nombre}</Text>
-        <View style={styles.pendienteBadge}>
-          <Text style={styles.badgeText}>Pendiente</Text>
-        </View>
-      </View>
-
-      <View style={styles.usuarioInfo}>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Email:</Text>
-          <Text style={styles.infoValue}>{usuario.email}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Teléfono:</Text>
-          <Text style={styles.infoValue}>{usuario.telefono}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Vivienda:</Text>
-          <Text style={styles.infoValue}>{usuario.vivienda}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Solicitud:</Text>
-          <Text style={styles.infoValue}>
-            {formatearFechaLegible(usuario.createdAt)}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.botonesContainer}>
-        <TouchableOpacity
-          style={styles.botonAprobar}
-          onPress={() => handleAprobar(usuario)}
-        >
-          <Text style={styles.botonAprobarText}>Aprobar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.botonRechazar}
-          onPress={() => handleRechazar(usuario)}
-        >
-          <Text style={styles.botonRechazarText}>Rechazar</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const renderUsuario = (usuario) => (
-    <View key={usuario.id} style={styles.usuarioCard}>
-      <View style={styles.usuarioHeader}>
-        <View style={styles.usuarioNombreContainer}>
-          <Text style={styles.usuarioNombre}>{usuario.nombre}</Text>
-          {usuario.id === user.id && (
-            <Text style={styles.tuCuenta}>(Tú)</Text>
-          )}
-        </View>
-        <View style={styles.badgesContainer}>
-          {usuario.esManager && (
-            <View style={styles.managerBadge}>
-              <Text style={styles.badgeText}>Manager</Text>
-            </View>
-          )}
-          {usuario.esAdmin && !usuario.esManager && (
-            <View style={styles.adminBadge}>
-              <Text style={styles.badgeText}>Admin</Text>
-            </View>
-          )}
-        </View>
-      </View>
-
-      <View style={styles.usuarioInfo}>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Email:</Text>
-          <Text style={styles.infoValue}>{usuario.email}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Vivienda:</Text>
-          <Text style={styles.infoValue}>{usuario.vivienda}</Text>
-        </View>
-      </View>
-
-      <View style={styles.adminToggleContainer}>
-        <Text style={styles.adminToggleLabel}>Administrador</Text>
-        <Switch
-          value={usuario.esAdmin}
-          onValueChange={() => handleToggleAdmin(usuario)}
-          trackColor={{ false: colors.border, true: colors.secondary }}
-          thumbColor={usuario.esAdmin ? colors.primary : colors.disabled}
-          disabled={usuario.esManager}
-        />
-      </View>
-
-      <TouchableOpacity
-        style={styles.editViviendaButton}
-        onPress={() => openEditVivienda(usuario)}
-      >
-        <Text style={styles.editViviendaButtonText}>Cambiar Vivienda</Text>
-      </TouchableOpacity>
-
-      {usuario.id !== user.id && !usuario.esManager && (
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => handleDeleteUser(usuario)}
-        >
-          <Text style={styles.deleteButtonText}>Eliminar Usuario</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-
-  const renderSolicitudCambio = (usuario) => (
-    <View key={usuario.id} style={styles.usuarioCard}>
-      <View style={styles.usuarioHeader}>
-        <Text style={styles.usuarioNombre}>{usuario.nombre}</Text>
-        <View style={styles.cambioBadge}>
-          <Text style={styles.badgeText}>Cambio</Text>
-        </View>
-      </View>
-
-      <View style={styles.usuarioInfo}>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Email:</Text>
-          <Text style={styles.infoValue}>{usuario.email}</Text>
-        </View>
-        <View style={styles.cambioViviendaContainer}>
-          <Text style={styles.cambioValue}>{formatearVivienda(usuario.vivienda)}</Text>
-          <Text style={styles.cambioArrow}>→</Text>
-          <Text style={[styles.cambioValue, styles.cambioNueva]}>
-            {formatearVivienda(usuario.viviendaSolicitada)}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.botonesContainer}>
-        <TouchableOpacity
-          style={styles.botonAprobar}
-          onPress={() => handleAprobarCambioVivienda(usuario)}
-        >
-          <Text style={styles.botonAprobarText}>Aprobar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.botonRechazar}
-          onPress={() => handleRechazarCambioVivienda(usuario)}
-        >
-          <Text style={styles.botonRechazarText}>Rechazar</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Panel de Administración</Text>
-      </View>
+      <AdminHeader />
 
-      <View style={styles.tabsContainer}>
-        <TouchableOpacity
-          style={[styles.tab, tabActiva === 'solicitudes' && styles.tabActive]}
-          onPress={() => setTabActiva('solicitudes')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              tabActiva === 'solicitudes' && styles.tabTextActive,
-            ]}
-          >
-            Solicitudes ({usuariosPendientes.length + solicitudesCambio.length})
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tab, tabActiva === 'usuarios' && styles.tabActive]}
-          onPress={() => setTabActiva('usuarios')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              tabActiva === 'usuarios' && styles.tabTextActive,
-            ]}
-          >
-            Usuarios ({todosUsuarios.length})
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tab, tabActiva === 'mensajes' && styles.tabActive]}
-          onPress={() => setTabActiva('mensajes')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              tabActiva === 'mensajes' && styles.tabTextActive,
-            ]}
-          >
-            Mensajes
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <AdminTabs
+        tabActiva={tabActiva}
+        onTabChange={setTabActiva}
+        contadorSolicitudes={usuariosPendientes.length + solicitudesCambio.length}
+        contadorUsuarios={todosUsuarios.length}
+      />
 
       <ScrollView
         style={styles.content}
@@ -649,168 +180,41 @@ export default function AdminScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        ) : tabActiva === 'solicitudes' ? (
-          usuariosPendientes.length > 0 || solicitudesCambio.length > 0 ? (
-            <>
-              {usuariosPendientes.length > 0 && (
-                <View style={styles.seccionContainer}>
-                  <View style={styles.seccionHeader}>
-                    <Ionicons name="person-add-outline" size={18} color={colors.primary} />
-                    <Text style={styles.seccionTitulo}>Nuevos usuarios ({usuariosPendientes.length})</Text>
-                  </View>
-                  {usuariosPendientes.map(renderSolicitud)}
-                </View>
-              )}
-              {solicitudesCambio.length > 0 && (
-                <View style={styles.seccionContainer}>
-                  <View style={styles.seccionHeader}>
-                    <Ionicons name="home-outline" size={18} color={colors.primary} />
-                    <Text style={styles.seccionTitulo}>Cambios de vivienda ({solicitudesCambio.length})</Text>
-                  </View>
-                  {solicitudesCambio.map(renderSolicitudCambio)}
-                </View>
-              )}
-            </>
-          ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No hay solicitudes pendientes</Text>
-              <Text style={styles.emptySubtext}>
-                Las nuevas solicitudes y cambios de vivienda aparecerán aquí
-              </Text>
-            </View>
-          )
-        ) : tabActiva === 'usuarios' ? (
-          todosUsuarios.length > 0 ? (
-            todosUsuarios.map(renderUsuario)
-          ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No hay usuarios</Text>
-            </View>
-          )
-        ) : tabActiva === 'mensajes' ? (
-          <View style={styles.mensajesContainer}>
-            <TouchableOpacity
-              style={styles.nuevoMensajeButton}
-              onPress={() => {
-                cargarUsuarios();
-                setCrearAnuncioVisible(true);
-              }}
-            >
-              <Ionicons name="add-circle-outline" size={22} color="#fff" />
-              <Text style={styles.nuevoMensajeText}>Nuevo mensaje</Text>
-            </TouchableOpacity>
-
-            {loadingAnuncios ? (
-              <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 30 }} />
-            ) : anuncios.length > 0 ? (
-              anuncios.map((anuncio) => (
-                <AnuncioAdminCard
-                  key={anuncio.id}
-                  anuncio={anuncio}
-                  onEliminar={eliminarAnuncio}
-                />
-              ))
-            ) : (
-              <View style={styles.emptyState}>
-                <Ionicons name="megaphone-outline" size={48} color={colors.disabled} />
-                <Text style={styles.emptyText}>No hay mensajes</Text>
-                <Text style={styles.emptySubtext}>
-                  Crea tu primer mensaje para los usuarios
-                </Text>
-              </View>
-            )}
-          </View>
-        ) : null}
+        {renderContent()}
       </ScrollView>
 
-      <Modal
-        visible={editViviendaModal.visible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={closeEditVivienda}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Cambiar Vivienda</Text>
-            {editViviendaModal.usuario && (
-              <Text style={styles.modalSubtitle}>
-                Usuario: {editViviendaModal.usuario.nombre}
-              </Text>
-            )}
+      {/* Modal editar vivienda */}
+      <EditViviendaModal
+        visible={editViviendaModal.modalState.visible}
+        usuario={editViviendaModal.modalState.usuario}
+        escalera={editViviendaModal.modalState.escalera}
+        piso={editViviendaModal.modalState.piso}
+        puerta={editViviendaModal.modalState.puerta}
+        saving={editViviendaModal.modalState.saving}
+        onChangeEscalera={editViviendaModal.setEscalera}
+        onChangePiso={editViviendaModal.setPiso}
+        onChangePuerta={editViviendaModal.setPuerta}
+        onSave={onSaveVivienda}
+        onClose={editViviendaModal.cerrar}
+      />
 
-            <View style={styles.viviendaSelectorContainer}>
-              <ViviendaSelector
-                escalera={editViviendaModal.escalera}
-                piso={editViviendaModal.piso}
-                puerta={editViviendaModal.puerta}
-                onChangeEscalera={(value) =>
-                  setEditViviendaModal((prev) => ({ ...prev, escalera: value }))
-                }
-                onChangePiso={(value) =>
-                  setEditViviendaModal((prev) => ({ ...prev, piso: value }))
-                }
-                onChangePuerta={(value) =>
-                  setEditViviendaModal((prev) => ({ ...prev, puerta: value }))
-                }
-              />
-            </View>
+      {/* Modal crear anuncio */}
+      <CrearAnuncioModal
+        visible={crearAnuncioVisible}
+        onClose={() => setCrearAnuncioVisible(false)}
+        onCrear={onCrearAnuncio}
+        usuarios={usuariosParaAnuncios}
+        loadingUsuarios={false}
+        creating={creatingAnuncio}
+      />
 
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.modalCancelButton}
-                onPress={closeEditVivienda}
-                disabled={editViviendaModal.saving}
-              >
-                <Text style={styles.modalCancelButtonText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.modalSaveButton,
-                  editViviendaModal.saving && styles.modalButtonDisabled,
-                ]}
-                onPress={handleSaveVivienda}
-                disabled={editViviendaModal.saving}
-              >
-                {editViviendaModal.saving ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.modalSaveButtonText}>Guardar</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
+      {/* Alert */}
       <CustomAlert
         visible={alertConfig.visible}
         title={alertConfig.title}
         message={alertConfig.message}
         buttons={alertConfig.buttons}
-        onDismiss={() => setAlertConfig({ ...alertConfig, visible: false })}
-      />
-
-      <CrearAnuncioModal
-        visible={crearAnuncioVisible}
-        onClose={() => setCrearAnuncioVisible(false)}
-        onCrear={async (data) => {
-          const result = await crearAnuncio(data.titulo, data.mensaje, data.tipo, data.destinatarios, data.usuariosIds);
-          if (!result.success) {
-            setAlertConfig({
-              visible: true,
-              title: 'Error',
-              message: result.error || 'No se pudo enviar el mensaje',
-              buttons: [{ text: 'OK', onPress: () => {} }],
-            });
-          }
-        }}
-        usuarios={usuariosParaAnuncios}
-        loadingUsuarios={false}
-        creating={creatingAnuncio}
+        onDismiss={cerrarAlerta}
       />
     </View>
   );
@@ -821,338 +225,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    backgroundColor: colors.accent,
-    padding: 20,
-    paddingTop: Platform.OS === 'web' ? 20 : 40,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 14,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  tabActive: {
-    borderBottomColor: colors.accent,
-  },
-  tabText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.textSecondary,
-  },
-  tabTextActive: {
-    color: colors.accent,
-    fontWeight: '600',
-  },
   content: {
     flex: 1,
     padding: 16,
-  },
-  loadingContainer: {
-    paddingTop: 40,
-    alignItems: 'center',
-  },
-  usuarioCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  usuarioHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  usuarioNombreContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  usuarioNombre: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  tuCuenta: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginLeft: 8,
-  },
-  pendienteBadge: {
-    backgroundColor: colors.accent,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  badgesContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  adminBadge: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  managerBadge: {
-    backgroundColor: colors.accent,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  badgeText: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: '500',
-  },
-  usuarioInfo: {
-    marginBottom: 12,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    marginBottom: 6,
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    width: 80,
-  },
-  infoValue: {
-    fontSize: 14,
-    color: colors.text,
-    flex: 1,
-  },
-  botonesContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  botonAprobar: {
-    flex: 1,
-    backgroundColor: colors.secondary,
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-  },
-  botonAprobarText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  botonRechazar: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.error,
-  },
-  botonRechazarText: {
-    color: colors.error,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  adminToggleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  adminToggleLabel: {
-    fontSize: 15,
-    color: colors.text,
-    fontWeight: '500',
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  deleteButton: {
-    marginTop: 12,
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.error,
-  },
-  deleteButtonText: {
-    color: colors.error,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  editViviendaButton: {
-    marginTop: 12,
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  editViviendaButtonText: {
-    color: colors.primary,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  modalSubtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  viviendaSelectorContainer: {
-    marginBottom: 24,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  modalCancelButton: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    padding: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  modalCancelButtonText: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  modalSaveButton: {
-    flex: 1,
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    padding: 14,
-    alignItems: 'center',
-  },
-  modalSaveButtonText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  modalButtonDisabled: {
-    opacity: 0.6,
-  },
-  cambioBadge: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  cambioViviendaContainer: {
-    marginTop: 8,
-    backgroundColor: colors.background,
-    borderRadius: 8,
-    padding: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  cambioValue: {
-    fontSize: 14,
-    color: colors.text,
-    fontWeight: '500',
-  },
-  cambioNueva: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  cambioArrow: {
-    fontSize: 18,
-    color: colors.textSecondary,
-  },
-  seccionContainer: {
-    marginBottom: 20,
-  },
-  seccionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  seccionTitulo: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  mensajesContainer: {
-    flex: 1,
-  },
-  nuevoMensajeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: 10,
-    paddingVertical: 14,
-    marginBottom: 16,
-    gap: 8,
-  },
-  nuevoMensajeText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
