@@ -17,4 +17,15 @@ export const colors = {
   reservaProvisional: '#d69e2e',  // Dorado - reserva segunda/provisional
   reservaDesplazable: '#cbd5e0',  // Gris claro - fondo de reserva desplazable
   reservaPasada: '#68a77c',       // Verde grisáceo - reservas pasadas disfrutadas
+  // Colores para sistema de clases
+  clase: '#1976d2',               // Azul - distintivo de clases
+  claseBadge: '#1976d2',          // Azul - badge de clase
+  claseBackground: '#e3f2fd',     // Azul muy claro - fondo de tarjeta clase
+  // Colores para sistema de tablón/anuncios
+  anuncioInfo: '#1976d2',         // Azul - tipo info
+  anuncioAviso: '#f57c00',        // Naranja - tipo aviso
+  anuncioUrgente: '#d32f2f',      // Rojo - tipo urgente
+  anuncioMantenimiento: '#616161', // Gris - tipo mantenimiento
+  notificacionLeida: '#f0f0f0',   // Gris claro - notificación leída
+  badgeRojo: '#e53e3e',           // Rojo para badges de contador
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { useReservas } from '../context/ReservasContext';
 import { colors } from '../constants/colors';
@@ -65,6 +66,13 @@ export default function PartidasScreen() {
 
   // Usuarios de la urbanización
   const usuariosUrb = useUsuariosUrbanizacion(user?.id);
+
+  // Recargar partidas cuando la pantalla recibe el foco
+  useFocusEffect(
+    useCallback(() => {
+      cargarPartidas();
+    }, [cargarPartidas])
+  );
 
   // Helper para mostrar alertas
   const showAlert = (title, message, buttons = [{ text: 'OK', onPress: () => {} }]) => {
@@ -167,6 +175,27 @@ export default function PartidasScreen() {
     await actions.rechazarSolicitud(jugadorId, partida.id);
   };
 
+  const handleCerrarClase = (partida) => {
+    showAlert(
+      'Cerrar inscripciones',
+      '¿Seguro que quieres cerrar las inscripciones de esta clase? Ya no podrán unirse más alumnos.',
+      [
+        { text: 'Cancelar', style: 'cancel', onPress: () => {} },
+        {
+          text: 'Cerrar clase',
+          onPress: async () => {
+            const result = await actions.cerrarClase(partida.id);
+            if (result.success) {
+              showAlert('Clase cerrada', 'Las inscripciones han sido cerradas');
+            } else {
+              showAlert('Error', result.error);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // Abrir modal en modo crear
   const handleAbrirCrear = async () => {
     setPartidaEditando(null);
@@ -210,18 +239,37 @@ export default function PartidasScreen() {
       mensaje: partida.mensaje || '',
       nivelPreferido: partida.nivelPreferido || null,
       saving: false,
+      // Campos de clase
+      esClase: partida.esClase || false,
+      niveles: partida.niveles || [],
+      minParticipantes: partida.minParticipantes || 2,
+      maxParticipantes: partida.maxParticipantes || (partida.esClase ? 8 : 4),
+      precioAlumno: partida.precioAlumno ? String(partida.precioAlumno) : '',
+      precioGrupo: partida.precioGrupo ? String(partida.precioGrupo) : '',
     });
 
     // Cargar jugadores existentes
     jugadoresConfirmados.forEach(j => crearModal.addJugador(j));
   };
 
-  // Crear o guardar partida
+  // Crear o guardar partida/clase
   const handlePublicar = async () => {
-    const { tipo, reservaSeleccionada, mensaje, nivelPreferido } = crearModal.modalState;
+    const {
+      tipo,
+      reservaSeleccionada,
+      mensaje,
+      nivelPreferido,
+      // Campos de clase
+      esClase,
+      niveles,
+      minParticipantes,
+      maxParticipantes,
+      precioAlumno,
+      precioGrupo,
+    } = crearModal.modalState;
 
     if (tipo === 'con_reserva' && !reservaSeleccionada) {
-      showAlert('Error', 'Selecciona una reserva para vincular la partida');
+      showAlert('Error', `Selecciona una reserva para vincular la ${esClase ? 'clase' : 'partida'}`);
       return;
     }
 
@@ -231,7 +279,13 @@ export default function PartidasScreen() {
       // MODO EDITAR
       const updates = {
         mensaje: mensaje.trim() || null,
-        nivelPreferido,
+        nivelPreferido: esClase ? null : nivelPreferido,
+        // Campos de clase
+        niveles: esClase ? niveles : null,
+        minParticipantes: esClase ? minParticipantes : 4,
+        maxParticipantes: esClase ? maxParticipantes : 4,
+        precioAlumno: esClase && precioAlumno ? parseFloat(precioAlumno.replace(',', '.')) : null,
+        precioGrupo: esClase && precioGrupo ? parseFloat(precioGrupo.replace(',', '.')) : null,
       };
 
       if (tipo === 'abierta') {
@@ -254,7 +308,7 @@ export default function PartidasScreen() {
       if (result.success) {
         crearModal.cerrar();
         setPartidaEditando(null);
-        showAlert('Partida actualizada', 'Los cambios se han guardado correctamente');
+        showAlert(esClase ? 'Clase actualizada' : 'Partida actualizada', 'Los cambios se han guardado correctamente');
       } else {
         showAlert('Error', result.error);
       }
@@ -266,8 +320,15 @@ export default function PartidasScreen() {
         creadorVivienda: user.vivienda,
         tipo,
         mensaje: mensaje.trim() || null,
-        nivelPreferido,
+        nivelPreferido: esClase ? null : nivelPreferido,
         jugadoresIniciales: crearModal.jugadores,
+        // Campos de clase
+        esClase,
+        niveles: esClase ? niveles : null,
+        minParticipantes: esClase ? minParticipantes : 4,
+        maxParticipantes: esClase ? maxParticipantes : 4,
+        precioAlumno: esClase && precioAlumno ? parseFloat(precioAlumno.replace(',', '.')) : null,
+        precioGrupo: esClase && precioGrupo ? parseFloat(precioGrupo.replace(',', '.')) : null,
       };
 
       if (tipo === 'con_reserva' && reservaSeleccionada) {
@@ -284,10 +345,20 @@ export default function PartidasScreen() {
       if (result.success) {
         crearModal.cerrar();
         const total = 1 + crearModal.jugadores.length;
-        const mensajeExito = total >= 4
-          ? 'Partida creada con 4 jugadores. ¡A jugar!'
-          : 'Tu solicitud de partida ha sido publicada.';
-        showAlert(total >= 4 ? 'Partida completa' : 'Partida creada', mensajeExito);
+        const maxPart = esClase ? maxParticipantes : 4;
+        const completa = total >= maxPart;
+
+        if (esClase) {
+          const mensajeExito = completa
+            ? `Clase creada con ${total} alumnos. ¡Lista!`
+            : 'Tu clase ha sido publicada.';
+          showAlert(completa ? 'Clase completa' : 'Clase creada', mensajeExito);
+        } else {
+          const mensajeExito = completa
+            ? 'Partida creada con 4 jugadores. ¡A jugar!'
+            : 'Tu solicitud de partida ha sido publicada.';
+          showAlert(completa ? 'Partida completa' : 'Partida creada', mensajeExito);
+        }
       } else {
         showAlert('Error', result.error);
       }
@@ -507,6 +578,7 @@ export default function PartidasScreen() {
               onDesapuntarse={handleDesapuntarse}
               onAceptarSolicitud={handleAceptarSolicitud}
               onRechazarSolicitud={handleRechazarSolicitud}
+              onCerrarClase={handleCerrarClase}
             />
           ))
         )}

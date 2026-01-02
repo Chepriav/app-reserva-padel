@@ -2,6 +2,7 @@ import { supabase } from './supabaseConfig';
 import { horasHasta, stringToDate, generarHorariosDisponibles, formatearFechaLegible } from '../utils/dateHelpers';
 import { LIMITES_RESERVA } from '../constants/config';
 import { notificationService } from './notificationService';
+import { partidasService } from './partidasService';
 
 /**
  * Convierte tiempo en formato HH:MM a minutos totales
@@ -396,6 +397,15 @@ export const reservasService = {
       });
       console.log('[desplazarReserva] Push notification enviada a vivienda:', reservaADesplazar.vivienda);
 
+      // 4. Cancelar partida vinculada si existe
+      const partidaResult = await partidasService.cancelarPartidaPorReserva(
+        reservaADesplazar.id,
+        'reserva_desplazada'
+      );
+      if (partidaResult.hadPartida) {
+        console.log('[desplazarReserva] Partida cancelada:', partidaResult.partidaId);
+      }
+
       return { success: true };
     } catch (error) {
       console.error('[desplazarReserva] Error general:', error);
@@ -674,11 +684,21 @@ export const reservasService = {
         return { success: false, error: 'Error al cancelar la reserva' };
       }
 
+      // Cancelar partida vinculada si existe
+      try {
+        console.log('[cancelarReserva] Buscando partida vinculada a reserva:', reservaId);
+        const partidaResult = await partidasService.cancelarPartidaPorReserva(reservaId, 'reserva_cancelada');
+        console.log('[cancelarReserva] Resultado cancelar partida:', partidaResult);
+      } catch (partidaError) {
+        console.error('[cancelarReserva] Error al cancelar partida vinculada:', partidaError);
+      }
+
       return {
         success: true,
         data: mapReservaToCamelCase({ ...reserva, estado: 'cancelada' }),
       };
     } catch (error) {
+      console.error('[cancelarReserva] Error general:', error);
       return { success: false, error: 'Error al cancelar la reserva' };
     }
   },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,14 +10,18 @@ import {
   RefreshControl,
   Switch,
   Modal,
+  FlatList,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { authService } from '../services/authService.supabase';
 import { notificationService } from '../services/notificationService';
 import { useAuth } from '../context/AuthContext';
+import { useAnunciosAdmin } from '../hooks';
 import { colors } from '../constants/colors';
 import { formatearFechaLegible } from '../utils/dateHelpers';
 import { CustomAlert } from '../components/CustomAlert';
 import { ViviendaSelector } from '../components/ViviendaSelector';
+import { CrearAnuncioModal, AnuncioAdminCard } from '../components/admin';
 import { parseVivienda, combinarVivienda, formatearVivienda } from '../constants/config';
 import { validarViviendaComponentes } from '../utils/validators';
 
@@ -45,6 +49,29 @@ export default function AdminScreen() {
     piso: '',
     puerta: '',
     saving: false,
+  });
+
+  // Estado para modal de crear anuncio
+  const [crearAnuncioVisible, setCrearAnuncioVisible] = useState(false);
+
+  // Hook para gestión de anuncios admin
+  const {
+    anuncios,
+    usuarios: usuariosParaAnuncios,
+    loading: loadingAnuncios,
+    creating: creatingAnuncio,
+    cargarAnuncios,
+    cargarUsuarios,
+    crearAnuncio,
+    eliminarAnuncio,
+  } = useAnunciosAdmin(user?.id, user?.nombre, () => {
+    setCrearAnuncioVisible(false);
+    setAlertConfig({
+      visible: true,
+      title: 'Mensaje enviado',
+      message: 'El mensaje ha sido enviado correctamente',
+      buttons: [{ text: 'OK', onPress: () => {} }],
+    });
   });
 
   const openEditVivienda = (usuario) => {
@@ -147,20 +174,23 @@ export default function AdminScreen() {
 
   const cargarDatosTab = async () => {
     if (tabActiva === 'solicitudes') {
-      const result = await authService.getUsuariosPendientes();
-      if (result.success) {
-        setUsuariosPendientes(result.data);
+      const [pendientesResult, cambiosResult] = await Promise.all([
+        authService.getUsuariosPendientes(),
+        authService.getSolicitudesCambioVivienda(),
+      ]);
+      if (pendientesResult.success) {
+        setUsuariosPendientes(pendientesResult.data);
       }
-    } else if (tabActiva === 'cambios') {
-      const result = await authService.getSolicitudesCambioVivienda();
-      if (result.success) {
-        setSolicitudesCambio(result.data);
+      if (cambiosResult.success) {
+        setSolicitudesCambio(cambiosResult.data);
       }
-    } else {
+    } else if (tabActiva === 'usuarios') {
       const result = await authService.getTodosUsuarios();
       if (result.success) {
         setTodosUsuarios(result.data);
       }
+    } else if (tabActiva === 'mensajes') {
+      await Promise.all([cargarAnuncios(), cargarUsuarios()]);
     }
   };
 
@@ -580,21 +610,7 @@ export default function AdminScreen() {
               tabActiva === 'solicitudes' && styles.tabTextActive,
             ]}
           >
-            Solicitudes ({usuariosPendientes.length})
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tab, tabActiva === 'cambios' && styles.tabActive]}
-          onPress={() => setTabActiva('cambios')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              tabActiva === 'cambios' && styles.tabTextActive,
-            ]}
-          >
-            Cambios ({solicitudesCambio.length})
+            Solicitudes ({usuariosPendientes.length + solicitudesCambio.length})
           </Text>
         </TouchableOpacity>
 
@@ -611,6 +627,20 @@ export default function AdminScreen() {
             Usuarios ({todosUsuarios.length})
           </Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tab, tabActiva === 'mensajes' && styles.tabActive]}
+          onPress={() => setTabActiva('mensajes')}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              tabActiva === 'mensajes' && styles.tabTextActive,
+            ]}
+          >
+            Mensajes
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -624,34 +654,77 @@ export default function AdminScreen() {
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : tabActiva === 'solicitudes' ? (
-          usuariosPendientes.length > 0 ? (
-            usuariosPendientes.map(renderSolicitud)
+          usuariosPendientes.length > 0 || solicitudesCambio.length > 0 ? (
+            <>
+              {usuariosPendientes.length > 0 && (
+                <View style={styles.seccionContainer}>
+                  <View style={styles.seccionHeader}>
+                    <Ionicons name="person-add-outline" size={18} color={colors.primary} />
+                    <Text style={styles.seccionTitulo}>Nuevos usuarios ({usuariosPendientes.length})</Text>
+                  </View>
+                  {usuariosPendientes.map(renderSolicitud)}
+                </View>
+              )}
+              {solicitudesCambio.length > 0 && (
+                <View style={styles.seccionContainer}>
+                  <View style={styles.seccionHeader}>
+                    <Ionicons name="home-outline" size={18} color={colors.primary} />
+                    <Text style={styles.seccionTitulo}>Cambios de vivienda ({solicitudesCambio.length})</Text>
+                  </View>
+                  {solicitudesCambio.map(renderSolicitudCambio)}
+                </View>
+              )}
+            </>
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyText}>No hay solicitudes pendientes</Text>
               <Text style={styles.emptySubtext}>
-                Las nuevas solicitudes aparecerán aquí
+                Las nuevas solicitudes y cambios de vivienda aparecerán aquí
               </Text>
             </View>
           )
-        ) : tabActiva === 'cambios' ? (
-          solicitudesCambio.length > 0 ? (
-            solicitudesCambio.map(renderSolicitudCambio)
+        ) : tabActiva === 'usuarios' ? (
+          todosUsuarios.length > 0 ? (
+            todosUsuarios.map(renderUsuario)
           ) : (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No hay cambios pendientes</Text>
-              <Text style={styles.emptySubtext}>
-                Las solicitudes de cambio de vivienda aparecerán aquí
-              </Text>
+              <Text style={styles.emptyText}>No hay usuarios</Text>
             </View>
           )
-        ) : todosUsuarios.length > 0 ? (
-          todosUsuarios.map(renderUsuario)
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No hay usuarios</Text>
+        ) : tabActiva === 'mensajes' ? (
+          <View style={styles.mensajesContainer}>
+            <TouchableOpacity
+              style={styles.nuevoMensajeButton}
+              onPress={() => {
+                cargarUsuarios();
+                setCrearAnuncioVisible(true);
+              }}
+            >
+              <Ionicons name="add-circle-outline" size={22} color="#fff" />
+              <Text style={styles.nuevoMensajeText}>Nuevo mensaje</Text>
+            </TouchableOpacity>
+
+            {loadingAnuncios ? (
+              <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 30 }} />
+            ) : anuncios.length > 0 ? (
+              anuncios.map((anuncio) => (
+                <AnuncioAdminCard
+                  key={anuncio.id}
+                  anuncio={anuncio}
+                  onEliminar={eliminarAnuncio}
+                />
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Ionicons name="megaphone-outline" size={48} color={colors.disabled} />
+                <Text style={styles.emptyText}>No hay mensajes</Text>
+                <Text style={styles.emptySubtext}>
+                  Crea tu primer mensaje para los usuarios
+                </Text>
+              </View>
+            )}
           </View>
-        )}
+        ) : null}
       </ScrollView>
 
       <Modal
@@ -719,6 +792,25 @@ export default function AdminScreen() {
         message={alertConfig.message}
         buttons={alertConfig.buttons}
         onDismiss={() => setAlertConfig({ ...alertConfig, visible: false })}
+      />
+
+      <CrearAnuncioModal
+        visible={crearAnuncioVisible}
+        onClose={() => setCrearAnuncioVisible(false)}
+        onCrear={async (data) => {
+          const result = await crearAnuncio(data.titulo, data.mensaje, data.tipo, data.destinatarios, data.usuariosIds);
+          if (!result.success) {
+            setAlertConfig({
+              visible: true,
+              title: 'Error',
+              message: result.error || 'No se pudo enviar el mensaje',
+              buttons: [{ text: 'OK', onPress: () => {} }],
+            });
+          }
+        }}
+        usuarios={usuariosParaAnuncios}
+        loadingUsuarios={false}
+        creating={creatingAnuncio}
       />
     </View>
   );
@@ -1027,5 +1119,40 @@ const styles = StyleSheet.create({
   cambioArrow: {
     fontSize: 18,
     color: colors.textSecondary,
+  },
+  seccionContainer: {
+    marginBottom: 20,
+  },
+  seccionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  seccionTitulo: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  mensajesContainer: {
+    flex: 1,
+  },
+  nuevoMensajeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    paddingVertical: 14,
+    marginBottom: 16,
+    gap: 8,
+  },
+  nuevoMensajeText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

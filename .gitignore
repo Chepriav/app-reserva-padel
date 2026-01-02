@@ -8,6 +8,7 @@ node_modules/
 .expo-shared/
 dist/
 web-build/
+web/
 
 # Native
 *.orig.*

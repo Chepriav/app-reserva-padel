@@ -102,10 +102,12 @@ const styles = StyleSheet.create({
   button: {
     flex: 1,
     paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     borderRadius: 8,
     backgroundColor: colors.primary,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
   },
   buttonSingle: {
     flex: 1,
@@ -117,9 +119,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.error,
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: '#fff',
+    textAlign: 'center',
   },
   buttonTextCancel: {
     color: colors.text,

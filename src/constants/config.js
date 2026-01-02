@@ -30,6 +30,14 @@ export const NIVELES_JUEGO = [
   { value: 'profesional', label: 'Profesional' },
 ];
 
+// Configuración de clases
+export const CLASE_CONFIG = {
+  MIN_ALUMNOS: 2,
+  MAX_ALUMNOS: 8,
+  OPCIONES_MIN: [2, 3, 4],
+  OPCIONES_MAX: [4, 5, 6, 7, 8],
+};
+
 // Configuración de viviendas
 export const VIVIENDA_CONFIG = {
   escaleras: [1, 2, 3, 4, 5, 6],

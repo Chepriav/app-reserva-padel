@@ -6,3 +6,10 @@ export {
 } from './usePartidas';
 
 export { useUsuariosUrbanizacion } from './useUsuarios';
+
+export {
+  useNotificaciones,
+  useAnuncios,
+  useAnunciosAdmin,
+  useContadorTablon,
+} from './useTablon';

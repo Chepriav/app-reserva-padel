@@ -1,19 +1,22 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Platform } from 'react-native';
+import { Platform, View, Text, StyleSheet } from 'react-native';
 import HomeScreen from '../screens/HomeScreen';
 import ReservasScreen from '../screens/ReservasScreen';
 import PartidasScreen from '../screens/PartidasScreen';
+import TablonScreen from '../screens/TablonScreen';
 import PerfilScreen from '../screens/PerfilScreen';
 import AdminScreen from '../screens/AdminScreen';
 import { colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
+import { useContadorTablon } from '../hooks';
 
 const Tab = createBottomTabNavigator();
 
 export default function TabNavigator() {
   const { user } = useAuth();
   const esAdmin = user?.esAdmin;
+  const { contadorTotal } = useContadorTablon(user?.id);
 
   return (
     <Tab.Navigator
@@ -68,6 +71,16 @@ export default function TabNavigator() {
           ),
         }}
       />
+      <Tab.Screen
+        name="Tablón"
+        component={TablonScreen}
+        options={{
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon name="tablon" color={color} size={size} badge={contadorTotal} />
+          ),
+        }}
+      />
       {esAdmin && (
         <Tab.Screen
           name="Admin"
@@ -94,20 +107,52 @@ export default function TabNavigator() {
   );
 }
 
-// Componente simple de icono (puedes reemplazar con react-native-vector-icons)
-const TabIcon = ({ name, color, size }) => {
-  const { Text } = require('react-native');
+// Componente simple de icono con soporte para badge
+const TabIcon = ({ name, color, size, badge }) => {
   const icons = {
     home: '🏠',
     calendar: '📅',
     partidas: '🎾',
+    tablon: '📢',
     admin: '⚙️',
     user: '👤',
   };
 
   return (
-    <Text style={{ fontSize: size || 24, color }}>
-      {icons[name] || '•'}
-    </Text>
+    <View style={styles.iconContainer}>
+      <Text style={{ fontSize: size || 24, color }}>
+        {icons[name] || '•'}
+      </Text>
+      {badge > 0 && (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>
+            {badge > 99 ? '99+' : badge}
+          </Text>
+        </View>
+      )}
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -10,
+    backgroundColor: colors.badgeRojo,
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+});

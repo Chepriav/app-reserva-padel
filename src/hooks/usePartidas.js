@@ -162,6 +162,14 @@ export function usePartidasActions(userId, onSuccess) {
     return result;
   };
 
+  const cerrarClase = async (partidaId) => {
+    const result = await partidasService.cerrarClase(partidaId, userId);
+    if (result.success) {
+      onSuccess?.();
+    }
+    return result;
+  };
+
   return {
     actionLoading,
     crearPartida,
@@ -174,11 +182,12 @@ export function usePartidasActions(userId, onSuccess) {
     editarPartida,
     eliminarJugador,
     anadirJugadorAPartida,
+    cerrarClase,
   };
 }
 
 /**
- * Hook para gestionar el modal de crear partida
+ * Hook para gestionar el modal de crear partida/clase
  */
 export function useCrearPartidaModal(userId) {
   const [visible, setVisible] = useState(false);
@@ -188,6 +197,13 @@ export function useCrearPartidaModal(userId) {
     mensaje: '',
     nivelPreferido: null,
     saving: false,
+    // Campos de clase
+    esClase: false,
+    niveles: [],
+    minParticipantes: 2,
+    maxParticipantes: 8,
+    precioAlumno: '',
+    precioGrupo: '',
   });
   const [jugadores, setJugadores] = useState([]);
   const [reservasConPartida, setReservasConPartida] = useState([]);
@@ -200,6 +216,13 @@ export function useCrearPartidaModal(userId) {
       mensaje: '',
       nivelPreferido: null,
       saving: false,
+      // Campos de clase
+      esClase: false,
+      niveles: [],
+      minParticipantes: 2,
+      maxParticipantes: 8,
+      precioAlumno: '',
+      precioGrupo: '',
     });
 
     // Cargar reservas que ya tienen partida
@@ -216,7 +239,10 @@ export function useCrearPartidaModal(userId) {
   };
 
   const addJugador = (jugador) => {
-    if (jugadores.length >= 3) return false;
+    // Para clases: max es maxParticipantes - 1 (creador cuenta como 1)
+    // Para partidas: max es 3 (creador + 3 = 4)
+    const maxJugadores = modalState.esClase ? modalState.maxParticipantes - 1 : 3;
+    if (jugadores.length >= maxJugadores) return false;
     setJugadores(prev => [...prev, jugador]);
     return true;
   };

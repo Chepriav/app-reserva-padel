@@ -63,13 +63,30 @@ App_reserva_padel_urbanizacion/
     │   ├── RegistroScreen.js       # Registro de nuevos usuarios
     │   ├── HomeScreen.js           # Pantalla principal - crear reservas
     │   ├── ReservasScreen.js       # Mis reservas (próximas/pasadas)
+    │   ├── PartidasScreen.js       # Buscar jugadores para partidas
+    │   ├── TablonScreen.js         # Tablón de anuncios y notificaciones
     │   ├── PerfilScreen.js         # Perfil de usuario - editar datos/foto
-    │   └── AdminScreen.js          # Panel admin - aprobar/rechazar usuarios
+    │   └── AdminScreen.js          # Panel admin - solicitudes, usuarios, mensajes
     ├── components/
-    │   └── CustomAlert.js          # Alertas personalizadas cross-platform
+    │   ├── CustomAlert.js          # Alertas personalizadas cross-platform
+    │   ├── partidas/               # Componentes de partidas/clases
+    │   ├── tablon/                 # Componentes del tablón de anuncios
+    │   │   ├── NotificacionCard.js # Tarjeta de notificación
+    │   │   ├── AnuncioCard.js      # Tarjeta de anuncio
+    │   │   ├── AnuncioModal.js     # Modal detalle de anuncio
+    │   │   └── EmptyState.js       # Estado vacío
+    │   └── admin/                  # Componentes del panel admin
+    │       ├── CrearAnuncioModal.js    # Modal crear anuncio
+    │       ├── SelectorDestinatarios.js # Selector de usuarios
+    │       └── AnuncioAdminCard.js     # Tarjeta anuncio admin
+    ├── hooks/
+    │   ├── index.js                # Exports centralizados
+    │   ├── usePartidas.js          # Hooks de partidas/clases
+    │   ├── useTablon.js            # Hooks del tablón
+    │   └── useUsuarios.js          # Hook de usuarios urbanización
     ├── navigation/
     │   ├── AppNavigator.js         # Navegación principal (auth + tabs)
-    │   └── TabNavigator.js         # Tabs: Home, Reservas, Perfil, Admin
+    │   └── TabNavigator.js         # Tabs: Inicio, Reservas, Partidas, Tablón, Admin, Perfil
     ├── context/
     │   ├── AuthContext.js          # Estado de autenticación global
     │   └── ReservasContext.js      # Estado de reservas global
@@ -77,6 +94,8 @@ App_reserva_padel_urbanizacion/
     │   ├── supabaseConfig.js       # Configuración cliente Supabase
     │   ├── authService.supabase.js # Servicio de autenticación
     │   ├── reservasService.supabase.js  # Servicio de reservas + RPCs
+    │   ├── partidasService.js      # Servicio de partidas/clases
+    │   ├── tablonService.js        # Servicio del tablón de anuncios
     │   ├── storageService.supabase.js   # Servicio de almacenamiento de imágenes
     │   ├── notificationService.js  # Push notifications nativas (Expo)
     │   ├── webPushService.js       # Web Push para PWA (iOS/Android/Desktop)
@@ -980,3 +999,332 @@ El sistema envía push notifications en los siguientes eventos:
 - `notifyPartidaAceptada(usuarioId, creadorNombre, partidaInfo)`
 - `notifyPartidaCompleta(jugadoresIds, creadorNombre, partidaInfo)`
 - `notifyPartidaCancelada(jugadoresIds, creadorNombre, partidaInfo)`
+
+## Sistema de Clases
+
+### Descripción
+Extensión del sistema de partidas para organizar clases de pádel. Una clase es esencialmente una partida especial con campos adicionales para gestionar grupos de alumnos.
+
+### Diferencias entre Partida y Clase
+
+| Característica | Partida | Clase |
+|---------------|---------|-------|
+| Participantes | 4 fijos | 2-8 configurable |
+| Nivel | Único preferido | Múltiples seleccionables |
+| Precio | No aplica | €/alumno y/o €/grupo (informativo) |
+| Cerrar manual | No | Sí (creador puede cerrar antes de completar) |
+| Distintivo visual | Sin badge | Badge "CLASE" + fondo azul |
+
+### Columnas adicionales en `partidas`
+
+```sql
+ALTER TABLE public.partidas ADD COLUMN es_clase BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.partidas ADD COLUMN niveles TEXT[];           -- Array: ['basico', 'intermedio']
+ALTER TABLE public.partidas ADD COLUMN min_participantes INTEGER DEFAULT 4;
+ALTER TABLE public.partidas ADD COLUMN max_participantes INTEGER DEFAULT 4;
+ALTER TABLE public.partidas ADD COLUMN precio_alumno DECIMAL(10,2);
+ALTER TABLE public.partidas ADD COLUMN precio_grupo DECIMAL(10,2);
+```
+
+### Mapeo de Campos de Clase
+
+| JavaScript | PostgreSQL |
+|------------|------------|
+| `esClase` | `es_clase` |
+| `niveles` | `niveles` |
+| `minParticipantes` | `min_participantes` |
+| `maxParticipantes` | `max_participantes` |
+| `precioAlumno` | `precio_alumno` |
+| `precioGrupo` | `precio_grupo` |
+
+### Flujo de Creación de Clase
+
+1. Usuario pulsa "+" en PartidasScreen
+2. Selecciona "Clase" en el toggle Partida/Clase
+3. Configura:
+   - Tipo: Fecha abierta o con reserva
+   - Número de alumnos (mín/máx)
+   - Niveles (selección múltiple)
+   - Precio por alumno y/o por grupo (opcional, informativo)
+   - Mensaje descriptivo
+   - Alumnos iniciales (opcional)
+4. Al publicar se crea la clase en estado 'buscando'
+
+### Cerrar Clase Manualmente
+
+El creador de una clase puede cerrar inscripciones aunque no esté completa:
+
+```javascript
+// En partidasService.js
+async cerrarClase(partidaId, creadorId) {
+  // Verifica que sea el creador y que sea clase
+  // Cambia estado a 'completa'
+  // Notifica a todos los alumnos confirmados
+}
+```
+
+### UI/UX de Clases
+
+- **Badge "CLASE"**: En esquina superior derecha de la tarjeta
+- **Fondo azul claro**: Para distinguir visualmente de partidas
+- **Borde azul**: En lugar de transparente/verde
+- **Info adicional**: Muestra niveles, rango de alumnos, precios
+- **Botón "Cerrar"**: Solo para creador, cierra inscripciones manualmente
+- **Badge contador**: X/{max} en lugar de X/4
+
+### Constantes de Configuración
+
+```javascript
+// config.js
+export const CLASE_CONFIG = {
+  MIN_ALUMNOS: 2,
+  MAX_ALUMNOS: 8,
+  OPCIONES_MIN: [2, 3, 4],
+  OPCIONES_MAX: [4, 5, 6, 7, 8],
+};
+
+// colors.js
+clase: '#1976d2',               // Azul - distintivo de clases
+claseBadge: '#1976d2',          // Azul - badge de clase
+claseBackground: '#e3f2fd',     // Azul muy claro - fondo de tarjeta clase
+```
+
+### Hooks Actualizados
+
+```javascript
+// useCrearPartidaModal incluye campos de clase
+const [modalState, setModalState] = useState({
+  // ...campos existentes
+  esClase: false,
+  niveles: [],
+  minParticipantes: 2,
+  maxParticipantes: 8,
+  precioAlumno: '',
+  precioGrupo: '',
+});
+
+// usePartidasActions incluye cerrarClase
+const { cerrarClase } = usePartidasActions(userId, onSuccess);
+```
+
+### Notificaciones de Clases
+
+Las notificaciones usan el campo `esClase` para personalizar mensajes:
+- "Nueva solicitud para tu clase" vs "Nueva solicitud para tu partida"
+- "La clase ya está completa" vs "La partida ya está completa"
+
+## Sistema de Tablón de Anuncios
+
+### Descripción
+Sistema de comunicación interna con dos tipos de contenido:
+- **Notificaciones**: Eventos automáticos del sistema (desplazamientos, partidas, etc.) - expiran en 7 días
+- **Anuncios**: Mensajes de administradores a usuarios - expiran en 1 mes
+
+### Arquitectura
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                       TablonScreen                          │
+│  ┌─────────────────────┬───────────────────────────┐        │
+│  │   Tab Anuncios      │    Tab Notificaciones     │        │
+│  │   (anuncios_admin)  │  (notificaciones_usuario) │        │
+│  └─────────────────────┴───────────────────────────┘        │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│                       AdminScreen                           │
+│  ┌──────────────┬──────────────┬──────────────────┐         │
+│  │  Solicitudes │   Usuarios   │     Mensajes     │         │
+│  │  (unificado) │              │  (crear anuncios)│         │
+│  └──────────────┴──────────────┴──────────────────┘         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Tablas en PostgreSQL
+
+#### Tabla: `notificaciones_usuario`
+```sql
+CREATE TABLE public.notificaciones_usuario (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  tipo TEXT NOT NULL,           -- 'desplazamiento', 'partida_solicitud', etc.
+  titulo TEXT NOT NULL,
+  mensaje TEXT NOT NULL,
+  datos JSONB DEFAULT '{}',     -- Datos adicionales flexibles
+  leida BOOLEAN DEFAULT FALSE,
+  expira_en TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '7 days'),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### Tabla: `anuncios_admin`
+```sql
+CREATE TABLE public.anuncios_admin (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  creador_id UUID NOT NULL REFERENCES public.users(id),
+  creador_nombre TEXT NOT NULL,
+  titulo TEXT NOT NULL,
+  mensaje TEXT NOT NULL,
+  tipo TEXT DEFAULT 'info',     -- 'info', 'aviso', 'urgente', 'mantenimiento'
+  destinatarios TEXT DEFAULT 'todos',  -- 'todos' o 'seleccionados'
+  expira_en TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '1 month'),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### Tabla: `anuncios_destinatarios`
+```sql
+CREATE TABLE public.anuncios_destinatarios (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  anuncio_id UUID NOT NULL REFERENCES public.anuncios_admin(id) ON DELETE CASCADE,
+  usuario_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  leido BOOLEAN DEFAULT FALSE,
+  leido_en TIMESTAMPTZ,
+  UNIQUE(anuncio_id, usuario_id)
+);
+```
+
+### Servicios
+
+#### tablonService.js
+
+**Notificaciones de usuario:**
+- `obtenerNotificaciones(usuarioId)` - Lista notificaciones no expiradas
+- `contarNotificacionesNoLeidas(usuarioId)` - Cuenta para badge
+- `marcarNotificacionLeida(notificacionId)` - Marca como leída
+- `marcarTodasLeidas(usuarioId)` - Marca todas como leídas
+- `eliminarNotificacion(notificacionId)` - Elimina manualmente
+- `crearNotificacion(usuarioId, tipo, titulo, mensaje, datos)` - Crea notificación
+
+**Anuncios (usuario):**
+- `obtenerAnunciosParaUsuario(usuarioId)` - Lista anuncios del usuario
+- `contarAnunciosNoLeidos(usuarioId)` - Cuenta para badge
+- `marcarAnuncioLeido(anuncioId, usuarioId)` - Marca como leído
+
+**Anuncios (admin):**
+- `obtenerTodosAnuncios()` - Lista todos los anuncios
+- `crearAnuncio(creadorId, creadorNombre, titulo, mensaje, tipo, destinatarios, usuariosIds)` - Crea anuncio
+- `eliminarAnuncio(anuncioId)` - Elimina anuncio
+- `obtenerUsuariosAprobados()` - Para selector de destinatarios
+
+### Hooks
+
+```javascript
+// Hook para notificaciones del usuario
+const {
+  notificaciones, loading, refreshing,
+  cargarNotificaciones, onRefresh,
+  eliminar, marcarLeida, marcarTodasLeidas, contarNoLeidas,
+} = useNotificaciones(userId);
+
+// Hook para anuncios (vista usuario)
+const {
+  anuncios, loading, refreshing, anuncioSeleccionado,
+  cargarAnuncios, onRefresh, verAnuncio, cerrarAnuncio, contarNoLeidos,
+} = useAnuncios(userId);
+
+// Hook para gestión de anuncios (admin)
+const {
+  anuncios, usuarios, loading, creating,
+  cargarAnuncios, cargarUsuarios, crearAnuncio, eliminarAnuncio,
+} = useAnunciosAdmin(userId, userName, onSuccess);
+
+// Hook para contador del badge del tab
+const {
+  contadorAnuncios, contadorNotificaciones, contadorTotal, actualizarContadores,
+} = useContadorTablon(userId);
+```
+
+### Tipos de Anuncio
+
+| Tipo | Color | Uso |
+|------|-------|-----|
+| `info` | Azul | Información general |
+| `aviso` | Naranja | Avisos importantes |
+| `urgente` | Rojo | Avisos urgentes |
+| `mantenimiento` | Gris | Mantenimiento de pistas |
+
+### Tipos de Notificación
+
+| Tipo | Icono | Evento |
+|------|-------|--------|
+| `desplazamiento` | swap-horizontal | Reserva desplazada |
+| `partida_solicitud` | people | Solicitud unirse partida |
+| `partida_aceptada` | checkmark-circle | Solicitud aceptada |
+| `partida_completa` | trophy | Partida completa (4/4) |
+| `partida_cancelada` | close-circle | Partida cancelada |
+| `reserva_recordatorio` | alarm | Recordatorio reserva |
+
+### UI/UX
+
+**TablonScreen:**
+- Dos tabs: "Anuncios" y "Notificaciones"
+- Badge rojo con contador de no leídos en cada tab
+- Pull-to-refresh en ambas listas
+- Botón "Marcar leídas" en header para notificaciones
+
+**AnuncioCard:**
+- Borde izquierdo coloreado según tipo
+- Badge de tipo (info/aviso/urgente/mantenimiento)
+- Badge rojo si no está leído
+- Tap abre modal con contenido completo
+
+**AnuncioModal:**
+- Vista completa del anuncio
+- Botón "Entendido" marca como leído y cierra
+
+**AdminScreen (Tab Mensajes):**
+- Botón "Nuevo mensaje" prominente
+- Lista de anuncios enviados con opción de eliminar
+- Modal de creación con:
+  - Título y mensaje
+  - Selector de tipo (4 opciones)
+  - Destinatarios: todos o seleccionados
+  - Lista de usuarios con checkboxes (búsqueda incluida)
+
+**TabNavigator:**
+- Tab "Tablón" con badge rojo mostrando total de no leídos
+- Se actualiza cada 30 segundos
+
+### Mapeo de Campos
+
+| JavaScript | PostgreSQL |
+|------------|------------|
+| `usuarioId` | `usuario_id` |
+| `creadorId` | `creador_id` |
+| `creadorNombre` | `creador_nombre` |
+| `anuncioId` | `anuncio_id` |
+| `expiraEn` | `expira_en` |
+| `leidoEn` | `leido_en` |
+| `createdAt` | `created_at` |
+
+### Colores del Sistema
+
+```javascript
+// colors.js
+anuncioInfo: '#1976d2',         // Azul - tipo info
+anuncioAviso: '#f57c00',        // Naranja - tipo aviso
+anuncioUrgente: '#d32f2f',      // Rojo - tipo urgente
+anuncioMantenimiento: '#616161', // Gris - tipo mantenimiento
+notificacionLeida: '#f0f0f0',   // Gris claro - notificación leída
+badgeRojo: '#e53e3e',           // Rojo para badges de contador
+```
+
+### Limpieza Automática
+
+Función SQL para limpiar registros expirados:
+```sql
+CREATE OR REPLACE FUNCTION limpiar_notificaciones_expiradas()
+RETURNS INTEGER AS $$
+DECLARE
+  deleted_count INTEGER;
+BEGIN
+  DELETE FROM public.notificaciones_usuario WHERE expira_en < NOW();
+  DELETE FROM public.anuncios_admin WHERE expira_en < NOW();
+  GET DIAGNOSTICS deleted_count = ROW_COUNT;
+  RETURN deleted_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+Puede configurarse con pg_cron para ejecutar periódicamente.

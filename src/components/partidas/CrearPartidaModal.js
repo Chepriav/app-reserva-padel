@@ -10,13 +10,20 @@ import {
   StyleSheet,
 } from 'react-native';
 import { colors } from '../../constants/colors';
-import { NIVELES_JUEGO } from '../../constants/config';
-import { formatearFechaLegible } from '../../utils/dateHelpers';
 import JugadoresEditor from './JugadoresEditor';
+import {
+  ModalidadSelector,
+  TipoSelector,
+  ReservaSelector,
+  NivelSelector,
+  ParticipantesSelector,
+  NivelesMultiSelector,
+  PrecioInput,
+} from './form';
 
 /**
- * Modal para crear o editar una partida
- * Si modoEditar=true, muestra "Editar partida" en vez de "Buscar jugadores"
+ * Modal para crear o editar una partida o clase
+ * Si modoEditar=true, muestra "Editar" en vez de "Buscar"
  */
 export default function CrearPartidaModal({
   visible,
@@ -31,10 +38,29 @@ export default function CrearPartidaModal({
   onCerrar,
   modoEditar = false,
 }) {
-  const { tipo, reservaSeleccionada, mensaje, nivelPreferido, saving } = modalState;
+  const {
+    tipo,
+    reservaSeleccionada,
+    mensaje,
+    nivelPreferido,
+    saving,
+    esClase,
+    niveles,
+    minParticipantes,
+    maxParticipantes,
+    precioAlumno,
+    precioGrupo,
+  } = modalState;
 
   const updateState = (updates) => {
     setModalState(prev => ({ ...prev, ...updates }));
+  };
+
+  const getTitulo = () => {
+    if (modoEditar) {
+      return esClase ? 'Editar clase' : 'Editar partida';
+    }
+    return esClase ? 'Organizar clase' : 'Buscar jugadores';
   };
 
   return (
@@ -45,24 +71,34 @@ export default function CrearPartidaModal({
       onRequestClose={onCerrar}
     >
       <View style={styles.overlay}>
-        <View style={styles.content}>
-          <Text style={styles.titulo}>{modoEditar ? 'Editar partida' : 'Buscar jugadores'}</Text>
+        <View style={[styles.content, esClase && styles.contentClase]}>
+          <Text style={styles.titulo}>{getTitulo()}</Text>
 
           <ScrollView
             style={styles.scrollContent}
             showsVerticalScrollIndicator
             nestedScrollEnabled
           >
-            {/* Tipo de partida */}
+            <ModalidadSelector
+              esClase={esClase}
+              onChange={(nuevaModalidad) => updateState({
+                esClase: nuevaModalidad,
+                nivelPreferido: null,
+                niveles: [],
+                minParticipantes: 2,
+                maxParticipantes: nuevaModalidad ? 8 : 4,
+              })}
+            />
+
             <TipoSelector
               tipo={tipo}
+              esClase={esClase}
               onChange={(nuevoTipo) => updateState({
                 tipo: nuevoTipo,
                 reservaSeleccionada: nuevoTipo === 'abierta' ? null : reservaSeleccionada,
               })}
             />
 
-            {/* Selector de reserva */}
             {tipo === 'con_reserva' && (
               <ReservaSelector
                 reservas={reservasFuturas}
@@ -71,25 +107,49 @@ export default function CrearPartidaModal({
               />
             )}
 
-            {/* Nivel preferido */}
-            <NivelSelector
-              nivel={nivelPreferido}
-              onChange={(nivel) => updateState({ nivelPreferido: nivel })}
-            />
+            {esClase && (
+              <>
+                <ParticipantesSelector
+                  minParticipantes={minParticipantes}
+                  maxParticipantes={maxParticipantes}
+                  onChangeMin={(val) => updateState({ minParticipantes: val })}
+                  onChangeMax={(val) => updateState({ maxParticipantes: val })}
+                />
+                <NivelesMultiSelector
+                  niveles={niveles}
+                  onChange={(nuevosNiveles) => updateState({ niveles: nuevosNiveles })}
+                />
+                <PrecioInput
+                  precioAlumno={precioAlumno}
+                  precioGrupo={precioGrupo}
+                  onChange={(precios) => updateState(precios)}
+                />
+              </>
+            )}
 
-            {/* Jugadores */}
+            {!esClase && (
+              <NivelSelector
+                nivel={nivelPreferido}
+                onChange={(nivel) => updateState({ nivelPreferido: nivel })}
+              />
+            )}
+
             <JugadoresEditor
               jugadores={jugadores}
               usuario={usuario}
               onAddJugador={onAbrirModalJugador}
               onRemoveJugador={onRemoveJugador}
+              esClase={esClase}
+              maxParticipantes={esClase ? maxParticipantes : 4}
             />
 
-            {/* Mensaje */}
             <Text style={styles.label}>Mensaje (opcional)</Text>
             <TextInput
               style={styles.mensajeInput}
-              placeholder="Ej: Buscamos pareja para partido amistoso..."
+              placeholder={esClase
+                ? 'Ej: Clase para mejorar el revés...'
+                : 'Ej: Buscamos pareja para partido amistoso...'
+              }
               placeholderTextColor={colors.textSecondary}
               value={mensaje}
               onChangeText={(text) => updateState({ mensaje: text })}
@@ -98,7 +158,6 @@ export default function CrearPartidaModal({
             />
           </ScrollView>
 
-          {/* Botones */}
           <View style={styles.botones}>
             <TouchableOpacity
               style={styles.botonCancelar}
@@ -125,88 +184,6 @@ export default function CrearPartidaModal({
   );
 }
 
-function TipoSelector({ tipo, onChange }) {
-  return (
-    <>
-      <Text style={styles.label}>Tipo de partida</Text>
-      <View style={styles.tipoButtons}>
-        <TouchableOpacity
-          style={[styles.tipoButton, tipo === 'abierta' && styles.tipoButtonActivo]}
-          onPress={() => onChange('abierta')}
-        >
-          <Text style={[styles.tipoButtonText, tipo === 'abierta' && styles.tipoButtonTextActivo]}>
-            Fecha abierta
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tipoButton, tipo === 'con_reserva' && styles.tipoButtonActivo]}
-          onPress={() => onChange('con_reserva')}
-        >
-          <Text style={[styles.tipoButtonText, tipo === 'con_reserva' && styles.tipoButtonTextActivo]}>
-            Con reserva
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </>
-  );
-}
-
-function ReservaSelector({ reservas, seleccionada, onSelect }) {
-  return (
-    <View style={styles.reservasContainer}>
-      <Text style={styles.label}>Selecciona tu reserva</Text>
-      {reservas.length === 0 ? (
-        <Text style={styles.noReservas}>No tienes reservas futuras disponibles</Text>
-      ) : (
-        reservas.map((reserva) => (
-          <TouchableOpacity
-            key={reserva.id}
-            style={[
-              styles.reservaOption,
-              seleccionada?.id === reserva.id && styles.reservaOptionSelected,
-            ]}
-            onPress={() => onSelect(reserva)}
-          >
-            <Text style={styles.reservaOptionText}>
-              {formatearFechaLegible(reserva.fecha)} • {reserva.horaInicio?.slice(0, 5)}
-            </Text>
-            <Text style={styles.reservaOptionPista}>{reserva.pistaNombre}</Text>
-          </TouchableOpacity>
-        ))
-      )}
-    </View>
-  );
-}
-
-function NivelSelector({ nivel, onChange }) {
-  return (
-    <>
-      <Text style={styles.label}>Nivel preferido (opcional)</Text>
-      <View style={styles.nivelesContainer}>
-        <TouchableOpacity
-          style={[styles.nivelOption, !nivel && styles.nivelOptionSelected]}
-          onPress={() => onChange(null)}
-        >
-          <Text style={[styles.nivelOptionText, !nivel && styles.nivelOptionTextSelected]}>
-            Cualquiera
-          </Text>
-        </TouchableOpacity>
-        {NIVELES_JUEGO.map((n) => (
-          <TouchableOpacity
-            key={n.value}
-            style={[styles.nivelOption, nivel === n.value && styles.nivelOptionSelected]}
-            onPress={() => onChange(n.value)}
-          >
-            <Text style={[styles.nivelOptionText, nivel === n.value && styles.nivelOptionTextSelected]}>
-              {n.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </>
-  );
-}
-
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
@@ -222,6 +199,10 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
     maxHeight: '90%',
+  },
+  contentClase: {
+    borderWidth: 2,
+    borderColor: colors.clase,
   },
   titulo: {
     fontSize: 20,
@@ -240,87 +221,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: 8,
     marginTop: 12,
-  },
-  tipoButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  tipoButton: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-  },
-  tipoButtonActivo: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  tipoButtonText: {
-    fontSize: 14,
-    color: colors.text,
-  },
-  tipoButtonTextActivo: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  reservasContainer: {
-    marginTop: 8,
-  },
-  noReservas: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    fontStyle: 'italic',
-    padding: 12,
-    backgroundColor: colors.background,
-    borderRadius: 8,
-  },
-  reservaOption: {
-    padding: 12,
-    backgroundColor: colors.background,
-    borderRadius: 8,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  reservaOptionSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary + '10',
-  },
-  reservaOptionText: {
-    fontSize: 14,
-    color: colors.text,
-    fontWeight: '500',
-  },
-  reservaOptionPista: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  nivelesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  nivelOption: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  nivelOptionSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  nivelOptionText: {
-    fontSize: 13,
-    color: colors.text,
-  },
-  nivelOptionTextSelected: {
-    color: '#fff',
-    fontWeight: '500',
   },
   mensajeInput: {
     backgroundColor: colors.background,

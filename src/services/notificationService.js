@@ -381,14 +381,16 @@ export const notificationService = {
   // ============ NOTIFICACIONES DE PARTIDAS ============
 
   /**
-   * Notifica al creador que alguien quiere unirse a su partida
+   * Notifica al creador que alguien quiere unirse a su partida/clase
    */
   async notifyPartidaSolicitud(creadorId, solicitanteNombre, partidaInfo) {
-    const title = 'Nueva solicitud de partida';
-    const body = `${solicitanteNombre} quiere unirse a tu partida${partidaInfo.fecha ? ` del ${partidaInfo.fecha}` : ''}.`;
+    const esClase = partidaInfo.esClase || false;
+    const tipo = esClase ? 'clase' : 'partida';
+    const title = esClase ? 'Nueva solicitud de clase' : 'Nueva solicitud de partida';
+    const body = `${solicitanteNombre} quiere unirse a tu ${tipo}${partidaInfo.fecha ? ` del ${partidaInfo.fecha}` : ''}.`;
 
     return await this.sendPushToUser(creadorId, title, body, {
-      type: 'partida_solicitud',
+      type: esClase ? 'clase_solicitud' : 'partida_solicitud',
       partidaId: partidaInfo.partidaId,
     });
   },
@@ -397,28 +399,42 @@ export const notificationService = {
    * Notifica al usuario que su solicitud fue aceptada
    */
   async notifyPartidaAceptada(usuarioId, creadorNombre, partidaInfo) {
-    const title = 'Solicitud aceptada';
-    const body = `${creadorNombre} te ha aceptado en su partida${partidaInfo.fecha ? ` del ${partidaInfo.fecha}` : ''}.`;
+    const esClase = partidaInfo.esClase || false;
+    const title = esClase ? '¡Plaza confirmada!' : 'Solicitud aceptada';
+    const body = esClase
+      ? `${creadorNombre} te ha confirmado en su clase${partidaInfo.fecha ? ` del ${partidaInfo.fecha}` : ''}.`
+      : `${creadorNombre} te ha aceptado en su partida${partidaInfo.fecha ? ` del ${partidaInfo.fecha}` : ''}.`;
 
     return await this.sendPushToUser(usuarioId, title, body, {
-      type: 'partida_aceptada',
+      type: esClase ? 'clase_aceptada' : 'partida_aceptada',
       partidaId: partidaInfo.partidaId,
     });
   },
 
   /**
-   * Notifica a todos los jugadores que la partida está completa (4/4)
+   * Notifica a todos los jugadores que la partida/clase está completa
    */
   async notifyPartidaCompleta(jugadoresIds, creadorNombre, partidaInfo) {
-    const title = 'Partida completa';
-    const body = partidaInfo.fecha
-      ? `La partida de ${creadorNombre} para el ${partidaInfo.fecha} ya tiene 4 jugadores.`
-      : `La partida de ${creadorNombre} ya tiene 4 jugadores.`;
+    const esClase = partidaInfo.esClase || false;
+
+    let title, body;
+
+    if (esClase) {
+      title = '📚 ¡Grupo cerrado!';
+      body = partidaInfo.fecha
+        ? `La clase de ${creadorNombre} está confirmada para el ${partidaInfo.fecha}. ¡Nos vemos en la pista!`
+        : `La clase de ${creadorNombre} ha sido cerrada. ¡El grupo está listo!`;
+    } else {
+      title = '🎾 ¡Partida completa!';
+      body = partidaInfo.fecha
+        ? `La partida de ${creadorNombre} para el ${partidaInfo.fecha} ya tiene 4 jugadores. ¡A jugar!`
+        : `La partida de ${creadorNombre} ya tiene 4 jugadores. ¡A jugar!`;
+    }
 
     const results = await Promise.all(
       jugadoresIds.map((userId) =>
         this.sendPushToUser(userId, title, body, {
-          type: 'partida_completa',
+          type: esClase ? 'clase_completa' : 'partida_completa',
           partidaId: partidaInfo.partidaId,
         })
       )
@@ -428,19 +444,58 @@ export const notificationService = {
   },
 
   /**
-   * Notifica a los jugadores que la partida fue cancelada
+   * Notifica a los jugadores que la partida/clase fue cancelada
    */
   async notifyPartidaCancelada(jugadoresIds, creadorNombre, partidaInfo) {
-    const title = 'Partida cancelada';
+    const esClase = partidaInfo.esClase || false;
+    const tipo = esClase ? 'clase' : 'partida';
+    const title = esClase ? 'Clase cancelada' : 'Partida cancelada';
     const body = partidaInfo.fecha
-      ? `La partida de ${creadorNombre} del ${partidaInfo.fecha} ha sido cancelada.`
-      : `La partida de ${creadorNombre} ha sido cancelada.`;
+      ? `La ${tipo} de ${creadorNombre} del ${partidaInfo.fecha} ha sido cancelada.`
+      : `La ${tipo} de ${creadorNombre} ha sido cancelada.`;
 
     const results = await Promise.all(
       jugadoresIds.map((userId) =>
         this.sendPushToUser(userId, title, body, {
-          type: 'partida_cancelada',
+          type: esClase ? 'clase_cancelada' : 'partida_cancelada',
           partidaId: partidaInfo.partidaId,
+        })
+      )
+    );
+
+    return { success: results.some((r) => r.success), results };
+  },
+
+  /**
+   * Notifica a los jugadores que la partida/clase fue cancelada por la reserva
+   * Se usa cuando la reserva vinculada es cancelada o desplazada
+   * @param {string[]} jugadoresIds - IDs de usuarios a notificar
+   * @param {string} creadorNombre - Nombre del creador de la partida
+   * @param {Object} partidaInfo - { fecha, horaInicio, esClase }
+   * @param {string} motivo - 'reserva_cancelada' o 'reserva_desplazada'
+   */
+  async notifyPartidaCanceladaPorReserva(jugadoresIds, creadorNombre, partidaInfo, motivo) {
+    const esClase = partidaInfo.esClase || false;
+    const tipo = esClase ? 'clase' : 'partida';
+    const emoji = esClase ? '📚' : '🎾';
+
+    let title, body;
+
+    if (motivo === 'reserva_desplazada') {
+      title = `${emoji} ${tipo.charAt(0).toUpperCase() + tipo.slice(1)} cancelada`;
+      body = `La reserva de la ${tipo} de ${creadorNombre} ha sido desplazada por otra vivienda.`;
+    } else {
+      title = `${emoji} ${tipo.charAt(0).toUpperCase() + tipo.slice(1)} cancelada`;
+      body = partidaInfo.fecha
+        ? `La reserva de la ${tipo} del ${partidaInfo.fecha} ha sido cancelada.`
+        : `La reserva de la ${tipo} de ${creadorNombre} ha sido cancelada.`;
+    }
+
+    const results = await Promise.all(
+      jugadoresIds.map((userId) =>
+        this.sendPushToUser(userId, title, body, {
+          type: esClase ? 'clase_cancelada_reserva' : 'partida_cancelada_reserva',
+          motivo,
         })
       )
     );
@@ -619,5 +674,51 @@ export const notificationService = {
       receivedSubscription.remove();
       responseSubscription.remove();
     };
+  },
+
+  // ============ NOTIFICACIONES DE ANUNCIOS ============
+
+  /**
+   * Notifica a usuarios sobre un nuevo anuncio de admin
+   * @param {string} titulo - Título del anuncio
+   * @param {string} mensaje - Mensaje del anuncio (se trunca para la notificación)
+   * @param {string} anuncioId - ID del anuncio
+   * @param {string[]} usuariosIds - IDs de usuarios destinatarios (vacío = todos)
+   */
+  async notifyNuevoAnuncio(titulo, mensaje, anuncioId, usuariosIds = []) {
+    const body = mensaje.length > 100 ? mensaje.substring(0, 97) + '...' : mensaje;
+
+    // Si usuariosIds está vacío, enviar a todos los usuarios aprobados
+    if (!usuariosIds || usuariosIds.length === 0) {
+      try {
+        const { data: usuarios, error } = await supabase
+          .from('users')
+          .select('id')
+          .eq('estado_aprobacion', 'aprobado');
+
+        if (error || !usuarios?.length) {
+          console.log('[Notificaciones] No se encontraron usuarios aprobados');
+          return { success: false, error: 'No se encontraron usuarios' };
+        }
+
+        usuariosIds = usuarios.map(u => u.id);
+      } catch (error) {
+        console.error('[Notificaciones] Error obteniendo usuarios:', error);
+        return { success: false, error: 'Error al obtener usuarios' };
+      }
+    }
+
+    // Enviar a todos los usuarios especificados
+    const results = await Promise.all(
+      usuariosIds.map((userId) =>
+        this.sendPushToUser(userId, `📢 ${titulo}`, body, {
+          type: 'nuevo_anuncio',
+          anuncioId,
+        })
+      )
+    );
+
+    console.log(`[Notificaciones] Anuncio enviado a ${usuariosIds.length} usuarios`);
+    return { success: results.some((r) => r.success), results };
   },
 };

@@ -24,6 +24,13 @@ const mapPartidaToCamelCase = (data) => {
     estado: data.estado,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
+    // Campos de clase
+    esClase: data.es_clase || false,
+    niveles: data.niveles || [],
+    minParticipantes: data.min_participantes || 4,
+    maxParticipantes: data.max_participantes || 4,
+    precioAlumno: data.precio_alumno,
+    precioGrupo: data.precio_grupo,
     // Jugadores si vienen incluidos
     jugadores: data.jugadores || [],
   };
@@ -127,12 +134,15 @@ export const partidasService = {
         return { success: false, error: 'Error al obtener partidas' };
       }
 
+      // Filtrar partidas pasadas
+      const partidasFuturas = filtrarPartidasFuturas(partidas);
+
       // Recolectar todos los IDs de usuarios para obtener datos en un solo query
-      const creadorIds = partidas.map(p => p.creador_id).filter(Boolean);
+      const creadorIds = partidasFuturas.map(p => p.creador_id).filter(Boolean);
 
       // Obtener jugadores de cada partida
       const partidasConJugadores = await Promise.all(
-        partidas.map(async (partida) => {
+        partidasFuturas.map(async (partida) => {
           const { data: jugadores } = await supabase
             .from('partidas_jugadores')
             .select('*')
@@ -313,7 +323,7 @@ export const partidasService = {
   },
 
   /**
-   * Crea una nueva partida/solicitud
+   * Crea una nueva partida/solicitud o clase
    */
   async crearPartida(partidaData) {
     try {
@@ -330,11 +340,21 @@ export const partidasService = {
         mensaje,
         nivelPreferido,
         jugadoresIniciales,
+        // Campos de clase
+        esClase,
+        niveles,
+        minParticipantes,
+        maxParticipantes,
+        precioAlumno,
+        precioGrupo,
       } = partidaData;
 
-      // Calcular si la partida estará completa desde el inicio
+      // Calcular máximo de participantes (4 para partidas, configurable para clases)
+      const maxPart = esClase ? (maxParticipantes || 8) : 4;
+
+      // Calcular si la partida/clase estará completa desde el inicio
       const totalJugadores = 1 + (jugadoresIniciales?.length || 0);
-      const estadoInicial = totalJugadores >= 4 ? 'completa' : 'buscando';
+      const estadoInicial = totalJugadores >= maxPart ? 'completa' : 'buscando';
 
       const { data, error } = await supabase
         .from('partidas')
@@ -351,6 +371,13 @@ export const partidasService = {
           mensaje: mensaje || null,
           nivel_preferido: nivelPreferido || null,
           estado: estadoInicial,
+          // Campos de clase
+          es_clase: esClase || false,
+          niveles: niveles?.length > 0 ? niveles : null,
+          min_participantes: esClase ? (minParticipantes || 2) : 4,
+          max_participantes: maxPart,
+          precio_alumno: precioAlumno || null,
+          precio_grupo: precioGrupo || null,
         })
         .select()
         .single();
@@ -428,8 +455,9 @@ export const partidasService = {
 
       // Contar jugadores confirmados (creador + confirmados)
       const jugadoresConfirmados = partida.partidas_jugadores?.filter(j => j.estado === 'confirmado') || [];
-      if (1 + jugadoresConfirmados.length >= 4) {
-        return { success: false, error: 'La partida ya está completa' };
+      const maxParticipantes = partida.max_participantes || 4;
+      if (1 + jugadoresConfirmados.length >= maxParticipantes) {
+        return { success: false, error: partida.es_clase ? 'La clase ya está completa' : 'La partida ya está completa' };
       }
 
       // Crear solicitud pendiente
@@ -449,11 +477,11 @@ export const partidasService = {
         return { success: false, error: 'Error al solicitar unirse' };
       }
 
-      // Notificar al creador de la partida
+      // Notificar al creador de la partida/clase
       notificationService.notifyPartidaSolicitud(
         partida.creador_id,
         usuario.nombre,
-        { partidaId, fecha: partida.fecha }
+        { partidaId, fecha: partida.fecha, esClase: partida.es_clase }
       );
 
       return { success: true };
@@ -471,7 +499,7 @@ export const partidasService = {
       // Verificar que sea el creador y obtener datos completos
       const { data: partida, error: partidaError } = await supabase
         .from('partidas')
-        .select('creador_id, creador_nombre, fecha, hora_inicio, pista_nombre, partidas_jugadores(*)')
+        .select('creador_id, creador_nombre, fecha, hora_inicio, pista_nombre, es_clase, max_participantes, partidas_jugadores(*)')
         .eq('id', partidaId)
         .single();
 
@@ -485,8 +513,9 @@ export const partidasService = {
 
       // Contar confirmados actuales
       const confirmados = partida.partidas_jugadores?.filter(j => j.estado === 'confirmado') || [];
-      if (1 + confirmados.length >= 4) {
-        return { success: false, error: 'La partida ya está completa' };
+      const maxParticipantes = partida.max_participantes || 4;
+      if (1 + confirmados.length >= maxParticipantes) {
+        return { success: false, error: partida.es_clase ? 'La clase ya está completa' : 'La partida ya está completa' };
       }
 
       // Aceptar solicitud - usar partida_id + usuario_id para identificar la fila
@@ -504,7 +533,7 @@ export const partidasService = {
       notificationService.notifyPartidaAceptada(
         jugadorId,
         partida.creador_nombre,
-        { partidaId, fecha: partida.fecha }
+        { partidaId, fecha: partida.fecha, esClase: partida.es_clase }
       );
 
       // Programar recordatorios de Match Day y 10 min antes para el jugador aceptado
@@ -517,9 +546,9 @@ export const partidasService = {
         });
       }
 
-      // Si ahora hay 4 jugadores, marcar como completa y notificar a todos
+      // Si ahora hay suficientes jugadores, marcar como completa y notificar a todos
       const nuevoTotalConfirmados = 1 + confirmados.length + 1;
-      if (nuevoTotalConfirmados >= 4) {
+      if (nuevoTotalConfirmados >= maxParticipantes) {
         await supabase
           .from('partidas')
           .update({ estado: 'completa', updated_at: new Date().toISOString() })
@@ -532,11 +561,11 @@ export const partidasService = {
           jugadorId,
         ];
 
-        // Notificar a todos que la partida está completa
+        // Notificar a todos que la partida/clase está completa
         notificationService.notifyPartidaCompleta(
           jugadoresIds,
           partida.creador_nombre,
-          { partidaId, fecha: partida.fecha }
+          { partidaId, fecha: partida.fecha, esClase: partida.es_clase }
         );
       }
 
@@ -615,7 +644,7 @@ export const partidasService = {
       // Obtener datos de la partida y jugadores antes de cancelar
       const { data: partida, error: fetchError } = await supabase
         .from('partidas')
-        .select('creador_id, creador_nombre, fecha, partidas_jugadores(*)')
+        .select('creador_id, creador_nombre, fecha, es_clase, partidas_jugadores(*)')
         .eq('id', partidaId)
         .single();
 
@@ -646,7 +675,7 @@ export const partidasService = {
         notificationService.notifyPartidaCancelada(
           jugadoresIds,
           partida.creador_nombre,
-          { partidaId, fecha: partida.fecha }
+          { partidaId, fecha: partida.fecha, esClase: partida.es_clase }
         );
       }
 
@@ -760,6 +789,13 @@ export const partidasService = {
       if (updates.horaFin !== undefined) updateData.hora_fin = updates.horaFin;
       if (updates.pistaNombre !== undefined) updateData.pista_nombre = updates.pistaNombre;
 
+      // Campos de clase
+      if (updates.niveles !== undefined) updateData.niveles = updates.niveles;
+      if (updates.minParticipantes !== undefined) updateData.min_participantes = updates.minParticipantes;
+      if (updates.maxParticipantes !== undefined) updateData.max_participantes = updates.maxParticipantes;
+      if (updates.precioAlumno !== undefined) updateData.precio_alumno = updates.precioAlumno;
+      if (updates.precioGrupo !== undefined) updateData.precio_grupo = updates.precioGrupo;
+
       const { error } = await supabase
         .from('partidas')
         .update(updateData)
@@ -783,7 +819,7 @@ export const partidasService = {
       // Verificar que sea el creador
       const { data: partida, error: fetchError } = await supabase
         .from('partidas')
-        .select('creador_id, estado, fecha, hora_inicio, pista_nombre, partidas_jugadores(*)')
+        .select('creador_id, estado, fecha, hora_inicio, pista_nombre, es_clase, max_participantes, partidas_jugadores(*)')
         .eq('id', partidaId)
         .single();
 
@@ -797,8 +833,9 @@ export const partidasService = {
 
       // Contar jugadores confirmados
       const jugadoresConfirmados = partida.partidas_jugadores?.filter(j => j.estado === 'confirmado') || [];
-      if (1 + jugadoresConfirmados.length >= 4) {
-        return { success: false, error: 'La partida ya está completa' };
+      const maxParticipantes = partida.max_participantes || 4;
+      if (1 + jugadoresConfirmados.length >= maxParticipantes) {
+        return { success: false, error: partida.es_clase ? 'La clase ya está completa' : 'La partida ya está completa' };
       }
 
       // Verificar que el jugador no esté ya en la partida
@@ -827,9 +864,9 @@ export const partidasService = {
         return { success: false, error: 'Error al añadir jugador' };
       }
 
-      // Verificar si ahora está completa (4 jugadores)
+      // Verificar si ahora está completa
       const nuevoTotal = 1 + jugadoresConfirmados.length + 1;
-      if (nuevoTotal >= 4) {
+      if (nuevoTotal >= maxParticipantes) {
         await supabase
           .from('partidas')
           .update({ estado: 'completa', updated_at: new Date().toISOString() })
@@ -890,6 +927,137 @@ export const partidasService = {
       return { success: true };
     } catch (error) {
       return { success: false, error: 'Error al eliminar jugador' };
+    }
+  },
+
+  /**
+   * Cerrar inscripciones de una clase manualmente (solo el creador)
+   * Permite cerrar aunque no esté completa
+   */
+  async cerrarClase(partidaId, creadorId) {
+    try {
+      // Verificar que sea el creador y que sea una clase
+      const { data: partida, error: fetchError } = await supabase
+        .from('partidas')
+        .select('creador_id, creador_nombre, es_clase, estado, fecha, partidas_jugadores(*)')
+        .eq('id', partidaId)
+        .single();
+
+      if (fetchError || !partida) {
+        return { success: false, error: 'Clase no encontrada' };
+      }
+
+      if (partida.creador_id !== creadorId) {
+        return { success: false, error: 'Solo el creador puede cerrar la clase' };
+      }
+
+      if (!partida.es_clase) {
+        return { success: false, error: 'Esta función es solo para clases' };
+      }
+
+      if (partida.estado !== 'buscando') {
+        return { success: false, error: 'La clase ya no está abierta' };
+      }
+
+      // Cerrar la clase (cambiar estado a 'completa')
+      const { error } = await supabase
+        .from('partidas')
+        .update({ estado: 'completa', updated_at: new Date().toISOString() })
+        .eq('id', partidaId);
+
+      if (error) {
+        return { success: false, error: 'Error al cerrar la clase' };
+      }
+
+      // Notificar a todos los jugadores confirmados
+      const jugadoresIds = (partida.partidas_jugadores || [])
+        .filter(j => j.usuario_id && j.estado === 'confirmado')
+        .map(j => j.usuario_id);
+
+      if (jugadoresIds.length > 0) {
+        notificationService.notifyPartidaCompleta(
+          [creadorId, ...jugadoresIds],
+          partida.creador_nombre,
+          { partidaId, fecha: partida.fecha, esClase: true }
+        );
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Error al cerrar la clase' };
+    }
+  },
+
+  /**
+   * Cancela una partida vinculada a una reserva
+   * Se llama cuando la reserva es cancelada o desplazada
+   * @param {string} reservaId - ID de la reserva
+   * @param {string} motivo - 'reserva_cancelada' o 'reserva_desplazada'
+   */
+  async cancelarPartidaPorReserva(reservaId, motivo = 'reserva_cancelada') {
+    try {
+      console.log('[cancelarPartidaPorReserva] Buscando partida con reserva_id:', reservaId);
+
+      // 1. Buscar partida vinculada a esta reserva
+      const { data: partidas, error: findError } = await supabase
+        .from('partidas')
+        .select('*, partidas_jugadores(*)')
+        .eq('reserva_id', reservaId)
+        .in('estado', ['buscando', 'completa']);
+
+      console.log('[cancelarPartidaPorReserva] Resultado búsqueda:', { partidas, findError });
+
+      // Si no hay partida vinculada, no hay nada que hacer
+      if (findError) {
+        console.error('[cancelarPartidaPorReserva] Error en búsqueda:', findError);
+        return { success: true, hadPartida: false };
+      }
+
+      if (!partidas || partidas.length === 0) {
+        console.log('[cancelarPartidaPorReserva] No hay partida vinculada a esta reserva');
+        return { success: true, hadPartida: false };
+      }
+
+      const partida = partidas[0];
+
+      // 2. Cambiar estado de la partida a 'cancelada'
+      const { error: updateError } = await supabase
+        .from('partidas')
+        .update({ estado: 'cancelada', updated_at: new Date().toISOString() })
+        .eq('id', partida.id);
+
+      if (updateError) {
+        console.error('[cancelarPartidaPorReserva] Error actualizando partida:', updateError);
+        return { success: false, error: 'Error al cancelar la partida' };
+      }
+
+      // 3. Obtener IDs de todos los jugadores confirmados + creador
+      const jugadoresIds = (partida.partidas_jugadores || [])
+        .filter(j => j.estado === 'confirmado' && j.usuario_id)
+        .map(j => j.usuario_id);
+
+      // Incluir creador
+      const todosLosIds = [...new Set([partida.creador_id, ...jugadoresIds])];
+
+      // 4. Notificar a todos
+      if (todosLosIds.length > 0) {
+        await notificationService.notifyPartidaCanceladaPorReserva(
+          todosLosIds,
+          partida.creador_nombre,
+          {
+            fecha: partida.fecha,
+            horaInicio: partida.hora_inicio,
+            esClase: partida.es_clase || false,
+          },
+          motivo
+        );
+      }
+
+      console.log(`[cancelarPartidaPorReserva] Partida ${partida.id} cancelada por ${motivo}`);
+      return { success: true, hadPartida: true, partidaId: partida.id };
+    } catch (error) {
+      console.error('[cancelarPartidaPorReserva] Error:', error);
+      return { success: false, error: 'Error al cancelar la partida vinculada' };
     }
   },
 };
