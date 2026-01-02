@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 
 /**
- * Hook para gestionar alertas personalizadas
- * Centraliza la lógica de mostrar alertas y confirmaciones
+ * Hook to manage custom alerts
+ * Centralizes the logic for showing alerts and confirmations
  */
 export function useAlert() {
   const [alertConfig, setAlertConfig] = useState({
@@ -12,7 +12,7 @@ export function useAlert() {
     buttons: [],
   });
 
-  const mostrarAlerta = useCallback((title, message) => {
+  const showAlert = useCallback((title, message) => {
     setAlertConfig({
       visible: true,
       title,
@@ -21,10 +21,10 @@ export function useAlert() {
     });
   }, []);
 
-  const mostrarConfirmacion = useCallback((config) => {
-    // Soporta tanto el formato objeto como el formato (title, message, onConfirm)
+  const showConfirmation = useCallback((config) => {
+    // Supports both object format and (title, message, onConfirm) format
     if (typeof config === 'string') {
-      // Formato antiguo: (title, message, onConfirm)
+      // Legacy format: (title, message, onConfirm)
       const [title, message, onConfirm] = [config, arguments[1], arguments[2]];
       setAlertConfig({
         visible: true,
@@ -36,7 +36,7 @@ export function useAlert() {
         ],
       });
     } else {
-      // Formato nuevo: { title, message, onConfirm, destructive, confirmText }
+      // New format: { title, message, onConfirm, destructive, confirmText }
       const { title, message, onConfirm, destructive, confirmText } = config;
       setAlertConfig({
         visible: true,
@@ -54,22 +54,28 @@ export function useAlert() {
     }
   }, []);
 
-  const mostrarAlertaPersonalizada = useCallback((config) => {
+  const showCustomAlert = useCallback((config) => {
     setAlertConfig({
       visible: true,
       ...config,
     });
   }, []);
 
-  const cerrarAlerta = useCallback(() => {
+  const closeAlert = useCallback(() => {
     setAlertConfig(prev => ({ ...prev, visible: false }));
   }, []);
 
   return {
     alertConfig,
-    mostrarAlerta,
-    mostrarConfirmacion,
-    mostrarAlertaPersonalizada,
-    cerrarAlerta,
+    // New English names
+    showAlert,
+    showConfirmation,
+    showCustomAlert,
+    closeAlert,
+    // Legacy Spanish names for backwards compatibility
+    mostrarAlerta: showAlert,
+    mostrarConfirmacion: showConfirmation,
+    mostrarAlertaPersonalizada: showCustomAlert,
+    cerrarAlerta: closeAlert,
   };
 }

@@ -5,15 +5,15 @@ import { decode } from 'base64-arraybuffer';
 const AVATAR_BUCKET = 'Avatar';
 
 /**
- * Servicio de almacenamiento con Supabase Storage
- * Reemplaza Cloudinary para fotos de perfil
+ * Storage service using Supabase Storage
+ * Replaces Cloudinary for profile photos
  */
 export const storageService = {
   /**
-   * Sube una imagen de avatar a Supabase Storage
-   * @param {string} userId - ID del usuario
-   * @param {string} imageUri - URI de la imagen (file://, blob:, data:)
-   * @returns {Promise<string>} URL pública de la imagen
+   * Uploads an avatar image to Supabase Storage
+   * @param {string} userId - User ID
+   * @param {string} imageUri - Image URI (file://, blob:, data:)
+   * @returns {Promise<string>} Public URL of the image
    */
   async uploadAvatar(userId, imageUri) {
     try {
@@ -70,7 +70,7 @@ export const storageService = {
   },
 
   /**
-   * Convierte un Blob a base64 (para web)
+   * Converts a Blob to base64 (for web)
    */
   blobToBase64(blob) {
     return new Promise((resolve, reject) => {
@@ -82,7 +82,7 @@ export const storageService = {
   },
 
   /**
-   * Elimina avatares anteriores del usuario
+   * Deletes old avatars from user
    */
   async deleteOldAvatars(userId) {
     try {
@@ -95,12 +95,12 @@ export const storageService = {
         await supabase.storage.from(AVATAR_BUCKET).remove(filesToDelete);
       }
     } catch {
-      // Ignorar errores al eliminar avatares antiguos
+      // Ignore errors when deleting old avatars
     }
   },
 
   /**
-   * Verifica si la URI es local (necesita subirse)
+   * Checks if the URI is local (needs to be uploaded)
    */
   isLocalImageUri(uri) {
     return uri && (

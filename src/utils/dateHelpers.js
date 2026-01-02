@@ -1,124 +1,136 @@
-import { HORARIOS_CONFIG } from '../constants/config';
+import { SCHEDULE_CONFIG } from '../constants/config';
 
-// Convertir fecha y hora a objeto Date
-export const stringToDate = (fecha, hora) => {
-  const [year, month, day] = fecha.split('-');
-  const [hours, minutes] = hora.split(':');
+// Convert date and time strings to Date object
+export const stringToDate = (date, time) => {
+  const [year, month, day] = date.split('-');
+  const [hours, minutes] = time.split(':');
   return new Date(year, month - 1, day, hours, minutes);
 };
 
-// Formatear fecha a YYYY-MM-DD
-export const formatearFecha = (date) => {
+// Format date to YYYY-MM-DD
+export const formatDate = (date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
 
-// Formatear fecha a formato legible (ej: "Lunes 25 de Diciembre")
-export const formatearFechaLegible = (fecha) => {
-  if (!fecha) return 'Fecha no disponible';
+// Format date to readable format (e.g., "Lunes 25 de Diciembre")
+export const formatReadableDate = (dateInput) => {
+  if (!dateInput) return 'Fecha no disponible';
 
   let date;
-  if (typeof fecha === 'string') {
-    // Si es un timestamp ISO completo (contiene T o Z), parsearlo directamente
-    if (fecha.includes('T') || fecha.includes('Z')) {
-      date = new Date(fecha);
+  if (typeof dateInput === 'string') {
+    // If it's a full ISO timestamp (contains T or Z), parse directly
+    if (dateInput.includes('T') || dateInput.includes('Z')) {
+      date = new Date(dateInput);
     } else {
-      // Si es solo fecha YYYY-MM-DD
-      date = new Date(fecha + 'T00:00:00');
+      // If it's just YYYY-MM-DD
+      date = new Date(dateInput + 'T00:00:00');
     }
-  } else if (fecha.toDate && typeof fecha.toDate === 'function') {
+  } else if (dateInput.toDate && typeof dateInput.toDate === 'function') {
     // Firebase Timestamp
-    date = fecha.toDate();
-  } else if (fecha instanceof Date) {
-    date = fecha;
+    date = dateInput.toDate();
+  } else if (dateInput instanceof Date) {
+    date = dateInput;
   } else {
     return 'Fecha inválida';
   }
 
-  // Verificar que la fecha sea válida
+  // Verify the date is valid
   if (isNaN(date.getTime())) {
     return 'Fecha inválida';
   }
 
-  const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  return date.toLocaleDateString('es-ES', opciones);
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  return date.toLocaleDateString('es-ES', options);
 };
 
-// Generar horarios disponibles del día
-export const generarHorariosDisponibles = () => {
-  const horarios = [];
-  const [horaInicio] = HORARIOS_CONFIG.horaApertura.split(':').map(Number);
-  const [horaFin] = HORARIOS_CONFIG.horaCierre.split(':').map(Number);
-  const duracion = HORARIOS_CONFIG.duracionBloque;
+// Generate available time slots for the day
+export const generateAvailableSlots = () => {
+  const slots = [];
+  const [openingHour] = SCHEDULE_CONFIG.openingTime.split(':').map(Number);
+  const [closingHour] = SCHEDULE_CONFIG.closingTime.split(':').map(Number);
+  const duration = SCHEDULE_CONFIG.slotDuration;
 
-  let horaActual = horaInicio * 60; // Convertir a minutos
-  const horaFinMinutos = horaFin * 60;
+  let currentMinutes = openingHour * 60; // Convert to minutes
+  const closingMinutes = closingHour * 60;
 
-  while (horaActual + duracion <= horaFinMinutos) {
-    const horas = Math.floor(horaActual / 60);
-    const minutos = horaActual % 60;
-    const horaStr = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
+  while (currentMinutes + duration <= closingMinutes) {
+    const hours = Math.floor(currentMinutes / 60);
+    const minutes = currentMinutes % 60;
+    const startTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 
-    const horaFinBloque = horaActual + duracion;
-    const horasFinBloque = Math.floor(horaFinBloque / 60);
-    const minutosFinBloque = horaFinBloque % 60;
-    const horaFinStr = `${String(horasFinBloque).padStart(2, '0')}:${String(minutosFinBloque).padStart(2, '0')}`;
+    const endMinutes = currentMinutes + duration;
+    const endHours = Math.floor(endMinutes / 60);
+    const endMins = endMinutes % 60;
+    const endTime = `${String(endHours).padStart(2, '0')}:${String(endMins).padStart(2, '0')}`;
 
-    horarios.push({
-      horaInicio: horaStr,
-      horaFin: horaFinStr,
+    slots.push({
+      horaInicio: startTime,
+      horaFin: endTime,
     });
 
-    horaActual += duracion;
+    currentMinutes += duration;
   }
 
-  return horarios;
+  return slots;
 };
 
-// Validar si fecha/hora es futura
-export const esFuturo = (fecha, hora) => {
-  const fechaHora = stringToDate(fecha, hora);
-  return fechaHora > new Date();
+// Check if date/time is in the future
+export const isFuture = (date, time) => {
+  const dateTime = stringToDate(date, time);
+  return dateTime > new Date();
 };
 
-// Validar si un bloque horario ya terminó (usa la hora de fin)
-// El bloque está activo mientras no haya terminado
-export const bloqueTerminado = (fecha, horaFin) => {
-  const fechaHoraFin = stringToDate(fecha, horaFin);
-  return fechaHoraFin <= new Date();
+// Check if a time slot has ended (uses end time)
+// The slot is active as long as it hasn't ended
+export const hasSlotEnded = (date, endTime) => {
+  const endDateTime = stringToDate(date, endTime);
+  return endDateTime <= new Date();
 };
 
-// Calcular diferencia en horas desde ahora hasta fecha/hora
-export const horasHasta = (fecha, hora) => {
-  const fechaHora = stringToDate(fecha, hora);
-  const ahora = new Date();
-  const diferencia = fechaHora - ahora;
-  return diferencia / (1000 * 60 * 60); // Convertir ms a horas
+// Calculate hours from now until date/time
+export const hoursUntil = (date, time) => {
+  const dateTime = stringToDate(date, time);
+  const now = new Date();
+  const difference = dateTime - now;
+  return difference / (1000 * 60 * 60); // Convert ms to hours
 };
 
-// Obtener fecha de hoy en formato YYYY-MM-DD
-export const obtenerFechaHoy = () => {
-  return formatearFecha(new Date());
+// Get today's date in YYYY-MM-DD format
+export const getTodayDate = () => {
+  return formatDate(new Date());
 };
 
-// Formatear hora para mostrar solo HH:MM (sin segundos)
-export const formatearHora = (hora) => {
-  if (!hora) return '';
-  // Si viene con segundos (HH:MM:SS), quitar los segundos
-  return hora.split(':').slice(0, 2).join(':');
+// Format time to show only HH:MM (without seconds)
+export const formatTime = (time) => {
+  if (!time) return '';
+  // If it has seconds (HH:MM:SS), remove them
+  return time.split(':').slice(0, 2).join(':');
 };
 
-// Validar si una fecha está dentro del rango permitido
-export const esFechaValida = (fecha) => {
-  const fechaObj = new Date(fecha + 'T00:00:00');
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
+// Check if a date is within the allowed booking range
+export const isDateValid = (date) => {
+  const dateObj = new Date(date + 'T00:00:00');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  const maxFecha = new Date();
-  maxFecha.setDate(maxFecha.getDate() + 7); // 7 días adelante
-  maxFecha.setHours(0, 0, 0, 0);
+  const maxDate = new Date();
+  maxDate.setDate(maxDate.getDate() + 7); // 7 days ahead
+  maxDate.setHours(0, 0, 0, 0);
 
-  return fechaObj >= hoy && fechaObj <= maxFecha;
+  return dateObj >= today && dateObj <= maxDate;
 };
+
+// Legacy exports for backwards compatibility
+// TODO: Remove these aliases once all consumers are updated
+export const formatearFecha = formatDate;
+export const formatearFechaLegible = formatReadableDate;
+export const generarHorariosDisponibles = generateAvailableSlots;
+export const esFuturo = isFuture;
+export const bloqueTerminado = hasSlotEnded;
+export const horasHasta = hoursUntil;
+export const obtenerFechaHoy = getTodayDate;
+export const formatearHora = formatTime;
+export const esFechaValida = isDateValid;

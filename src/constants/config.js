@@ -1,72 +1,76 @@
-// Configuración de horarios
-export const HORARIOS_CONFIG = {
-  horaApertura: '08:00',
-  horaCierre: '22:00',
-  duracionBloque: 30, // minutos - bloques de 30 minutos
+// Schedule configuration
+export const SCHEDULE_CONFIG = {
+  openingTime: '08:00',
+  closingTime: '22:00',
+  slotDuration: 30, // minutes - 30-minute slots
 };
 
-// Duración de bloque (para usar en servicios)
-export const DURACION_BLOQUE = 30;
+// Slot duration (for use in services)
+export const SLOT_DURATION = 30;
 
-// Límites de reserva
-export const LIMITES_RESERVA = {
-  maxReservasActivas: 2, // Por vivienda
-  horasAnticipacionMinima: 0,
-  diasAnticipacionMaxima: 7,
-  horasCancelacionMinima: 1.5, // 1 hora y media
+// Reservation limits
+export const RESERVATION_LIMITS = {
+  maxActiveReservations: 2, // Per apartment
+  minAdvanceHours: 0,
+  maxAdvanceDays: 7,
+  minCancellationHours: 1.5, // 1 hour and 30 minutes
 };
 
-// Etiquetas de prioridad para UI
-export const PRIORIDAD_LABELS = {
+// Priority labels for UI (Spanish - user-facing)
+export const PRIORITY_LABELS = {
   primera: 'Garantizada',
   segunda: 'Provisional',
 };
 
-// Niveles de juego
-export const NIVELES_JUEGO = [
+// Play levels (Spanish labels - user-facing)
+export const PLAY_LEVELS = [
   { value: 'principiante', label: 'Principiante' },
   { value: 'intermedio', label: 'Intermedio' },
   { value: 'avanzado', label: 'Avanzado' },
   { value: 'profesional', label: 'Profesional' },
 ];
 
-// Configuración de clases
-export const CLASE_CONFIG = {
-  MIN_ALUMNOS: 2,
-  MAX_ALUMNOS: 8,
-  OPCIONES_MIN: [2, 3, 4],
-  OPCIONES_MAX: [4, 5, 6, 7, 8],
+// Class configuration
+export const CLASS_CONFIG = {
+  MIN_STUDENTS: 2,
+  MAX_STUDENTS: 8,
+  MIN_OPTIONS: [2, 3, 4],
+  MAX_OPTIONS: [4, 5, 6, 7, 8],
 };
 
-// Configuración de viviendas
-export const VIVIENDA_CONFIG = {
-  escaleras: [1, 2, 3, 4, 5, 6],
-  pisos: [1, 2, 3, 4, 5, 6],
-  puertas: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'],
-};
-
-/**
- * Formatea una vivienda para mostrar al usuario
- * @param {string} viviendaStr - Formato almacenado "1-3-B"
- * @returns {string} Formato legible "Esc. 1, Piso 3, Pta. B"
- */
-export const formatearVivienda = (viviendaStr) => {
-  if (!viviendaStr) return '';
-  const parsed = parseVivienda(viviendaStr);
-  if (!parsed) return viviendaStr;
-  return `Esc. ${parsed.escalera}, Piso ${parsed.piso}, Pta. ${parsed.puerta}`;
+// Apartment configuration
+export const APARTMENT_CONFIG = {
+  stairs: [1, 2, 3, 4, 5, 6],
+  floors: [1, 2, 3, 4, 5, 6],
+  doors: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'],
 };
 
 /**
- * Parsea una vivienda del formato almacenado
- * @param {string} viviendaStr - Formato "1-3-B"
- * @returns {object|null} { escalera, piso, puerta } o null si formato inválido
+ * Format apartment for display to user
+ * @param {string} apartmentStr - Stored format "1-3-B"
+ * @returns {string} Readable format "Esc. 1, Piso 3, Pta. B"
  */
-export const parseVivienda = (viviendaStr) => {
-  if (!viviendaStr) return null;
-  const match = viviendaStr.match(/^(\d+)-(\d+)-([A-M])$/);
+export const formatApartment = (apartmentStr) => {
+  if (!apartmentStr) return '';
+  const parsed = parseApartment(apartmentStr);
+  if (!parsed) return apartmentStr;
+  return `Esc. ${parsed.stair}, Piso ${parsed.floor}, Pta. ${parsed.door}`;
+};
+
+/**
+ * Parse apartment from stored format
+ * @param {string} apartmentStr - Format "1-3-B"
+ * @returns {object|null} { stair, floor, door } or null if invalid format
+ */
+export const parseApartment = (apartmentStr) => {
+  if (!apartmentStr) return null;
+  const match = apartmentStr.match(/^(\d+)-(\d+)-([A-M])$/);
   if (!match) return null;
   return {
+    stair: match[1],
+    floor: match[2],
+    door: match[3],
+    // Legacy property names for backwards compatibility
     escalera: match[1],
     piso: match[2],
     puerta: match[3],
@@ -74,18 +78,45 @@ export const parseVivienda = (viviendaStr) => {
 };
 
 /**
- * Combina escalera, piso y puerta en formato almacenado
- * @returns {string} Formato "1-3-B"
+ * Combine stair, floor, and door into stored format
+ * @returns {string} Format "1-3-B"
  */
-export const combinarVivienda = (escalera, piso, puerta) => {
-  return `${escalera}-${piso}-${puerta}`;
+export const combineApartment = (stair, floor, door) => {
+  return `${stair}-${floor}-${door}`;
 };
 
 /**
- * Verifica si una vivienda tiene el formato estructurado válido
- * @param {string} viviendaStr - La vivienda a verificar
+ * Verify if an apartment has valid structured format
+ * @param {string} apartmentStr - The apartment to verify
  * @returns {boolean}
  */
-export const esViviendaValida = (viviendaStr) => {
-  return parseVivienda(viviendaStr) !== null;
+export const isValidApartment = (apartmentStr) => {
+  return parseApartment(apartmentStr) !== null;
 };
+
+// Legacy exports for backwards compatibility
+// TODO: Remove these aliases once all consumers are updated
+export const HORARIOS_CONFIG = {
+  horaApertura: SCHEDULE_CONFIG.openingTime,
+  horaCierre: SCHEDULE_CONFIG.closingTime,
+  duracionBloque: SCHEDULE_CONFIG.slotDuration,
+};
+export const DURACION_BLOQUE = SLOT_DURATION;
+export const LIMITES_RESERVA = {
+  maxReservasActivas: RESERVATION_LIMITS.maxActiveReservations,
+  horasAnticipacionMinima: RESERVATION_LIMITS.minAdvanceHours,
+  diasAnticipacionMaxima: RESERVATION_LIMITS.maxAdvanceDays,
+  horasCancelacionMinima: RESERVATION_LIMITS.minCancellationHours,
+};
+export const PRIORIDAD_LABELS = PRIORITY_LABELS;
+export const NIVELES_JUEGO = PLAY_LEVELS;
+export const CLASE_CONFIG = CLASS_CONFIG;
+export const VIVIENDA_CONFIG = {
+  escaleras: APARTMENT_CONFIG.stairs,
+  pisos: APARTMENT_CONFIG.floors,
+  puertas: APARTMENT_CONFIG.doors,
+};
+export const formatearVivienda = formatApartment;
+export const parseVivienda = parseApartment;
+export const combinarVivienda = combineApartment;
+export const esViviendaValida = isValidApartment;

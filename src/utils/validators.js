@@ -1,163 +1,184 @@
-import { LIMITES_RESERVA, esViviendaValida, VIVIENDA_CONFIG } from '../constants/config';
-import { horasHasta } from './dateHelpers';
+import { RESERVATION_LIMITS, isValidApartment, APARTMENT_CONFIG, LIMITES_RESERVA, esViviendaValida, VIVIENDA_CONFIG } from '../constants/config';
+import { hoursUntil, horasHasta } from './dateHelpers';
 
-// Validar formato de email
-export const validarEmail = (email) => {
+// Validate email format
+export const validateEmail = (email) => {
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return regex.test(email);
 };
 
-// Validar teléfono (formato flexible)
-export const validarTelefono = (telefono) => {
-  // Acepta números de 9 dígitos o más
-  const soloNumeros = telefono.replace(/\s/g, '').replace(/\+/g, '').replace(/-/g, '');
-  return soloNumeros.length >= 9 && /^\d+$/.test(soloNumeros);
+// Validate phone number (flexible format)
+export const validatePhone = (phone) => {
+  // Accepts 9+ digit numbers
+  const digitsOnly = phone.replace(/\s/g, '').replace(/\+/g, '').replace(/-/g, '');
+  return digitsOnly.length >= 9 && /^\d+$/.test(digitsOnly);
 };
 
-// Validar componentes de vivienda (escalera, piso, puerta)
-export const validarViviendaComponentes = (escalera, piso, puerta) => {
-  const errores = {};
+// Validate apartment components (stair, floor, door)
+export const validateApartmentComponents = (stair, floor, door) => {
+  const errors = {};
 
-  if (!escalera) {
-    errores.escalera = 'Selecciona una escalera';
-  } else if (!VIVIENDA_CONFIG.escaleras.includes(Number(escalera))) {
-    errores.escalera = 'Escalera no válida';
+  if (!stair) {
+    errors.escalera = 'Selecciona una escalera';
+  } else if (!APARTMENT_CONFIG.stairs.includes(Number(stair))) {
+    errors.escalera = 'Escalera no válida';
   }
 
-  if (!piso) {
-    errores.piso = 'Selecciona un piso';
-  } else if (!VIVIENDA_CONFIG.pisos.includes(Number(piso))) {
-    errores.piso = 'Piso no válido';
+  if (!floor) {
+    errors.piso = 'Selecciona un piso';
+  } else if (!APARTMENT_CONFIG.floors.includes(Number(floor))) {
+    errors.piso = 'Piso no válido';
   }
 
-  if (!puerta) {
-    errores.puerta = 'Selecciona una puerta';
-  } else if (!VIVIENDA_CONFIG.puertas.includes(puerta)) {
-    errores.puerta = 'Puerta no válida';
+  if (!door) {
+    errors.puerta = 'Selecciona una puerta';
+  } else if (!APARTMENT_CONFIG.doors.includes(door)) {
+    errors.puerta = 'Puerta no válida';
   }
 
   return {
-    valido: Object.keys(errores).length === 0,
-    errores,
+    valid: Object.keys(errors).length === 0,
+    errors,
+    // Legacy property for backwards compatibility
+    valido: Object.keys(errors).length === 0,
+    errores: errors,
   };
 };
 
-// Validar si el usuario puede hacer una nueva reserva
-// NOTA: La validación principal de límites se hace en el backend (reservasService)
-// Esta función solo hace validaciones básicas del frontend
-export const puedeReservar = (usuario, nuevaReserva, reservasActuales) => {
-  // Verificar que la fecha/hora sea futura
-  const horasAnticipacion = horasHasta(nuevaReserva.fecha, nuevaReserva.horaInicio);
+// Check if user can make a new reservation
+// NOTE: Main limit validation is done in backend (reservasService)
+// This function only performs basic frontend validations
+export const canMakeReservation = (user, newReservation, currentReservations) => {
+  // Verify the date/time is in the future
+  const hoursInAdvance = hoursUntil(newReservation.fecha, newReservation.horaInicio);
 
-  if (horasAnticipacion < 0) {
+  if (hoursInAdvance < 0) {
     return {
+      valid: false,
       valido: false,
       error: 'No puedes reservar en horarios pasados',
     };
   }
 
-  // 2. Verificar límite de reservas activas de la VIVIENDA (solo futuras)
-  const ahora = new Date();
-  const reservasActivasVivienda = reservasActuales.filter((r) => {
-    // Filtrar por vivienda, estado confirmada, y que sea futura
-    const esMismaVivienda = r.vivienda === usuario.vivienda;
-    const esConfirmada = r.estado === 'confirmada';
-    const fechaReserva = new Date(r.fecha + 'T' + r.horaInicio);
-    const esFutura = fechaReserva > ahora;
-    return esMismaVivienda && esConfirmada && esFutura;
+  // 2. Check apartment's active reservations limit (only future ones)
+  const now = new Date();
+  const apartmentActiveReservations = currentReservations.filter((r) => {
+    // Filter by apartment, confirmed status, and future date
+    const sameApartment = r.vivienda === user.vivienda;
+    const isConfirmed = r.estado === 'confirmada';
+    const reservationDate = new Date(r.fecha + 'T' + r.horaInicio);
+    const isFuture = reservationDate > now;
+    return sameApartment && isConfirmed && isFuture;
   });
 
-  if (reservasActivasVivienda.length >= LIMITES_RESERVA.maxReservasActivas) {
+  if (apartmentActiveReservations.length >= RESERVATION_LIMITS.maxActiveReservations) {
     return {
+      valid: false,
       valido: false,
-      error: `Tu vivienda ya tiene ${LIMITES_RESERVA.maxReservasActivas} reservas activas`,
+      error: `Tu vivienda ya tiene ${RESERVATION_LIMITS.maxActiveReservations} reservas activas`,
     };
   }
 
-  // 3. Verificar que la vivienda no tenga otra reserva a la misma hora
-  const conflicto = reservasActivasVivienda.find(
+  // 3. Check if apartment doesn't have another reservation at the same time
+  const conflict = apartmentActiveReservations.find(
     (r) =>
-      r.fecha === nuevaReserva.fecha &&
-      r.horaInicio === nuevaReserva.horaInicio
+      r.fecha === newReservation.fecha &&
+      r.horaInicio === newReservation.horaInicio
   );
-  if (conflicto) {
+  if (conflict) {
     return {
+      valid: false,
       valido: false,
       error: 'Tu vivienda ya tiene una reserva a esta hora',
     };
   }
 
-  return { valido: true };
+  return { valid: true, valido: true };
 };
 
-// Validar si se puede cancelar una reserva
-export const puedeCancelar = (reserva) => {
-  const horasRestantes = horasHasta(reserva.fecha, reserva.horaInicio);
-  if (horasRestantes < LIMITES_RESERVA.horasCancelacionMinima) {
+// Check if a reservation can be cancelled
+export const canCancelReservation = (reservation) => {
+  const remainingHours = hoursUntil(reservation.fecha, reservation.horaInicio);
+  if (remainingHours < RESERVATION_LIMITS.minCancellationHours) {
     return {
+      valid: false,
       valido: false,
-      error: `Solo puedes cancelar con al menos ${LIMITES_RESERVA.horasCancelacionMinima} horas de anticipación`,
+      error: `Solo puedes cancelar con al menos ${RESERVATION_LIMITS.minCancellationHours} horas de anticipación`,
     };
   }
-  return { valido: true };
+  return { valid: true, valido: true };
 };
 
-// Validar datos de registro
-export const validarRegistro = (datos) => {
-  const errores = {};
+// Validate registration data
+export const validateRegistration = (data) => {
+  const errors = {};
 
-  if (!datos.nombre || datos.nombre.trim().length < 2) {
-    errores.nombre = 'El nombre debe tener al menos 2 caracteres';
+  if (!data.nombre || data.nombre.trim().length < 2) {
+    errors.nombre = 'El nombre debe tener al menos 2 caracteres';
   }
 
-  if (!validarEmail(datos.email)) {
-    errores.email = 'Email no válido';
+  if (!validateEmail(data.email)) {
+    errors.email = 'Email no válido';
   }
 
-  if (!validarTelefono(datos.telefono)) {
-    errores.telefono = 'Teléfono no válido';
+  if (!validatePhone(data.telefono)) {
+    errors.telefono = 'Teléfono no válido';
   }
 
-  // Validar vivienda estructurada
-  if (!datos.vivienda || !esViviendaValida(datos.vivienda)) {
-    errores.vivienda = 'Debes seleccionar tu vivienda completa';
+  // Validate structured apartment
+  if (!data.vivienda || !isValidApartment(data.vivienda)) {
+    errors.vivienda = 'Debes seleccionar tu vivienda completa';
   }
 
-  if (!datos.password || datos.password.length < 6) {
-    errores.password = 'La contraseña debe tener al menos 6 caracteres';
+  if (!data.password || data.password.length < 6) {
+    errors.password = 'La contraseña debe tener al menos 6 caracteres';
   }
 
   return {
-    valido: Object.keys(errores).length === 0,
-    errores,
+    valid: Object.keys(errors).length === 0,
+    valido: Object.keys(errors).length === 0,
+    errors,
+    errores: errors,
   };
 };
 
-// Validar datos de perfil
-export const validarPerfil = (datos) => {
-  const errores = {};
+// Validate profile data
+export const validateProfile = (data) => {
+  const errors = {};
 
-  if (!datos.nombre || datos.nombre.trim().length < 2) {
-    errores.nombre = 'El nombre debe tener al menos 2 caracteres';
+  if (!data.nombre || data.nombre.trim().length < 2) {
+    errors.nombre = 'El nombre debe tener al menos 2 caracteres';
   }
 
-  if (!validarTelefono(datos.telefono)) {
-    errores.telefono = 'Teléfono no válido';
+  if (!validatePhone(data.telefono)) {
+    errors.telefono = 'Teléfono no válido';
   }
 
-  // Validar vivienda estructurada
-  if (!datos.vivienda || !esViviendaValida(datos.vivienda)) {
-    errores.vivienda = 'Debes seleccionar tu vivienda completa';
+  // Validate structured apartment
+  if (!data.vivienda || !isValidApartment(data.vivienda)) {
+    errors.vivienda = 'Debes seleccionar tu vivienda completa';
   }
 
   // nivelJuego is optional, but if provided must be valid
-  const nivelesValidos = ['principiante', 'intermedio', 'avanzado', 'profesional'];
-  if (datos.nivelJuego && !nivelesValidos.includes(datos.nivelJuego)) {
-    errores.nivelJuego = 'Nivel de juego no válido';
+  const validLevels = ['principiante', 'intermedio', 'avanzado', 'profesional'];
+  if (data.nivelJuego && !validLevels.includes(data.nivelJuego)) {
+    errors.nivelJuego = 'Nivel de juego no válido';
   }
 
   return {
-    valido: Object.keys(errores).length === 0,
-    errores,
+    valid: Object.keys(errors).length === 0,
+    valido: Object.keys(errors).length === 0,
+    errors,
+    errores: errors,
   };
 };
+
+// Legacy exports for backwards compatibility
+// TODO: Remove these aliases once all consumers are updated
+export const validarEmail = validateEmail;
+export const validarTelefono = validatePhone;
+export const validarViviendaComponentes = validateApartmentComponents;
+export const puedeReservar = canMakeReservation;
+export const puedeCancelar = canCancelReservation;
+export const validarRegistro = validateRegistration;
+export const validarPerfil = validateProfile;
