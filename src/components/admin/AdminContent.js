@@ -10,8 +10,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import { SolicitudCard } from './SolicitudCard';
 import { UsuarioCard } from './UsuarioCard';
-import { CambioViviendaCard } from './CambioViviendaCard';
-import { AnuncioAdminCard } from './AnuncioAdminCard';
+import { ApartmentChangeCard } from './ApartmentChangeCard';
+import { AnnouncementAdminCard } from './AnnouncementAdminCard';
 
 /**
  * Estado vacío genérico
@@ -85,7 +85,7 @@ export function SolicitudesContent({
           title={`Cambios de vivienda (${solicitudesCambio.length})`}
         >
           {solicitudesCambio.map((usuario) => (
-            <CambioViviendaCard
+            <ApartmentChangeCard
               key={usuario.id}
               usuario={usuario}
               onAprobar={onAprobarCambio}
@@ -155,7 +155,7 @@ export function MensajesContent({
         />
       ) : anuncios.length > 0 ? (
         anuncios.map((anuncio) => (
-          <AnuncioAdminCard
+          <AnnouncementAdminCard
             key={anuncio.id}
             anuncio={anuncio}
             onEliminar={onEliminar}

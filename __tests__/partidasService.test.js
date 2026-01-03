@@ -32,7 +32,7 @@ jest.mock('../src/services/notificationService', () => ({
   },
 }));
 
-import { partidasService } from '../src/services/partidasService';
+import { partidasService } from '../src/services/matchesService';
 import { supabase } from '../src/services/supabaseConfig';
 
 describe('partidasService', () => {

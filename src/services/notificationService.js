@@ -3,7 +3,7 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { supabase } from './supabaseConfig';
 import { webPushService } from './webPushService';
-import { tablonService } from './tablonService';
+import { tablonService } from './bulletinService';
 
 // Configure notification behavior when app is in foreground (mobile only)
 if (Platform.OS !== 'web') {

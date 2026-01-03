@@ -27,20 +27,20 @@ npm run lint         # Verificar código
 ```
 src/
 ├── screens/          # Pantallas (orquestadores)
-│   ├── HomeScreen.js       # Reservas + bloqueos
-│   ├── ReservasScreen.js   # Mis reservas
-│   ├── PartidasScreen.js   # Buscar jugadores
-│   ├── TablonScreen.js     # Anuncios + notificaciones
-│   ├── PerfilScreen.js     # Perfil usuario
-│   └── AdminScreen.js      # Panel admin
+│   ├── HomeScreen.js           # Reservas + bloqueos
+│   ├── ReservationsScreen.js   # Mis reservas
+│   ├── MatchesScreen.js        # Buscar jugadores
+│   ├── BulletinScreen.js       # Anuncios + notificaciones
+│   ├── ProfileScreen.js        # Perfil usuario
+│   └── AdminScreen.js          # Panel admin
 ├── components/
 │   ├── home/         # Componentes HomeScreen
 │   ├── partidas/     # Componentes partidas
 │   ├── tablon/       # Componentes tablón
 │   └── admin/        # Componentes admin
-├── hooks/            # Custom hooks (useAlert, useBloqueos, etc.)
-├── services/         # Servicios (auth, reservas, partidas, etc.)
-├── context/          # AuthContext, ReservasContext
+├── hooks/            # Custom hooks (useSchedules, useBlockouts, etc.)
+├── services/         # Servicios (auth, reservations, matches, etc.)
+├── context/          # AuthContext, ReservationsContext
 ├── utils/            # dateHelpers, validators
 └── constants/        # colors, config
 ```

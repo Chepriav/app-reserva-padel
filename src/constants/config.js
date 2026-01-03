@@ -110,7 +110,14 @@ export const LIMITES_RESERVA = {
 };
 export const PRIORIDAD_LABELS = PRIORITY_LABELS;
 export const NIVELES_JUEGO = PLAY_LEVELS;
-export const CLASE_CONFIG = CLASS_CONFIG;
+export const CLASE_CONFIG = {
+  ...CLASS_CONFIG,
+  // Legacy property names for backwards compatibility
+  MIN_ALUMNOS: CLASS_CONFIG.MIN_STUDENTS,
+  MAX_ALUMNOS: CLASS_CONFIG.MAX_STUDENTS,
+  OPCIONES_MIN: CLASS_CONFIG.MIN_OPTIONS,
+  OPCIONES_MAX: CLASS_CONFIG.MAX_OPTIONS,
+};
 export const VIVIENDA_CONFIG = {
   escaleras: APARTMENT_CONFIG.stairs,
   pisos: APARTMENT_CONFIG.floors,

@@ -2,21 +2,21 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Platform, View, Text, StyleSheet } from 'react-native';
 import HomeScreen from '../screens/HomeScreen';
-import ReservasScreen from '../screens/ReservasScreen';
-import PartidasScreen from '../screens/PartidasScreen';
-import TablonScreen from '../screens/TablonScreen';
-import PerfilScreen from '../screens/PerfilScreen';
+import ReservationsScreen from '../screens/ReservationsScreen';
+import MatchesScreen from '../screens/MatchesScreen';
+import BulletinScreen from '../screens/BulletinScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 import AdminScreen from '../screens/AdminScreen';
 import { colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
-import { useContadorTablon } from '../hooks';
+import { useBulletinCounter } from '../hooks';
 
 const Tab = createBottomTabNavigator();
 
 export default function TabNavigator() {
   const { user } = useAuth();
   const esAdmin = user?.esAdmin;
-  const { contadorTotal } = useContadorTablon(user?.id);
+  const { totalCount } = useBulletinCounter(user?.id);
 
   return (
     <Tab.Navigator
@@ -55,7 +55,7 @@ export default function TabNavigator() {
       />
       <Tab.Screen
         name="Mis Reservas"
-        component={ReservasScreen}
+        component={ReservationsScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
             <TabIcon name="calendar" color={color} size={size} />
@@ -64,7 +64,7 @@ export default function TabNavigator() {
       />
       <Tab.Screen
         name="Partidas"
-        component={PartidasScreen}
+        component={MatchesScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
             <TabIcon name="partidas" color={color} size={size} />
@@ -73,11 +73,11 @@ export default function TabNavigator() {
       />
       <Tab.Screen
         name="Tablón"
-        component={TablonScreen}
+        component={BulletinScreen}
         options={{
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <TabIcon name="tablon" color={color} size={size} badge={contadorTotal} />
+            <TabIcon name="tablon" color={color} size={size} badge={totalCount} />
           ),
         }}
       />
@@ -95,7 +95,7 @@ export default function TabNavigator() {
       )}
       <Tab.Screen
         name="Perfil"
-        component={PerfilScreen}
+        component={ProfileScreen}
         options={{
           headerShown: false,
           tabBarIcon: ({ color, size }) => (

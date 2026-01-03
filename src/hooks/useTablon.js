@@ -1,198 +1,198 @@
 import { useState, useEffect, useCallback } from 'react';
-import { tablonService } from '../services/tablonService';
+import { tablonService } from '../services/bulletinService';
 
 /**
  * Hook to manage user notifications
  */
-export function useNotificaciones(userId) {
-  const [notificaciones, setNotificaciones] = useState([]);
+export function useNotifications(userId) {
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const cargarNotificaciones = useCallback(async () => {
+  const loadNotifications = useCallback(async () => {
     if (!userId) return;
 
     setLoading(true);
     const result = await tablonService.obtenerNotificaciones(userId);
     if (result.success) {
-      setNotificaciones(result.data);
+      setNotifications(result.data);
     }
     setLoading(false);
   }, [userId]);
 
   useEffect(() => {
-    cargarNotificaciones();
-  }, [cargarNotificaciones]);
+    loadNotifications();
+  }, [loadNotifications]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await cargarNotificaciones();
+    await loadNotifications();
     setRefreshing(false);
   };
 
-  const eliminar = async (notificacionId) => {
-    const result = await tablonService.eliminarNotificacion(notificacionId);
+  const deleteNotification = async (notificationId) => {
+    const result = await tablonService.eliminarNotificacion(notificationId);
     if (result.success) {
-      setNotificaciones(prev => prev.filter(n => n.id !== notificacionId));
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
     }
     return result;
   };
 
-  const marcarLeida = async (notificacionId) => {
-    const result = await tablonService.marcarNotificacionLeida(notificacionId);
+  const markAsRead = async (notificationId) => {
+    const result = await tablonService.marcarNotificacionLeida(notificationId);
     if (result.success) {
-      setNotificaciones(prev =>
-        prev.map(n => n.id === notificacionId ? { ...n, leida: true } : n)
+      setNotifications(prev =>
+        prev.map(n => n.id === notificationId ? { ...n, leida: true } : n)
       );
     }
     return result;
   };
 
-  const marcarTodasLeidas = async () => {
+  const markAllAsRead = async () => {
     const result = await tablonService.marcarTodasLeidas(userId);
     if (result.success) {
-      setNotificaciones(prev => prev.map(n => ({ ...n, leida: true })));
+      setNotifications(prev => prev.map(n => ({ ...n, leida: true })));
     }
     return result;
   };
 
-  const contarNoLeidas = () => {
-    return notificaciones.filter(n => !n.leida).length;
+  const countUnread = () => {
+    return notifications.filter(n => !n.leida).length;
   };
 
   return {
-    notificaciones,
+    notifications,
     loading,
     refreshing,
-    cargarNotificaciones,
+    loadNotifications,
     onRefresh,
-    eliminar,
-    marcarLeida,
-    marcarTodasLeidas,
-    contarNoLeidas,
+    deleteNotification,
+    markAsRead,
+    markAllAsRead,
+    countUnread,
   };
 }
 
 /**
  * Hook to manage announcements (user view)
  */
-export function useAnuncios(userId) {
-  const [anuncios, setAnuncios] = useState([]);
+export function useAnnouncements(userId) {
+  const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [anuncioSeleccionado, setAnuncioSeleccionado] = useState(null);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
 
-  const cargarAnuncios = useCallback(async () => {
+  const loadAnnouncements = useCallback(async () => {
     if (!userId) return;
 
     setLoading(true);
     const result = await tablonService.obtenerAnunciosParaUsuario(userId);
     if (result.success) {
-      setAnuncios(result.data);
+      setAnnouncements(result.data);
     }
     setLoading(false);
   }, [userId]);
 
   useEffect(() => {
-    cargarAnuncios();
-  }, [cargarAnuncios]);
+    loadAnnouncements();
+  }, [loadAnnouncements]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await cargarAnuncios();
+    await loadAnnouncements();
     setRefreshing(false);
   };
 
-  const verAnuncio = async (anuncio) => {
-    setAnuncioSeleccionado(anuncio);
+  const viewAnnouncement = async (announcement) => {
+    setSelectedAnnouncement(announcement);
 
     // Mark as read if not already
-    if (!anuncio.leido) {
-      const result = await tablonService.marcarAnuncioLeido(anuncio.id, userId);
+    if (!announcement.leido) {
+      const result = await tablonService.marcarAnuncioLeido(announcement.id, userId);
       if (result.success) {
-        setAnuncios(prev =>
-          prev.map(a => a.id === anuncio.id ? { ...a, leido: true } : a)
+        setAnnouncements(prev =>
+          prev.map(a => a.id === announcement.id ? { ...a, leido: true } : a)
         );
         // Also update the selected announcement
-        setAnuncioSeleccionado(prev => prev ? { ...prev, leido: true } : null);
+        setSelectedAnnouncement(prev => prev ? { ...prev, leido: true } : null);
       }
     }
   };
 
-  const cerrarAnuncio = () => {
-    setAnuncioSeleccionado(null);
+  const closeAnnouncement = () => {
+    setSelectedAnnouncement(null);
   };
 
-  const contarNoLeidos = () => {
-    return anuncios.filter(a => !a.leido).length;
+  const countUnread = () => {
+    return announcements.filter(a => !a.leido).length;
   };
 
   return {
-    anuncios,
+    announcements,
     loading,
     refreshing,
-    anuncioSeleccionado,
-    cargarAnuncios,
+    selectedAnnouncement,
+    loadAnnouncements,
     onRefresh,
-    verAnuncio,
-    cerrarAnuncio,
-    contarNoLeidos,
+    viewAnnouncement,
+    closeAnnouncement,
+    countUnread,
   };
 }
 
 /**
  * Hook for admin actions (announcement management)
  */
-export function useAnunciosAdmin(userId, userName, onSuccess) {
-  const [anuncios, setAnuncios] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
+export function useAnnouncementsAdmin(userId, userName, onSuccess) {
+  const [announcements, setAnnouncements] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
-  const cargarAnuncios = useCallback(async () => {
+  const loadAnnouncements = useCallback(async () => {
     setLoading(true);
     const result = await tablonService.obtenerTodosAnuncios();
     if (result.success) {
-      setAnuncios(result.data);
+      setAnnouncements(result.data);
     }
     setLoading(false);
   }, []);
 
-  const cargarUsuarios = useCallback(async () => {
+  const loadUsers = useCallback(async () => {
     const result = await tablonService.obtenerUsuariosAprobados();
     if (result.success) {
-      setUsuarios(result.data);
+      setUsers(result.data);
     }
   }, []);
 
   useEffect(() => {
-    cargarAnuncios();
-  }, [cargarAnuncios]);
+    loadAnnouncements();
+  }, [loadAnnouncements]);
 
-  const crearAnuncio = async (titulo, mensaje, tipo, destinatarios, usuariosIds) => {
+  const createAnnouncement = async (title, message, type, recipients, userIds) => {
     setCreating(true);
 
     const result = await tablonService.crearAnuncio(
       userId,
       userName,
-      titulo,
-      mensaje,
-      tipo,
-      destinatarios,
-      usuariosIds
+      title,
+      message,
+      type,
+      recipients,
+      userIds
     );
 
     if (result.success) {
       // Send push notification
       const { notificationService } = require('../services/notificationService');
 
-      if (destinatarios === 'todos') {
-        await notificationService.notifyNuevoAnuncio(titulo, mensaje, result.data.id);
+      if (recipients === 'todos') {
+        await notificationService.notifyNuevoAnuncio(title, message, result.data.id);
       } else {
-        await notificationService.notifyNuevoAnuncio(titulo, mensaje, result.data.id, usuariosIds);
+        await notificationService.notifyNuevoAnuncio(title, message, result.data.id, userIds);
       }
 
-      await cargarAnuncios();
+      await loadAnnouncements();
       onSuccess?.();
     }
 
@@ -200,62 +200,62 @@ export function useAnunciosAdmin(userId, userName, onSuccess) {
     return result;
   };
 
-  const eliminarAnuncio = async (anuncioId) => {
-    const result = await tablonService.eliminarAnuncio(anuncioId);
+  const deleteAnnouncement = async (announcementId) => {
+    const result = await tablonService.eliminarAnuncio(announcementId);
     if (result.success) {
-      setAnuncios(prev => prev.filter(a => a.id !== anuncioId));
+      setAnnouncements(prev => prev.filter(a => a.id !== announcementId));
       onSuccess?.();
     }
     return result;
   };
 
   return {
-    anuncios,
-    usuarios,
+    announcements,
+    users,
     loading,
     creating,
-    cargarAnuncios,
-    cargarUsuarios,
-    crearAnuncio,
-    eliminarAnuncio,
+    loadAnnouncements,
+    loadUsers,
+    createAnnouncement,
+    deleteAnnouncement,
   };
 }
 
 /**
  * Hook to count unread notifications/announcements (for tab badge)
  */
-export function useContadorTablon(userId) {
-  const [contadorAnuncios, setContadorAnuncios] = useState(0);
-  const [contadorNotificaciones, setContadorNotificaciones] = useState(0);
+export function useBulletinCounter(userId) {
+  const [announcementCount, setAnnouncementCount] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0);
 
-  const actualizarContadores = useCallback(async () => {
+  const updateCounts = useCallback(async () => {
     if (!userId) return;
 
-    const [anunciosResult, notifResult] = await Promise.all([
+    const [announcementsResult, notifResult] = await Promise.all([
       tablonService.contarAnunciosNoLeidos(userId),
       tablonService.contarNotificacionesNoLeidas(userId),
     ]);
 
-    if (anunciosResult.success) {
-      setContadorAnuncios(anunciosResult.count);
+    if (announcementsResult.success) {
+      setAnnouncementCount(announcementsResult.count);
     }
     if (notifResult.success) {
-      setContadorNotificaciones(notifResult.count);
+      setNotificationCount(notifResult.count);
     }
   }, [userId]);
 
   useEffect(() => {
-    actualizarContadores();
+    updateCounts();
 
     // Update every 30 seconds
-    const interval = setInterval(actualizarContadores, 30000);
+    const interval = setInterval(updateCounts, 30000);
     return () => clearInterval(interval);
-  }, [actualizarContadores]);
+  }, [updateCounts]);
 
   return {
-    contadorAnuncios,
-    contadorNotificaciones,
-    contadorTotal: contadorAnuncios + contadorNotificaciones,
-    actualizarContadores,
+    announcementCount,
+    notificationCount,
+    totalCount: announcementCount + notificationCount,
+    updateCounts,
   };
 }

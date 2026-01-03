@@ -1,7 +1,8 @@
-export { default as ModalidadSelector } from './ModalidadSelector';
-export { default as TipoSelector } from './TipoSelector';
-export { default as ReservaSelector } from './ReservaSelector';
-export { default as NivelSelector } from './NivelSelector';
-export { default as ParticipantesSelector } from './ParticipantesSelector';
-export { default as NivelesMultiSelector } from './NivelesMultiSelector';
-export { default as PrecioInput } from './PrecioInput';
+// New English exports with legacy aliases
+export { default as ModeSelector, ModalidadSelector } from './ModeSelector';
+export { default as TypeSelector, TipoSelector } from './TypeSelector';
+export { default as ReservationSelector, ReservaSelector } from './ReservationSelector';
+export { default as LevelSelector, NivelSelector } from './LevelSelector';
+export { default as ParticipantsSelector, ParticipantesSelector } from './ParticipantsSelector';
+export { default as LevelsMultiSelector, NivelesMultiSelector } from './LevelsMultiSelector';
+export { default as PriceInput, PrecioInput } from './PriceInput';

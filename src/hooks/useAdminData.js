@@ -5,13 +5,13 @@ import { authService } from '../services/authService.supabase';
  * Hook to load and manage admin panel data
  */
 export function useAdminData() {
-  const [usuariosPendientes, setUsuariosPendientes] = useState([]);
-  const [todosUsuarios, setTodosUsuarios] = useState([]);
-  const [solicitudesCambio, setSolicitudesCambio] = useState([]);
+  const [pendingUsers, setPendingUsers] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [changeRequests, setChangeRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const cargarTodosDatos = useCallback(async () => {
+  const loadAllData = useCallback(async () => {
     setLoading(true);
     const [pendientesResult, usuariosResult, cambiosResult] = await Promise.all([
       authService.getUsuariosPendientes(),
@@ -19,33 +19,33 @@ export function useAdminData() {
       authService.getSolicitudesCambioVivienda(),
     ]);
     if (pendientesResult.success) {
-      setUsuariosPendientes(pendientesResult.data);
+      setPendingUsers(pendientesResult.data);
     }
     if (usuariosResult.success) {
-      setTodosUsuarios(usuariosResult.data);
+      setAllUsers(usuariosResult.data);
     }
     if (cambiosResult.success) {
-      setSolicitudesCambio(cambiosResult.data);
+      setChangeRequests(cambiosResult.data);
     }
     setLoading(false);
   }, []);
 
-  const cargarDatosTab = useCallback(async (tabActiva, cargarAnunciosCallback, cargarUsuariosCallback) => {
+  const loadTabData = useCallback(async (tabActiva, cargarAnunciosCallback, cargarUsuariosCallback) => {
     if (tabActiva === 'solicitudes') {
       const [pendientesResult, cambiosResult] = await Promise.all([
         authService.getUsuariosPendientes(),
         authService.getSolicitudesCambioVivienda(),
       ]);
       if (pendientesResult.success) {
-        setUsuariosPendientes(pendientesResult.data);
+        setPendingUsers(pendientesResult.data);
       }
       if (cambiosResult.success) {
-        setSolicitudesCambio(cambiosResult.data);
+        setChangeRequests(cambiosResult.data);
       }
     } else if (tabActiva === 'usuarios') {
       const result = await authService.getTodosUsuarios();
       if (result.success) {
-        setTodosUsuarios(result.data);
+        setAllUsers(result.data);
       }
     } else if (tabActiva === 'mensajes' && cargarAnunciosCallback && cargarUsuariosCallback) {
       await Promise.all([cargarAnunciosCallback(), cargarUsuariosCallback()]);
@@ -54,45 +54,45 @@ export function useAdminData() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await cargarTodosDatos();
+    await loadAllData();
     setRefreshing(false);
-  }, [cargarTodosDatos]);
+  }, [loadAllData]);
 
   // Functions to update local state
-  const removeUsuarioPendiente = useCallback((userId) => {
-    setUsuariosPendientes((prev) => prev.filter((u) => u.id !== userId));
+  const removePendingUser = useCallback((userId) => {
+    setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
   }, []);
 
-  const removeSolicitudCambio = useCallback((userId) => {
-    setSolicitudesCambio((prev) => prev.filter((u) => u.id !== userId));
+  const removeChangeRequest = useCallback((userId) => {
+    setChangeRequests((prev) => prev.filter((u) => u.id !== userId));
   }, []);
 
-  const updateUsuario = useCallback((userId, updates) => {
-    setTodosUsuarios((prev) =>
+  const updateUser = useCallback((userId, updates) => {
+    setAllUsers((prev) =>
       prev.map((u) => (u.id === userId ? { ...u, ...updates } : u))
     );
   }, []);
 
-  const removeUsuario = useCallback((userId) => {
-    setTodosUsuarios((prev) => prev.filter((u) => u.id !== userId));
+  const removeUser = useCallback((userId) => {
+    setAllUsers((prev) => prev.filter((u) => u.id !== userId));
   }, []);
 
   useEffect(() => {
-    cargarTodosDatos();
-  }, [cargarTodosDatos]);
+    loadAllData();
+  }, [loadAllData]);
 
   return {
-    usuariosPendientes,
-    todosUsuarios,
-    solicitudesCambio,
+    pendingUsers,
+    allUsers,
+    changeRequests,
     loading,
     refreshing,
-    cargarTodosDatos,
-    cargarDatosTab,
+    loadAllData,
+    loadTabData,
     onRefresh,
-    removeUsuarioPendiente,
-    removeSolicitudCambio,
-    updateUsuario,
-    removeUsuario,
+    removePendingUser,
+    removeChangeRequest,
+    updateUser,
+    removeUser,
   };
 }

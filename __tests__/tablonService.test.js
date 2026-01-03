@@ -23,7 +23,7 @@ jest.mock('../src/services/supabaseConfig', () => ({
 }));
 
 // Importar después del mock
-const { tablonService } = require('../src/services/tablonService');
+const { tablonService } = require('../src/services/bulletinService');
 
 describe('tablonService', () => {
   beforeEach(() => {

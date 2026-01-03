@@ -1,70 +1,70 @@
 import { useState, useEffect, useCallback } from 'react';
-import { partidasService } from '../services/partidasService';
+import { partidasService } from '../services/matchesService';
 
 /**
  * Hook to manage match/game logic
  */
-export function usePartidas(userId, tabActivo) {
-  const [partidas, setPartidas] = useState([]);
+export function useMatches(userId, activeTab) {
+  const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const cargarPartidas = useCallback(async () => {
+  const loadMatches = useCallback(async () => {
     if (!userId) return;
 
     setLoading(true);
     try {
-      if (tabActivo === 'disponibles') {
+      if (activeTab === 'disponibles') {
         const result = await partidasService.obtenerPartidasActivas();
         if (result.success) {
           // Filter: only matches from OTHER users (not mine)
-          const partidasDeOtros = result.data.filter((p) => p.creadorId !== userId);
-          setPartidas(partidasDeOtros.map((p) => ({ ...p, esCreador: false })));
+          const matchesFromOthers = result.data.filter((p) => p.creadorId !== userId);
+          setMatches(matchesFromOthers.map((p) => ({ ...p, esCreador: false })));
         }
       } else {
-        const [creadas, apuntado] = await Promise.all([
+        const [created, joined] = await Promise.all([
           partidasService.obtenerMisPartidas(userId),
           partidasService.obtenerPartidasApuntado(userId),
         ]);
 
-        const todas = [];
-        if (creadas.success) {
-          creadas.data.forEach((p) => {
+        const all = [];
+        if (created.success) {
+          created.data.forEach((p) => {
             p.esCreador = true;
-            todas.push(p);
+            all.push(p);
           });
         }
-        if (apuntado.success) {
-          apuntado.data.forEach((p) => {
-            if (!todas.find((t) => t.id === p.id)) {
+        if (joined.success) {
+          joined.data.forEach((p) => {
+            if (!all.find((t) => t.id === p.id)) {
               p.esCreador = false;
-              todas.push(p);
+              all.push(p);
             }
           });
         }
-        setPartidas(todas);
+        setMatches(all);
       }
     } catch (error) {
       // Silent error, user will see empty list
     }
     setLoading(false);
-  }, [userId, tabActivo]);
+  }, [userId, activeTab]);
 
   useEffect(() => {
-    cargarPartidas();
-  }, [cargarPartidas]);
+    loadMatches();
+  }, [loadMatches]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await cargarPartidas();
+    await loadMatches();
     setRefreshing(false);
   };
 
   return {
-    partidas,
+    matches,
     loading,
     refreshing,
-    cargarPartidas,
+    loadMatches,
     onRefresh,
   };
 }
@@ -72,12 +72,12 @@ export function usePartidas(userId, tabActivo) {
 /**
  * Hook for match actions
  */
-export function usePartidasActions(userId, onSuccess) {
+export function useMatchesActions(userId, onSuccess) {
   const [actionLoading, setActionLoading] = useState(false);
 
-  const crearPartida = async (partidaData) => {
+  const createMatch = async (matchData) => {
     setActionLoading(true);
-    const result = await partidasService.crearPartida(partidaData);
+    const result = await partidasService.crearPartida(matchData);
     setActionLoading(false);
 
     if (result.success) {
@@ -86,48 +86,48 @@ export function usePartidasActions(userId, onSuccess) {
     return result;
   };
 
-  const cancelarPartida = async (partidaId) => {
-    const result = await partidasService.cancelarPartida(partidaId, userId);
+  const cancelMatch = async (matchId) => {
+    const result = await partidasService.cancelarPartida(matchId, userId);
     if (result.success) {
       onSuccess?.();
     }
     return result;
   };
 
-  const solicitarUnirse = async (partidaId, usuario) => {
-    const result = await partidasService.solicitarUnirse(partidaId, usuario);
+  const requestToJoin = async (matchId, user) => {
+    const result = await partidasService.solicitarUnirse(matchId, user);
     if (result.success) {
       onSuccess?.();
     }
     return result;
   };
 
-  const aceptarSolicitud = async (jugadorId, partidaId) => {
-    const result = await partidasService.aceptarSolicitud(jugadorId, partidaId, userId);
+  const acceptRequest = async (playerId, matchId) => {
+    const result = await partidasService.aceptarSolicitud(playerId, matchId, userId);
     if (result.success) {
       onSuccess?.();
     }
     return result;
   };
 
-  const rechazarSolicitud = async (jugadorId, partidaId) => {
-    const result = await partidasService.rechazarSolicitud(jugadorId, partidaId);
+  const rejectRequest = async (playerId, matchId) => {
+    const result = await partidasService.rechazarSolicitud(playerId, matchId);
     if (result.success) {
       onSuccess?.();
     }
     return result;
   };
 
-  const cancelarSolicitud = async (partidaId) => {
-    const result = await partidasService.cancelarSolicitud(partidaId, userId);
+  const cancelRequest = async (matchId) => {
+    const result = await partidasService.cancelarSolicitud(matchId, userId);
     if (result.success) {
       onSuccess?.();
     }
     return result;
   };
 
-  const desapuntarse = async (partidaId) => {
-    const result = await partidasService.desapuntarsePartida(partidaId, userId);
+  const leaveMatch = async (matchId) => {
+    const result = await partidasService.desapuntarsePartida(matchId, userId);
     if (result.success) {
       // Small delay for Supabase to propagate the change
       await new Promise(resolve => setTimeout(resolve, 300));
@@ -136,9 +136,9 @@ export function usePartidasActions(userId, onSuccess) {
     return result;
   };
 
-  const editarPartida = async (partidaId, updates) => {
+  const editMatch = async (matchId, updates) => {
     setActionLoading(true);
-    const result = await partidasService.editarPartida(partidaId, userId, updates);
+    const result = await partidasService.editarPartida(matchId, userId, updates);
     setActionLoading(false);
     if (result.success) {
       onSuccess?.();
@@ -146,24 +146,24 @@ export function usePartidasActions(userId, onSuccess) {
     return result;
   };
 
-  const eliminarJugador = async (jugadorId, partidaId) => {
-    const result = await partidasService.eliminarJugador(jugadorId, partidaId, userId);
+  const removePlayer = async (playerId, matchId) => {
+    const result = await partidasService.eliminarJugador(playerId, matchId, userId);
     if (result.success) {
       onSuccess?.();
     }
     return result;
   };
 
-  const anadirJugadorAPartida = async (partidaId, jugadorData) => {
-    const result = await partidasService.anadirJugadorAPartida(partidaId, userId, jugadorData);
+  const addPlayerToMatch = async (matchId, playerData) => {
+    const result = await partidasService.anadirJugadorAPartida(matchId, userId, playerData);
     if (result.success) {
       onSuccess?.();
     }
     return result;
   };
 
-  const cerrarClase = async (partidaId) => {
-    const result = await partidasService.cerrarClase(partidaId, userId);
+  const closeClass = async (matchId) => {
+    const result = await partidasService.cerrarClase(matchId, userId);
     if (result.success) {
       onSuccess?.();
     }
@@ -172,83 +172,83 @@ export function usePartidasActions(userId, onSuccess) {
 
   return {
     actionLoading,
-    crearPartida,
-    cancelarPartida,
-    solicitarUnirse,
-    aceptarSolicitud,
-    rechazarSolicitud,
-    cancelarSolicitud,
-    desapuntarse,
-    editarPartida,
-    eliminarJugador,
-    anadirJugadorAPartida,
-    cerrarClase,
+    createMatch,
+    cancelMatch,
+    requestToJoin,
+    acceptRequest,
+    rejectRequest,
+    cancelRequest,
+    leaveMatch,
+    editMatch,
+    removePlayer,
+    addPlayerToMatch,
+    closeClass,
   };
 }
 
 /**
  * Hook to manage the create match/class modal
  */
-export function useCrearPartidaModal(userId) {
+export function useCreateMatchModal(userId) {
   const [visible, setVisible] = useState(false);
   const [modalState, setModalState] = useState({
     tipo: 'abierta',
-    reservaSeleccionada: null,
-    mensaje: '',
-    nivelPreferido: null,
+    selectedReservation: null,
+    message: '',
+    preferredLevel: null,
     saving: false,
     // Class fields
-    esClase: false,
-    niveles: [],
-    minParticipantes: 2,
-    maxParticipantes: 8,
-    precioAlumno: '',
-    precioGrupo: '',
+    isClass: false,
+    levels: [],
+    minParticipants: 2,
+    maxParticipants: 8,
+    pricePerStudent: '',
+    pricePerGroup: '',
   });
-  const [jugadores, setJugadores] = useState([]);
-  const [reservasConPartida, setReservasConPartida] = useState([]);
+  const [players, setPlayers] = useState([]);
+  const [reservationsWithMatch, setReservationsWithMatch] = useState([]);
 
-  const abrir = async () => {
-    setJugadores([]);
+  const open = async () => {
+    setPlayers([]);
     setModalState({
       tipo: 'abierta',
-      reservaSeleccionada: null,
-      mensaje: '',
-      nivelPreferido: null,
+      selectedReservation: null,
+      message: '',
+      preferredLevel: null,
       saving: false,
       // Class fields
-      esClase: false,
-      niveles: [],
-      minParticipantes: 2,
-      maxParticipantes: 8,
-      precioAlumno: '',
-      precioGrupo: '',
+      isClass: false,
+      levels: [],
+      minParticipants: 2,
+      maxParticipants: 8,
+      pricePerStudent: '',
+      pricePerGroup: '',
     });
 
     // Load reservations that already have a match
     const result = await partidasService.obtenerReservasConPartida(userId);
     if (result.success) {
-      setReservasConPartida(result.data);
+      setReservationsWithMatch(result.data);
     }
 
     setVisible(true);
   };
 
-  const cerrar = () => {
+  const close = () => {
     setVisible(false);
   };
 
-  const addJugador = (jugador) => {
-    // For classes: max is maxParticipantes - 1 (creator counts as 1)
+  const addPlayer = (player) => {
+    // For classes: max is maxParticipants - 1 (creator counts as 1)
     // For matches: max is 3 (creator + 3 = 4)
-    const maxJugadores = modalState.esClase ? modalState.maxParticipantes - 1 : 3;
-    if (jugadores.length >= maxJugadores) return false;
-    setJugadores(prev => [...prev, jugador]);
+    const maxPlayers = modalState.isClass ? modalState.maxParticipants - 1 : 3;
+    if (players.length >= maxPlayers) return false;
+    setPlayers(prev => [...prev, player]);
     return true;
   };
 
-  const removeJugador = (index) => {
-    setJugadores(prev => prev.filter((_, i) => i !== index));
+  const removePlayer = (index) => {
+    setPlayers(prev => prev.filter((_, i) => i !== index));
   };
 
   const setSaving = (saving) => {
@@ -259,12 +259,12 @@ export function useCrearPartidaModal(userId) {
     visible,
     modalState,
     setModalState,
-    jugadores,
-    reservasConPartida,
-    abrir,
-    cerrar,
-    addJugador,
-    removeJugador,
+    players,
+    reservationsWithMatch,
+    open,
+    close,
+    addPlayer,
+    removePlayer,
     setSaving,
   };
 }
@@ -272,61 +272,61 @@ export function useCrearPartidaModal(userId) {
 /**
  * Hook to manage the add player modal
  */
-export function useAddJugadorModal(onAddJugador) {
+export function useAddPlayerModal(onAddPlayer) {
   const [visible, setVisible] = useState(false);
   const [modalState, setModalState] = useState({
-    tipo: 'urbanizacion',
-    busqueda: '',
-    nombreExterno: '',
-    nivelExterno: null,
+    type: 'community',
+    search: '',
+    externalName: '',
+    externalLevel: null,
   });
 
-  const abrir = () => {
+  const open = () => {
     setModalState({
-      tipo: 'urbanizacion',
-      busqueda: '',
-      nombreExterno: '',
-      nivelExterno: null,
+      type: 'community',
+      search: '',
+      externalName: '',
+      externalLevel: null,
     });
     setVisible(true);
   };
 
-  const cerrar = () => {
+  const close = () => {
     setVisible(false);
   };
 
-  const addUrbanizacion = (usuario) => {
-    const jugador = {
+  const addCommunityUser = (user) => {
+    const player = {
       tipo: 'urbanizacion',
-      usuario,
-      nombre: usuario.nombre,
-      vivienda: usuario.vivienda,
-      nivel: usuario.nivelJuego,
+      usuario: user,
+      nombre: user.nombre,
+      vivienda: user.vivienda,
+      nivel: user.nivelJuego,
     };
 
-    if (onAddJugador(jugador)) {
-      cerrar();
+    if (onAddPlayer(player)) {
+      close();
       return true;
     }
     return false;
   };
 
-  const addExterno = () => {
-    const { nombreExterno, nivelExterno } = modalState;
+  const addExternalPlayer = () => {
+    const { externalName, externalLevel } = modalState;
 
-    if (!nombreExterno.trim()) {
+    if (!externalName.trim()) {
       return { success: false, error: 'Introduce el nombre del jugador' };
     }
 
-    const jugador = {
+    const player = {
       tipo: 'externo',
-      nombre: nombreExterno.trim(),
+      nombre: externalName.trim(),
       vivienda: null,
-      nivel: nivelExterno,
+      nivel: externalLevel,
     };
 
-    if (onAddJugador(jugador)) {
-      cerrar();
+    if (onAddPlayer(player)) {
+      close();
       return { success: true };
     }
     return { success: false, error: 'La partida ya está completa' };
@@ -336,9 +336,9 @@ export function useAddJugadorModal(onAddJugador) {
     visible,
     modalState,
     setModalState,
-    abrir,
-    cerrar,
-    addUrbanizacion,
-    addExterno,
+    open,
+    close,
+    addCommunityUser,
+    addExternalPlayer,
   };
 }

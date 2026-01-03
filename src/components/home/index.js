@@ -1,10 +1,11 @@
+// New English exports
 export { HomeHeader } from './HomeHeader';
-export { VistaSelector } from './VistaSelector';
-export { FechaSelector } from './FechaSelector';
-export { PistaSelector } from './PistaSelector';
-export { Leyenda } from './Leyenda';
-export { HorarioChip } from './HorarioChip';
-export { HorariosGridDia, HorariosGridSemana, HorariosContainer } from './HorariosGrid';
-export { BotonReservar, BotonesBloqueo } from './BotonesFlotantes';
-export { ModalBloqueo } from './ModalBloqueo';
-export { HorariosHeader, SeleccionInfo } from './SeleccionInfo';
+export { ViewSelector, VistaSelector } from './ViewSelector';
+export { DateSelector, FechaSelector } from './DateSelector';
+export { CourtSelector, PistaSelector } from './CourtSelector';
+export { Legend, Leyenda } from './Legend';
+export { TimeSlotChip, HorarioChip } from './TimeSlotChip';
+export { DayScheduleGrid, WeekScheduleGrid, ScheduleContainer, HorariosGridDia, HorariosGridSemana, HorariosContainer } from './ScheduleGrid';
+export { ReserveButton, BlockoutButtons, BotonReservar, BotonesBloqueo } from './FloatingButtons';
+export { BlockoutModal, ModalBloqueo } from './BlockoutModal';
+export { ScheduleHeader, SelectionInfo, HorariosHeader, SeleccionInfo } from './SelectionInfo';

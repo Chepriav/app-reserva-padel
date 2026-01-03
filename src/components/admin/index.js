@@ -1,10 +1,10 @@
-export { CrearAnuncioModal } from './CrearAnuncioModal';
-export { SelectorDestinatarios } from './SelectorDestinatarios';
-export { AnuncioAdminCard } from './AnuncioAdminCard';
+export { CreateAnnouncementModal } from './CreateAnnouncementModal';
+export { RecipientsSelector } from './RecipientsSelector';
+export { AnnouncementAdminCard } from './AnnouncementAdminCard';
 export { SolicitudCard } from './SolicitudCard';
 export { UsuarioCard } from './UsuarioCard';
-export { CambioViviendaCard } from './CambioViviendaCard';
-export { EditViviendaModal } from './EditViviendaModal';
+export { ApartmentChangeCard } from './ApartmentChangeCard';
+export { EditApartmentModal } from './EditApartmentModal';
 export { AdminHeader, AdminTabs } from './AdminTabs';
 export {
   SolicitudesContent,

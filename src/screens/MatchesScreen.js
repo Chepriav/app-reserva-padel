@@ -1,0 +1,699 @@
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  RefreshControl,
+  ActivityIndicator,
+  Platform,
+} from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { useAuth } from '../context/AuthContext';
+import { useReservations } from '../context/ReservationsContext';
+import { colors } from '../constants/colors';
+import { CustomAlert } from '../components/CustomAlert';
+import {
+  PartidaCard,
+  CrearPartidaModal,
+  AddJugadorModal,
+} from '../components/partidas';
+import {
+  useMatches,
+  useMatchesActions,
+  useCreateMatchModal,
+  useAddPlayerModal,
+  useCommunityUsers,
+} from '../hooks';
+
+export default function PartidasScreen() {
+  const { user } = useAuth();
+  const { reservations: reservas } = useReservations();
+  const [tabActivo, setTabActivo] = useState('disponibles');
+  const [alertConfig, setAlertConfig] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    buttons: [],
+  });
+
+  // Estado para modo editar (null = crear, partida = editar)
+  const [partidaEditando, setPartidaEditando] = useState(null);
+
+  // Hooks para partidas
+  const { matches, loading, refreshing, loadMatches, onRefresh } = useMatches(
+    user?.id,
+    tabActivo
+  );
+
+  const actions = useMatchesActions(user?.id, loadMatches);
+
+  // Modal crear/editar partida
+  const createModal = useCreateMatchModal(user?.id);
+
+  // Modal añadir jugador
+  const addPlayerModal = useAddPlayerModal((jugador) => {
+    const yaExiste = createModal.players.some(
+      j => j.tipo === 'urbanizacion' && j.usuario?.id === jugador.usuario?.id
+    );
+    if (yaExiste) {
+      showAlert('Ya añadido', 'Este jugador ya está en la partida');
+      return false;
+    }
+    return createModal.addPlayer(jugador);
+  });
+
+  // Usuarios de la urbanización
+  const communityUsers = useCommunityUsers(user?.id);
+
+  // Recargar partidas cuando la pantalla recibe el foco
+  useFocusEffect(
+    useCallback(() => {
+      loadMatches();
+    }, [loadMatches])
+  );
+
+  // Helper para mostrar alertas
+  const showAlert = (title, message, buttons = [{ text: 'OK', onPress: () => {} }]) => {
+    setAlertConfig({ visible: true, title, message, buttons });
+  };
+
+  // Obtener reservas futuras (excluyendo las que ya tienen partida, excepto la actual si estamos editando)
+  const getReservasFuturas = (partidaActual = partidaEditando) => {
+    if (!reservas) return [];
+    const ahora = new Date();
+    return reservas.filter((r) => {
+      const fechaReserva = new Date(r.fecha + 'T' + r.horaInicio);
+      // En modo editar, permitir la reserva actual de la partida
+      const esReservaActual = partidaActual && r.id === partidaActual.reservaId;
+      const yaConPartida = createModal.reservationsWithMatch.includes(r.id);
+      return r.estado === 'confirmada' && fechaReserva > ahora && (!yaConPartida || esReservaActual);
+    });
+  };
+
+  // Handlers de acciones
+  const handleCancelar = (partida) => {
+    showAlert('Cancelar partida', '¿Seguro que quieres cancelar esta partida?', [
+      { text: 'No', style: 'cancel', onPress: () => {} },
+      {
+        text: 'Sí, cancelar',
+        style: 'destructive',
+        onPress: async () => {
+          const result = await actions.cancelMatch(partida.id);
+          if (!result.success) {
+            showAlert('Error', result.error);
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleSolicitarUnirse = (partida) => {
+    showAlert(
+      'Solicitar unirse',
+      `¿Quieres enviar una solicitud para unirte a la partida de ${partida.creadorNombre}?`,
+      [
+        { text: 'Cancelar', style: 'cancel', onPress: () => {} },
+        {
+          text: 'Enviar solicitud',
+          onPress: async () => {
+            const result = await actions.requestToJoin(partida.id, user);
+            if (result.success) {
+              showAlert('Solicitud enviada', 'Tu solicitud ha sido enviada. El creador debe aceptarla.');
+            } else {
+              showAlert('Error', result.error);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleCancelarSolicitud = (partida) => {
+    showAlert('Cancelar solicitud', '¿Seguro que quieres cancelar tu solicitud?', [
+      { text: 'No', style: 'cancel', onPress: () => {} },
+      {
+        text: 'Sí, cancelar',
+        style: 'destructive',
+        onPress: async () => {
+          const result = await actions.cancelRequest(partida.id);
+          if (!result.success) {
+            showAlert('Error', result.error);
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleDesapuntarse = (partida) => {
+    showAlert('Desapuntarse', '¿Seguro que quieres desapuntarte de esta partida?', [
+      { text: 'Cancelar', style: 'cancel', onPress: () => {} },
+      {
+        text: 'Desapuntarme',
+        style: 'destructive',
+        onPress: async () => {
+          const result = await actions.leaveMatch(partida.id);
+          if (!result.success) {
+            showAlert('Error', result.error);
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleAceptarSolicitud = async (jugadorId, partida) => {
+    const result = await actions.acceptRequest(jugadorId, partida.id);
+    if (result.success) {
+      showAlert('Solicitud aceptada', 'El jugador ha sido añadido a la partida');
+    } else {
+      showAlert('Error', result.error);
+    }
+  };
+
+  const handleRechazarSolicitud = async (jugadorId, partida) => {
+    await actions.rejectRequest(jugadorId, partida.id);
+  };
+
+  const handleCerrarClase = (partida) => {
+    showAlert(
+      'Cerrar inscripciones',
+      '¿Seguro que quieres cerrar las inscripciones de esta clase? Ya no podrán unirse más alumnos.',
+      [
+        { text: 'Cancelar', style: 'cancel', onPress: () => {} },
+        {
+          text: 'Cerrar clase',
+          onPress: async () => {
+            const result = await actions.closeClass(partida.id);
+            if (result.success) {
+              showAlert('Clase cerrada', 'Las inscripciones han sido cerradas');
+            } else {
+              showAlert('Error', result.error);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Abrir modal en modo crear
+  const handleAbrirCrear = async () => {
+    setPartidaEditando(null);
+    await createModal.open();
+  };
+
+  // Abrir modal en modo editar
+  const handleEditar = async (partida) => {
+    setPartidaEditando(partida);
+    await createModal.open();
+
+    // Cargar datos de la partida existente (pasar partida directamente porque el state aún no se actualizó)
+    const reservasFut = getReservasFuturas(partida);
+    const reservaActual = partida.reservaId
+      ? reservasFut.find(r => r.id === partida.reservaId)
+      : null;
+
+    // Convertir jugadores confirmados al formato del modal
+    const jugadoresConfirmados = (partida.jugadores || [])
+      .filter(j => j.estado === 'confirmado')
+      .map(j => ({
+        tipo: j.esExterno ? 'externo' : 'urbanizacion',
+        usuario: j.esExterno ? null : {
+          id: j.usuarioId,
+          nombre: j.usuarioNombre,
+          vivienda: j.usuarioVivienda,
+          nivelJuego: j.nivelJuego,
+        },
+        nombre: j.usuarioNombre,
+        vivienda: j.usuarioVivienda,
+        nivel: j.nivelJuego,
+      }));
+
+    // Inferir tipo: si tiene reservaId, es 'con_reserva'
+    const tipoInferido = partida.reservaId ? 'con_reserva' : (partida.tipo || 'abierta');
+
+    // Establecer estado inicial del modal
+    createModal.setModalState({
+      tipo: tipoInferido,
+      selectedReservation: reservaActual,
+      message: partida.mensaje || '',
+      preferredLevel: partida.nivelPreferido || null,
+      saving: false,
+      // Campos de clase
+      isClass: partida.esClase || false,
+      levels: partida.niveles || [],
+      minParticipants: partida.minParticipantes || 2,
+      maxParticipants: partida.maxParticipantes || (partida.esClase ? 8 : 4),
+      pricePerStudent: partida.precioAlumno ? String(partida.precioAlumno) : '',
+      pricePerGroup: partida.precioGrupo ? String(partida.precioGrupo) : '',
+    });
+
+    // Cargar jugadores existentes
+    jugadoresConfirmados.forEach(j => createModal.addPlayer(j));
+  };
+
+  // Crear o guardar partida/clase
+  const handlePublicar = async () => {
+    const {
+      tipo,
+      selectedReservation,
+      message,
+      preferredLevel,
+      // Campos de clase
+      isClass,
+      levels,
+      minParticipants,
+      maxParticipants,
+      pricePerStudent,
+      pricePerGroup,
+    } = createModal.modalState;
+
+    if (tipo === 'con_reserva' && !selectedReservation) {
+      showAlert('Error', `Selecciona una reserva para vincular la ${isClass ? 'clase' : 'partida'}`);
+      return;
+    }
+
+    createModal.setSaving(true);
+
+    if (partidaEditando) {
+      // MODO EDITAR
+      const updates = {
+        mensaje: message.trim() || null,
+        nivelPreferido: isClass ? null : preferredLevel,
+        // Campos de clase
+        niveles: isClass ? levels : null,
+        minParticipantes: isClass ? minParticipants : 4,
+        maxParticipantes: isClass ? maxParticipants : 4,
+        precioAlumno: isClass && pricePerStudent ? parseFloat(pricePerStudent.replace(',', '.')) : null,
+        precioGrupo: isClass && pricePerGroup ? parseFloat(pricePerGroup.replace(',', '.')) : null,
+      };
+
+      if (tipo === 'abierta') {
+        updates.reservaId = null;
+        updates.fecha = null;
+        updates.horaInicio = null;
+        updates.horaFin = null;
+        updates.pistaNombre = null;
+      } else if (selectedReservation) {
+        updates.reservaId = selectedReservation.id;
+        updates.fecha = selectedReservation.fecha;
+        updates.horaInicio = selectedReservation.horaInicio;
+        updates.horaFin = selectedReservation.horaFin;
+        updates.pistaNombre = selectedReservation.pistaNombre;
+      }
+
+      const result = await actions.editMatch(partidaEditando.id, updates);
+      createModal.setSaving(false);
+
+      if (result.success) {
+        createModal.close();
+        setPartidaEditando(null);
+        showAlert(isClass ? 'Clase actualizada' : 'Partida actualizada', 'Los cambios se han guardado correctamente');
+      } else {
+        showAlert('Error', result.error);
+      }
+    } else {
+      // MODO CREAR
+      const partidaData = {
+        creadorId: user.id,
+        creadorNombre: user.nombre,
+        creadorVivienda: user.vivienda,
+        tipo,
+        mensaje: message.trim() || null,
+        nivelPreferido: isClass ? null : preferredLevel,
+        jugadoresIniciales: createModal.players,
+        // Campos de clase
+        esClase: isClass,
+        niveles: isClass ? levels : null,
+        minParticipantes: isClass ? minParticipants : 4,
+        maxParticipantes: isClass ? maxParticipants : 4,
+        precioAlumno: isClass && pricePerStudent ? parseFloat(pricePerStudent.replace(',', '.')) : null,
+        precioGrupo: isClass && pricePerGroup ? parseFloat(pricePerGroup.replace(',', '.')) : null,
+      };
+
+      if (tipo === 'con_reserva' && selectedReservation) {
+        partidaData.reservaId = selectedReservation.id;
+        partidaData.fecha = selectedReservation.fecha;
+        partidaData.horaInicio = selectedReservation.horaInicio;
+        partidaData.horaFin = selectedReservation.horaFin;
+        partidaData.pistaNombre = selectedReservation.pistaNombre;
+      }
+
+      const result = await actions.createMatch(partidaData);
+      createModal.setSaving(false);
+
+      if (result.success) {
+        createModal.close();
+        const total = 1 + createModal.players.length;
+        const maxPart = isClass ? maxParticipants : 4;
+        const completa = total >= maxPart;
+
+        if (isClass) {
+          const mensajeExito = completa
+            ? `Clase creada con ${total} alumnos. ¡Lista!`
+            : 'Tu clase ha sido publicada.';
+          showAlert(completa ? 'Clase completa' : 'Clase creada', mensajeExito);
+        } else {
+          const mensajeExito = completa
+            ? 'Partida creada con 4 jugadores. ¡A jugar!'
+            : 'Tu solicitud de partida ha sido publicada.';
+          showAlert(completa ? 'Partida completa' : 'Partida creada', mensajeExito);
+        }
+      } else {
+        showAlert('Error', result.error);
+      }
+    }
+  };
+
+  // Cerrar modal
+  const handleCerrarModal = () => {
+    createModal.close();
+    setPartidaEditando(null);
+  };
+
+  // Abrir modal añadir jugador
+  const handleAbrirAddJugador = () => {
+    communityUsers.cargar();
+    addPlayerModal.open();
+  };
+
+  // Cerrar modal añadir jugador
+  const handleCerrarAddJugador = () => {
+    addPlayerModal.close();
+  };
+
+  // Añadir jugador de urbanización
+  const handleAddUrbanizacion = async (usuarioSeleccionado) => {
+    if (partidaEditando) {
+      // En modo edición, añadir directamente a la partida en BD
+      const partidaId = partidaEditando.id;
+      const result = await actions.addPlayerToMatch(partidaId, {
+        usuarioId: usuarioSeleccionado.id,
+        usuarioNombre: usuarioSeleccionado.nombre,
+        usuarioVivienda: usuarioSeleccionado.vivienda,
+        nivelJuego: usuarioSeleccionado.nivelJuego,
+        esExterno: false,
+      });
+      if (result.success) {
+        addPlayerModal.close();
+        // Actualizar partidaEditando directamente con el nuevo jugador
+        const nuevoJugador = {
+          id: result.jugadorId || Date.now().toString(), // ID temporal si no viene
+          usuarioId: usuarioSeleccionado.id,
+          usuarioNombre: usuarioSeleccionado.nombre,
+          usuarioVivienda: usuarioSeleccionado.vivienda,
+          nivelJuego: usuarioSeleccionado.nivelJuego,
+          esExterno: false,
+          estado: 'confirmado',
+        };
+        setPartidaEditando(prev => ({
+          ...prev,
+          jugadores: [...(prev.jugadores || []), nuevoJugador],
+        }));
+        // También recargar en background para sincronizar
+        loadMatches();
+      } else {
+        showAlert('Error', result.error);
+      }
+    } else {
+      // En modo crear, usar la lógica del hook
+      if (!addPlayerModal.addCommunityUser(usuarioSeleccionado)) {
+        showAlert('Partida completa', 'Ya tienes 3 jugadores añadidos (4 con el creador)');
+      }
+    }
+  };
+
+  // Añadir jugador externo
+  const handleAddExterno = async () => {
+    const { externalName, externalLevel } = addPlayerModal.modalState;
+
+    if (!externalName?.trim()) {
+      showAlert('Error', 'Introduce el nombre del jugador');
+      return;
+    }
+
+    if (partidaEditando) {
+      // En modo edición, añadir directamente a la partida en BD
+      const partidaId = partidaEditando.id;
+      const nombreTrimmed = externalName.trim();
+      const result = await actions.addPlayerToMatch(partidaId, {
+        usuarioId: null,
+        usuarioNombre: nombreTrimmed,
+        usuarioVivienda: null,
+        nivelJuego: externalLevel,
+        esExterno: true,
+      });
+      if (result.success) {
+        addPlayerModal.close();
+        // Actualizar partidaEditando directamente con el nuevo jugador
+        const nuevoJugador = {
+          id: result.jugadorId || Date.now().toString(),
+          usuarioId: null,
+          usuarioNombre: nombreTrimmed,
+          usuarioVivienda: null,
+          nivelJuego: externalLevel,
+          esExterno: true,
+          estado: 'confirmado',
+        };
+        setPartidaEditando(prev => ({
+          ...prev,
+          jugadores: [...(prev.jugadores || []), nuevoJugador],
+        }));
+        // También recargar en background para sincronizar
+        loadMatches();
+      } else {
+        showAlert('Error', result.error);
+      }
+    } else {
+      // En modo crear, usar la lógica del hook
+      const resultCrear = addPlayerModal.addExternalPlayer();
+      if (!resultCrear.success) {
+        showAlert('Error', resultCrear.error);
+      }
+    }
+  };
+
+  // Eliminar jugador de la partida (solo en modo editar)
+  const handleRemoveJugador = async (index) => {
+    if (partidaEditando) {
+      // Obtener el jugador a eliminar de la partida actual
+      const jugadoresConfirmados = (partidaEditando.jugadores || [])
+        .filter(j => j.estado === 'confirmado');
+      const jugadorAEliminar = jugadoresConfirmados[index];
+
+      if (jugadorAEliminar) {
+        const jugadorId = jugadorAEliminar.id;
+        const result = await actions.removePlayer(jugadorId, partidaEditando.id);
+        if (result.success) {
+          // Actualizar partidaEditando directamente eliminando el jugador
+          setPartidaEditando(prev => ({
+            ...prev,
+            jugadores: (prev.jugadores || []).filter(j => j.id !== jugadorId),
+          }));
+          // También recargar en background para sincronizar
+          loadMatches();
+        } else {
+          showAlert('Error', result.error);
+        }
+      }
+    } else {
+      // En modo crear, usar la lógica del hook
+      createModal.removePlayer(index);
+    }
+  };
+
+  // Obtener jugadores para el modal (en modo editar, desde la partida; en crear, desde el hook)
+  const getJugadoresModal = () => {
+    if (partidaEditando) {
+      return (partidaEditando.jugadores || [])
+        .filter(j => j.estado === 'confirmado')
+        .map(j => ({
+          tipo: j.esExterno ? 'externo' : 'urbanizacion',
+          usuario: j.esExterno ? null : {
+            id: j.usuarioId,
+            nombre: j.usuarioNombre,
+            vivienda: j.usuarioVivienda,
+            nivelJuego: j.nivelJuego,
+          },
+          nombre: j.usuarioNombre,
+          vivienda: j.usuarioVivienda,
+          nivel: j.nivelJuego,
+        }));
+    }
+    return createModal.players;
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* Tabs */}
+      <View style={styles.tabs}>
+        <TouchableOpacity
+          style={[styles.tab, tabActivo === 'disponibles' && styles.tabActivo]}
+          onPress={() => setTabActivo('disponibles')}
+        >
+          <Text style={[styles.tabText, tabActivo === 'disponibles' && styles.tabTextActivo]}>
+            Buscan jugadores
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, tabActivo === 'mis_partidas' && styles.tabActivo]}
+          onPress={() => setTabActivo('mis_partidas')}
+        >
+          <Text style={[styles.tabText, tabActivo === 'mis_partidas' && styles.tabTextActivo]}>
+            Mis partidas
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Lista de partidas */}
+      <ScrollView
+        style={styles.lista}
+        contentContainerStyle={styles.listaContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+        }
+      >
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : matches.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              {tabActivo === 'disponibles'
+                ? 'No hay partidas buscando jugadores'
+                : 'No tienes partidas activas'}
+            </Text>
+          </View>
+        ) : (
+          matches.map((partida) => (
+            <PartidaCard
+              key={partida.id}
+              partida={partida}
+              usuarioActualId={user.id}
+              onCancelar={handleCancelar}
+              onEditar={handleEditar}
+              onSolicitarUnirse={handleSolicitarUnirse}
+              onCancelarSolicitud={handleCancelarSolicitud}
+              onDesapuntarse={handleDesapuntarse}
+              onAceptarSolicitud={handleAceptarSolicitud}
+              onRechazarSolicitud={handleRechazarSolicitud}
+              onCerrarClase={handleCerrarClase}
+            />
+          ))
+        )}
+      </ScrollView>
+
+      {/* Botón crear partida */}
+      <TouchableOpacity style={styles.botonCrear} onPress={handleAbrirCrear}>
+        <Text style={styles.botonCrearText}>+ Buscar jugadores</Text>
+      </TouchableOpacity>
+
+      {/* Modal crear/editar partida */}
+      <CrearPartidaModal
+        visible={createModal.visible}
+        modalState={createModal.modalState}
+        setModalState={createModal.setModalState}
+        jugadores={getJugadoresModal()}
+        usuario={user}
+        reservasFuturas={getReservasFuturas()}
+        onAbrirModalJugador={handleAbrirAddJugador}
+        onRemoveJugador={handleRemoveJugador}
+        onCrear={handlePublicar}
+        onCerrar={handleCerrarModal}
+        modoEditar={!!partidaEditando}
+      />
+
+      {/* Modal añadir jugador */}
+      <AddJugadorModal
+        visible={addPlayerModal.visible}
+        modalState={addPlayerModal.modalState}
+        setModalState={addPlayerModal.setModalState}
+        usuarios={communityUsers.usuarios}
+        loadingUsuarios={communityUsers.loading}
+        jugadoresActuales={getJugadoresModal()}
+        onAddUrbanizacion={handleAddUrbanizacion}
+        onAddExterno={handleAddExterno}
+        onCerrar={handleCerrarAddJugador}
+      />
+
+      <CustomAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        buttons={alertConfig.buttons}
+        onDismiss={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  tabs: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  tabActivo: {
+    borderBottomWidth: 2,
+    borderBottomColor: colors.primary,
+  },
+  tabText: {
+    fontSize: 15,
+    color: colors.textSecondary,
+  },
+  tabTextActivo: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  lista: {
+    flex: 1,
+  },
+  listaContent: {
+    padding: 16,
+    paddingBottom: 100,
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: colors.textSecondary,
+    fontSize: 15,
+    textAlign: 'center',
+  },
+  botonCrear: {
+    position: 'absolute',
+    bottom: Platform.OS === 'web' ? 20 : 30,
+    left: 20,
+    right: 20,
+    backgroundColor: colors.primary,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  botonCrearText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

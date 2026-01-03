@@ -3,7 +3,7 @@ import { NavigationContainer, createNavigationContainerRef } from '@react-naviga
 import { createStackNavigator } from '@react-navigation/stack';
 import { useAuth } from '../context/AuthContext';
 import LoginScreen from '../screens/LoginScreen';
-import RegistroScreen from '../screens/RegistroScreen';
+import RegisterScreen from '../screens/RegisterScreen';
 import TabNavigator from './TabNavigator';
 import { ActivityIndicator, View } from 'react-native';
 import { colors } from '../constants/colors';
@@ -63,7 +63,7 @@ export default function AppNavigator() {
             />
             <Stack.Screen
               name="Registro"
-              component={RegistroScreen}
+              component={RegisterScreen}
               options={{
                 title: 'Registro de Vecino',
                 cardStyle: { flex: 1 },

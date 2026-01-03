@@ -17,7 +17,7 @@ export const colors = {
   // Reservation priority system colors
   guaranteedReservation: '#2f855a',  // Green - first/guaranteed reservation
   provisionalReservation: '#d69e2e', // Gold - second/provisional reservation
-  displacableReservation: '#cbd5e0', // Light gray - displaceable reservation background
+  displaceable: '#cbd5e0',           // Light gray - displaceable reservation background
   pastReservation: '#68a77c',        // Gray-green - past enjoyed reservations
 
   // Class system colors
@@ -34,7 +34,7 @@ export const colors = {
   badgeRed: '#e53e3e',               // Red for counter badges
 
   // Blockout system colors
-  blocked: '#e53e3e',                // Red - blocked slot border
+  blockout: '#e53e3e',               // Red - blocked slot border
 
   // Legacy aliases for backwards compatibility
   // TODO: Remove these once all consumers are updated

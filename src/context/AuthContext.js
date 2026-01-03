@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { Platform, AppState } from 'react-native';
 import { authService } from '../services/authService.supabase';
-import { reservasService } from '../services/reservasService.supabase';
+import { reservasService } from '../services/reservationsService.supabase';
 import { notificationService } from '../services/notificationService';
 import { navigateFromNotification } from '../navigation/AppNavigator';
 import { supabase, refreshSession } from '../services/supabaseConfig';

@@ -2,17 +2,17 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import {
-  useAnunciosAdmin,
+  useAnnouncementsAdmin,
   useAdminData,
   useAdminActions,
-  useEditViviendaModal,
+  useEditApartmentModal,
   useAlert,
 } from '../hooks';
 import { colors } from '../constants/colors';
 import { CustomAlert } from '../components/CustomAlert';
 import {
-  CrearAnuncioModal,
-  EditViviendaModal,
+  CreateAnnouncementModal,
+  EditApartmentModal,
   AdminHeader,
   AdminTabs,
   SolicitudesContent,
@@ -31,82 +31,82 @@ export default function AdminScreen() {
 
   // Hook de datos
   const {
-    usuariosPendientes,
-    todosUsuarios,
-    solicitudesCambio,
+    pendingUsers,
+    allUsers,
+    changeRequests,
     loading,
     refreshing,
-    cargarDatosTab,
+    loadTabData,
     onRefresh,
-    removeUsuarioPendiente,
-    removeSolicitudCambio,
-    updateUsuario,
-    removeUsuario,
+    removePendingUser,
+    removeChangeRequest,
+    updateUser,
+    removeUser,
   } = useAdminData();
 
   // Hook de anuncios admin
   const {
-    anuncios,
-    usuarios: usuariosParaAnuncios,
-    loading: loadingAnuncios,
-    creating: creatingAnuncio,
-    cargarAnuncios,
-    cargarUsuarios,
-    crearAnuncio,
-    eliminarAnuncio,
-  } = useAnunciosAdmin(user?.id, user?.nombre, () => {
+    announcements,
+    users: usersForAnnouncements,
+    loading: loadingAnnouncements,
+    creating: creatingAnnouncement,
+    loadAnnouncements,
+    loadUsers,
+    createAnnouncement,
+    deleteAnnouncement,
+  } = useAnnouncementsAdmin(user?.id, user?.nombre, () => {
     setCrearAnuncioVisible(false);
     mostrarAlerta('Mensaje enviado', 'El mensaje ha sido enviado correctamente');
   });
 
   // Hook de acciones admin
   const {
-    handleAprobar,
-    handleRechazar,
+    handleApprove,
+    handleReject,
     handleToggleAdmin,
     handleDeleteUser,
-    handleAprobarCambioVivienda,
-    handleRechazarCambioVivienda,
-    handleSaveVivienda,
+    handleApproveApartmentChange,
+    handleRejectApartmentChange,
+    handleSaveApartment,
   } = useAdminActions({
     currentUserId: user?.id,
     mostrarAlerta,
     mostrarConfirmacion,
-    removeUsuarioPendiente,
-    removeSolicitudCambio,
-    updateUsuario,
-    removeUsuario,
+    removePendingUser,
+    removeChangeRequest,
+    updateUser,
+    removeUser,
   });
 
   // Hook de modal editar vivienda
-  const editViviendaModal = useEditViviendaModal();
+  const editApartmentModal = useEditApartmentModal();
 
   // Cargar datos cuando cambia la tab
   useEffect(() => {
-    cargarDatosTab(tabActiva, cargarAnuncios, cargarUsuarios);
-  }, [tabActiva, cargarDatosTab, cargarAnuncios, cargarUsuarios]);
+    loadTabData(tabActiva, loadAnnouncements, loadUsers);
+  }, [tabActiva, loadTabData, loadAnnouncements, loadUsers]);
 
   // Handler para guardar vivienda
   const onSaveVivienda = useCallback(async () => {
-    const { usuario, escalera, piso, puerta } = editViviendaModal.modalState;
-    editViviendaModal.setSaving(true);
-    const result = await handleSaveVivienda(usuario, escalera, piso, puerta);
+    const { usuario, staircase, floor, door } = editApartmentModal.modalState;
+    editApartmentModal.setSaving(true);
+    const result = await handleSaveApartment(usuario, staircase, floor, door);
     if (result.success) {
-      editViviendaModal.cerrar();
+      editApartmentModal.close();
     } else {
-      editViviendaModal.setSaving(false);
+      editApartmentModal.setSaving(false);
     }
-  }, [editViviendaModal, handleSaveVivienda]);
+  }, [editApartmentModal, handleSaveApartment]);
 
   // Handler para nuevo mensaje
   const onNuevoMensaje = useCallback(() => {
-    cargarUsuarios();
+    loadUsers();
     setCrearAnuncioVisible(true);
-  }, [cargarUsuarios]);
+  }, [loadUsers]);
 
   // Handler para crear anuncio
   const onCrearAnuncio = useCallback(async (data) => {
-    const result = await crearAnuncio(
+    const result = await createAnnouncement(
       data.titulo,
       data.mensaje,
       data.tipo,
@@ -116,7 +116,23 @@ export default function AdminScreen() {
     if (!result.success) {
       mostrarAlerta('Error', result.error || 'No se pudo enviar el mensaje');
     }
-  }, [crearAnuncio, mostrarAlerta]);
+  }, [createAnnouncement, mostrarAlerta]);
+
+  // Handler para eliminar anuncio con confirmación
+  const handleDeleteAnnouncement = useCallback((announcementId) => {
+    mostrarConfirmacion(
+      'Eliminar mensaje',
+      '¿Estás seguro de que quieres eliminar este mensaje?',
+      async () => {
+        const result = await deleteAnnouncement(announcementId);
+        if (result.success) {
+          mostrarAlerta('Mensaje eliminado', 'El mensaje ha sido eliminado correctamente');
+        } else {
+          mostrarAlerta('Error', result.error || 'No se pudo eliminar el mensaje');
+        }
+      }
+    );
+  }, [deleteAnnouncement, mostrarConfirmacion, mostrarAlerta]);
 
   // Renderizar contenido según tab activa
   const renderContent = () => {
@@ -128,22 +144,22 @@ export default function AdminScreen() {
       case 'solicitudes':
         return (
           <SolicitudesContent
-            usuariosPendientes={usuariosPendientes}
-            solicitudesCambio={solicitudesCambio}
-            onAprobar={handleAprobar}
-            onRechazar={handleRechazar}
-            onAprobarCambio={handleAprobarCambioVivienda}
-            onRechazarCambio={handleRechazarCambioVivienda}
+            usuariosPendientes={pendingUsers}
+            solicitudesCambio={changeRequests}
+            onAprobar={handleApprove}
+            onRechazar={handleReject}
+            onAprobarCambio={handleApproveApartmentChange}
+            onRechazarCambio={handleRejectApartmentChange}
           />
         );
 
       case 'usuarios':
         return (
           <UsuariosContent
-            usuarios={todosUsuarios}
+            usuarios={allUsers}
             currentUserId={user?.id}
             onToggleAdmin={handleToggleAdmin}
-            onEditVivienda={editViviendaModal.abrir}
+            onEditVivienda={editApartmentModal.open}
             onDelete={handleDeleteUser}
           />
         );
@@ -151,10 +167,10 @@ export default function AdminScreen() {
       case 'mensajes':
         return (
           <MensajesContent
-            anuncios={anuncios}
-            loadingAnuncios={loadingAnuncios}
+            anuncios={announcements}
+            loadingAnuncios={loadingAnnouncements}
             onNuevoMensaje={onNuevoMensaje}
-            onEliminar={eliminarAnuncio}
+            onEliminar={handleDeleteAnnouncement}
           />
         );
 
@@ -170,8 +186,8 @@ export default function AdminScreen() {
       <AdminTabs
         tabActiva={tabActiva}
         onTabChange={setTabActiva}
-        contadorSolicitudes={usuariosPendientes.length + solicitudesCambio.length}
-        contadorUsuarios={todosUsuarios.length}
+        contadorSolicitudes={pendingUsers.length + changeRequests.length}
+        contadorUsuarios={allUsers.length}
       />
 
       <ScrollView
@@ -184,28 +200,28 @@ export default function AdminScreen() {
       </ScrollView>
 
       {/* Modal editar vivienda */}
-      <EditViviendaModal
-        visible={editViviendaModal.modalState.visible}
-        usuario={editViviendaModal.modalState.usuario}
-        escalera={editViviendaModal.modalState.escalera}
-        piso={editViviendaModal.modalState.piso}
-        puerta={editViviendaModal.modalState.puerta}
-        saving={editViviendaModal.modalState.saving}
-        onChangeEscalera={editViviendaModal.setEscalera}
-        onChangePiso={editViviendaModal.setPiso}
-        onChangePuerta={editViviendaModal.setPuerta}
+      <EditApartmentModal
+        visible={editApartmentModal.modalState.visible}
+        usuario={editApartmentModal.modalState.usuario}
+        escalera={editApartmentModal.modalState.staircase}
+        piso={editApartmentModal.modalState.floor}
+        puerta={editApartmentModal.modalState.door}
+        saving={editApartmentModal.modalState.saving}
+        onChangeEscalera={editApartmentModal.setStaircase}
+        onChangePiso={editApartmentModal.setFloor}
+        onChangePuerta={editApartmentModal.setDoor}
         onSave={onSaveVivienda}
-        onClose={editViviendaModal.cerrar}
+        onClose={editApartmentModal.close}
       />
 
       {/* Modal crear anuncio */}
-      <CrearAnuncioModal
+      <CreateAnnouncementModal
         visible={crearAnuncioVisible}
         onClose={() => setCrearAnuncioVisible(false)}
         onCrear={onCrearAnuncio}
-        usuarios={usuariosParaAnuncios}
+        usuarios={usersForAnnouncements}
         loadingUsuarios={false}
-        creating={creatingAnuncio}
+        creating={creatingAnnouncement}
       />
 
       {/* Alert */}

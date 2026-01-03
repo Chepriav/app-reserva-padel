@@ -1,97 +1,97 @@
 import { useState, useCallback, useEffect } from 'react';
-import { reservasService } from '../services/reservasService.supabase';
+import { reservasService } from '../services/reservationsService.supabase';
 
 /**
  * Hook to manage schedule blockouts (admin only)
  * Handles multi-selection and blockout operations
  */
-export function useBloqueos({ pistaSeleccionada, userId, mostrarAlerta, onRecargarHorarios }) {
-  const [modoBloqueo, setModoBloqueo] = useState(false);
-  const [bloquesABloquear, setBloquesABloquear] = useState([]);
-  const [bloquesADesbloquear, setBloquesADesbloquear] = useState([]);
-  const [modalBloqueo, setModalBloqueo] = useState({ visible: false, motivo: '' });
-  const [procesando, setProcesando] = useState(false);
+export function useBlockouts({ selectedCourt, userId, mostrarAlerta, onReloadSchedules }) {
+  const [blockoutMode, setBlockoutMode] = useState(false);
+  const [slotsToBlock, setSlotsToBlock] = useState([]);
+  const [slotsToUnblock, setSlotsToUnblock] = useState([]);
+  const [blockoutModal, setBlockoutModal] = useState({ visible: false, motivo: '' });
+  const [processing, setProcessing] = useState(false);
 
   // Clear selection when blockout mode is deactivated
   useEffect(() => {
-    if (!modoBloqueo) {
-      setBloquesABloquear([]);
-      setBloquesADesbloquear([]);
+    if (!blockoutMode) {
+      setSlotsToBlock([]);
+      setSlotsToUnblock([]);
     }
-  }, [modoBloqueo]);
+  }, [blockoutMode]);
 
   // Toggle selection for blocking
-  const toggleBloqueABloquear = useCallback((horario, fecha) => {
-    const yaSeleccionado = bloquesABloquear.some(b =>
+  const toggleSlotToBlock = useCallback((horario, fecha) => {
+    const yaSeleccionado = slotsToBlock.some(b =>
       b.fecha === fecha && b.horaInicio === horario.horaInicio
     );
 
     if (yaSeleccionado) {
-      setBloquesABloquear(prev => prev.filter(b =>
+      setSlotsToBlock(prev => prev.filter(b =>
         !(b.fecha === fecha && b.horaInicio === horario.horaInicio)
       ));
     } else {
-      setBloquesABloquear(prev => [...prev, {
+      setSlotsToBlock(prev => [...prev, {
         fecha,
         horaInicio: horario.horaInicio,
         horaFin: horario.horaFin,
       }]);
     }
-  }, [bloquesABloquear]);
+  }, [slotsToBlock]);
 
   // Toggle selection for unblocking
-  const toggleBloqueADesbloquear = useCallback((horario, fecha) => {
-    const yaSeleccionado = bloquesADesbloquear.some(b =>
+  const toggleSlotToUnblock = useCallback((horario, fecha) => {
+    const yaSeleccionado = slotsToUnblock.some(b =>
       b.fecha === fecha && b.horaInicio === horario.horaInicio
     );
 
     if (yaSeleccionado) {
-      setBloquesADesbloquear(prev => prev.filter(b =>
+      setSlotsToUnblock(prev => prev.filter(b =>
         !(b.fecha === fecha && b.horaInicio === horario.horaInicio)
       ));
     } else {
-      setBloquesADesbloquear(prev => [...prev, {
+      setSlotsToUnblock(prev => [...prev, {
         fecha,
         horaInicio: horario.horaInicio,
         horaFin: horario.horaFin,
         bloqueoId: horario.bloqueoId,
       }]);
     }
-  }, [bloquesADesbloquear]);
+  }, [slotsToUnblock]);
 
   // Clear all selection
-  const limpiarSeleccionBloqueo = useCallback(() => {
-    setBloquesABloquear([]);
-    setBloquesADesbloquear([]);
+  const clearBlockoutSelection = useCallback(() => {
+    setSlotsToBlock([]);
+    setSlotsToUnblock([]);
   }, []);
 
   // Open blockout modal
-  const abrirModalBloqueo = useCallback(() => {
-    setModalBloqueo({ visible: true, motivo: '' });
+  const openBlockoutModal = useCallback(() => {
+    setBlockoutModal({ visible: true, motivo: '' });
   }, []);
 
   // Close blockout modal
-  const cerrarModalBloqueo = useCallback(() => {
-    setModalBloqueo({ visible: false, motivo: '' });
+  const closeBlockoutModal = useCallback(() => {
+    setBlockoutModal({ visible: false, motivo: '' });
   }, []);
 
   // Update modal reason
-  const setMotivoBloqueo = useCallback((motivo) => {
-    setModalBloqueo(prev => ({ ...prev, motivo }));
+  const setBlockoutReason = useCallback((motivo) => {
+    setBlockoutModal(prev => ({ ...prev, motivo }));
   }, []);
 
   // Create multiple blockouts
-  const crearBloqueos = useCallback(async () => {
-    if (bloquesABloquear.length === 0 || !pistaSeleccionada) return;
+  const createBlockouts = useCallback(async () => {
+    if (slotsToBlock.length === 0 || !selectedCourt) return;
 
-    setProcesando(true);
-    const motivo = modalBloqueo.motivo || 'Bloqueado por administración';
+    setProcessing(true);
+    const motivo = blockoutModal.motivo || 'Bloqueado por administración';
     let exitosos = 0;
     const errores = [];
 
-    for (const bloque of bloquesABloquear) {
+    for (const bloque of slotsToBlock) {
       const result = await reservasService.crearBloqueo(
-        pistaSeleccionada.id,
+        selectedCourt.id,
         bloque.fecha,
         bloque.horaInicio,
         bloque.horaFin,
@@ -105,31 +105,31 @@ export function useBloqueos({ pistaSeleccionada, userId, mostrarAlerta, onRecarg
       }
     }
 
-    setProcesando(false);
-    cerrarModalBloqueo();
-    setBloquesABloquear([]);
+    setProcessing(false);
+    closeBlockoutModal();
+    setSlotsToBlock([]);
 
     if (exitosos > 0) {
-      const mensaje = exitosos === bloquesABloquear.length
+      const mensaje = exitosos === slotsToBlock.length
         ? `Se han bloqueado ${exitosos} horario${exitosos > 1 ? 's' : ''}.`
-        : `Se bloquearon ${exitosos} de ${bloquesABloquear.length} horarios.${errores.length > 0 ? '\n\nErrores:\n' + errores.join('\n') : ''}`;
+        : `Se bloquearon ${exitosos} de ${slotsToBlock.length} horarios.${errores.length > 0 ? '\n\nErrores:\n' + errores.join('\n') : ''}`;
       mostrarAlerta('Horarios bloqueados', mensaje);
     } else {
       mostrarAlerta('Error', 'No se pudo bloquear ningún horario.\n\n' + errores.join('\n'));
     }
 
-    onRecargarHorarios();
-  }, [bloquesABloquear, pistaSeleccionada, userId, modalBloqueo.motivo, mostrarAlerta, cerrarModalBloqueo, onRecargarHorarios]);
+    onReloadSchedules();
+  }, [slotsToBlock, selectedCourt, userId, blockoutModal.motivo, mostrarAlerta, closeBlockoutModal, onReloadSchedules]);
 
   // Delete multiple blockouts
-  const eliminarBloqueos = useCallback(async () => {
-    if (bloquesADesbloquear.length === 0) return;
+  const deleteBlockouts = useCallback(async () => {
+    if (slotsToUnblock.length === 0) return;
 
-    setProcesando(true);
+    setProcessing(true);
     let exitosos = 0;
     const errores = [];
 
-    for (const bloque of bloquesADesbloquear) {
+    for (const bloque of slotsToUnblock) {
       const result = await reservasService.eliminarBloqueo(bloque.bloqueoId);
       if (result.success) {
         exitosos++;
@@ -138,23 +138,23 @@ export function useBloqueos({ pistaSeleccionada, userId, mostrarAlerta, onRecarg
       }
     }
 
-    setProcesando(false);
-    setBloquesADesbloquear([]);
+    setProcessing(false);
+    setSlotsToUnblock([]);
 
     if (exitosos > 0) {
-      const mensaje = exitosos === bloquesADesbloquear.length
+      const mensaje = exitosos === slotsToUnblock.length
         ? `Se han desbloqueado ${exitosos} horario${exitosos > 1 ? 's' : ''}.`
-        : `Se desbloquearon ${exitosos} de ${bloquesADesbloquear.length} horarios.${errores.length > 0 ? '\n\nErrores:\n' + errores.join('\n') : ''}`;
+        : `Se desbloquearon ${exitosos} de ${slotsToUnblock.length} horarios.${errores.length > 0 ? '\n\nErrores:\n' + errores.join('\n') : ''}`;
       mostrarAlerta('Horarios desbloqueados', mensaje);
     } else {
       mostrarAlerta('Error', 'No se pudo desbloquear ningún horario.\n\n' + errores.join('\n'));
     }
 
-    onRecargarHorarios();
-  }, [bloquesADesbloquear, mostrarAlerta, onRecargarHorarios]);
+    onReloadSchedules();
+  }, [slotsToUnblock, mostrarAlerta, onReloadSchedules]);
 
   // Show blockout reason
-  const handleTapBloqueado = useCallback((horario) => {
+  const handleTapBlocked = useCallback((horario) => {
     mostrarAlerta(
       '🔒 Horario Bloqueado',
       horario.motivoBloqueo || 'Bloqueado por administración'
@@ -162,20 +162,20 @@ export function useBloqueos({ pistaSeleccionada, userId, mostrarAlerta, onRecarg
   }, [mostrarAlerta]);
 
   return {
-    modoBloqueo,
-    setModoBloqueo,
-    bloquesABloquear,
-    bloquesADesbloquear,
-    modalBloqueo,
-    procesando,
-    toggleBloqueABloquear,
-    toggleBloqueADesbloquear,
-    limpiarSeleccionBloqueo,
-    abrirModalBloqueo,
-    cerrarModalBloqueo,
-    setMotivoBloqueo,
-    crearBloqueos,
-    eliminarBloqueos,
-    handleTapBloqueado,
+    blockoutMode,
+    setBlockoutMode,
+    slotsToBlock,
+    slotsToUnblock,
+    blockoutModal,
+    processing,
+    toggleSlotToBlock,
+    toggleSlotToUnblock,
+    clearBlockoutSelection,
+    openBlockoutModal,
+    closeBlockoutModal,
+    setBlockoutReason,
+    createBlockouts,
+    deleteBlockouts,
+    handleTapBlocked,
   };
 }

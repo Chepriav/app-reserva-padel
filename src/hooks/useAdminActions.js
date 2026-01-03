@@ -11,29 +11,29 @@ export function useAdminActions({
   currentUserId,
   mostrarAlerta,
   mostrarConfirmacion,
-  removeUsuarioPendiente,
-  removeSolicitudCambio,
-  updateUsuario,
-  removeUsuario,
+  removePendingUser,
+  removeChangeRequest,
+  updateUser,
+  removeUser,
 }) {
   // Approve pending user
-  const handleAprobar = useCallback((usuario) => {
+  const handleApprove = useCallback((usuario) => {
     mostrarConfirmacion({
       title: 'Aprobar Usuario',
       message: `¿Aprobar el registro de ${usuario.nombre}?\n\nVivienda: ${usuario.vivienda}\nEmail: ${usuario.email}`,
       onConfirm: async () => {
         const result = await authService.aprobarUsuario(usuario.id);
         if (result.success) {
-          removeUsuarioPendiente(usuario.id);
+          removePendingUser(usuario.id);
         } else {
           mostrarAlerta('Error', result.error);
         }
       },
     });
-  }, [mostrarConfirmacion, mostrarAlerta, removeUsuarioPendiente]);
+  }, [mostrarConfirmacion, mostrarAlerta, removePendingUser]);
 
   // Reject pending user
-  const handleRechazar = useCallback((usuario) => {
+  const handleReject = useCallback((usuario) => {
     mostrarConfirmacion({
       title: 'Rechazar Usuario',
       message: `¿Rechazar el registro de ${usuario.nombre}?\n\nVivienda: ${usuario.vivienda}\nEmail: ${usuario.email}`,
@@ -42,13 +42,13 @@ export function useAdminActions({
       onConfirm: async () => {
         const result = await authService.rechazarUsuario(usuario.id);
         if (result.success) {
-          removeUsuarioPendiente(usuario.id);
+          removePendingUser(usuario.id);
         } else {
           mostrarAlerta('Error', result.error);
         }
       },
     });
-  }, [mostrarConfirmacion, mostrarAlerta, removeUsuarioPendiente]);
+  }, [mostrarConfirmacion, mostrarAlerta, removePendingUser]);
 
   // Toggle admin role
   const handleToggleAdmin = useCallback((usuario) => {
@@ -73,13 +73,13 @@ export function useAdminActions({
       onConfirm: async () => {
         const result = await authService.toggleAdminRole(usuario.id, nuevoRol);
         if (result.success) {
-          updateUsuario(usuario.id, { esAdmin: nuevoRol });
+          updateUser(usuario.id, { esAdmin: nuevoRol });
         } else {
           mostrarAlerta('Error', result.error);
         }
       },
     });
-  }, [currentUserId, mostrarAlerta, mostrarConfirmacion, updateUsuario]);
+  }, [currentUserId, mostrarAlerta, mostrarConfirmacion, updateUser]);
 
   // Delete user
   const handleDeleteUser = useCallback((usuario) => {
@@ -103,23 +103,23 @@ export function useAdminActions({
       onConfirm: async () => {
         const result = await authService.deleteUser(usuario.id);
         if (result.success) {
-          removeUsuario(usuario.id);
+          removeUser(usuario.id);
         } else {
           mostrarAlerta('Error', result.error);
         }
       },
     });
-  }, [currentUserId, mostrarAlerta, mostrarConfirmacion, removeUsuario]);
+  }, [currentUserId, mostrarAlerta, mostrarConfirmacion, removeUser]);
 
   // Approve apartment change
-  const handleAprobarCambioVivienda = useCallback((usuario) => {
+  const handleApproveApartmentChange = useCallback((usuario) => {
     mostrarConfirmacion({
       title: 'Aprobar Cambio de Vivienda',
       message: `¿Aprobar el cambio de vivienda de ${usuario.nombre}?\n\nActual: ${formatearVivienda(usuario.vivienda)}\nNueva: ${formatearVivienda(usuario.viviendaSolicitada)}`,
       onConfirm: async () => {
         const result = await authService.aprobarCambioVivienda(usuario.id);
         if (result.success) {
-          removeSolicitudCambio(usuario.id);
+          removeChangeRequest(usuario.id);
           await notificationService.notifyViviendaChange(
             usuario.id,
             true,
@@ -134,10 +134,10 @@ export function useAdminActions({
         }
       },
     });
-  }, [mostrarAlerta, mostrarConfirmacion, removeSolicitudCambio]);
+  }, [mostrarAlerta, mostrarConfirmacion, removeChangeRequest]);
 
   // Reject apartment change
-  const handleRechazarCambioVivienda = useCallback((usuario) => {
+  const handleRejectApartmentChange = useCallback((usuario) => {
     mostrarConfirmacion({
       title: 'Rechazar Cambio de Vivienda',
       message: `¿Rechazar la solicitud de cambio de vivienda de ${usuario.nombre}?\n\nSolicita: ${formatearVivienda(usuario.viviendaSolicitada)}`,
@@ -146,17 +146,17 @@ export function useAdminActions({
       onConfirm: async () => {
         const result = await authService.rechazarCambioVivienda(usuario.id);
         if (result.success) {
-          removeSolicitudCambio(usuario.id);
+          removeChangeRequest(usuario.id);
           await notificationService.notifyViviendaChange(usuario.id, false, null);
         } else {
           mostrarAlerta('Error', result.error);
         }
       },
     });
-  }, [mostrarAlerta, mostrarConfirmacion, removeSolicitudCambio]);
+  }, [mostrarAlerta, mostrarConfirmacion, removeChangeRequest]);
 
   // Save apartment change (direct admin edit)
-  const handleSaveVivienda = useCallback(async (usuario, escalera, piso, puerta) => {
+  const handleSaveApartment = useCallback(async (usuario, escalera, piso, puerta) => {
     const validacion = validarViviendaComponentes(escalera, piso, puerta);
     if (!validacion.valido) {
       const errorMsg = Object.values(validacion.errores).join('\n');
@@ -170,7 +170,7 @@ export function useAdminActions({
     });
 
     if (result.success) {
-      updateUsuario(usuario.id, { vivienda: nuevaVivienda });
+      updateUser(usuario.id, { vivienda: nuevaVivienda });
       mostrarAlerta(
         'Vivienda actualizada',
         `La vivienda de ${usuario.nombre} ha sido cambiada a ${formatearVivienda(nuevaVivienda)}`
@@ -180,15 +180,15 @@ export function useAdminActions({
       mostrarAlerta('Error', result.error || 'Error al actualizar la vivienda');
       return { success: false };
     }
-  }, [mostrarAlerta, updateUsuario]);
+  }, [mostrarAlerta, updateUser]);
 
   return {
-    handleAprobar,
-    handleRechazar,
+    handleApprove,
+    handleReject,
     handleToggleAdmin,
     handleDeleteUser,
-    handleAprobarCambioVivienda,
-    handleRechazarCambioVivienda,
-    handleSaveVivienda,
+    handleApproveApartmentChange,
+    handleRejectApartmentChange,
+    handleSaveApartment,
   };
 }

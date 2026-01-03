@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { useReservas } from '../context/ReservasContext';
+import { useReservations } from '../context/ReservationsContext';
 import { colors } from '../constants/colors';
 import {
   obtenerFechaHoy,
@@ -15,9 +15,9 @@ import { CustomAlert } from '../components/CustomAlert';
 // Hooks
 import {
   useAlert,
-  useSeleccionHorarios,
-  useBloqueos,
-  useHorarios,
+  useSlotSelection,
+  useBlockouts,
+  useSchedules,
 } from '../hooks';
 
 // Componentes
@@ -37,7 +37,13 @@ import {
 
 export default function HomeScreen({ navigation }) {
   const { user, notificacionesPendientes, marcarNotificacionesLeidas } = useAuth();
-  const { pistas, crearReserva, obtenerDisponibilidad, reservas, reservasVersion } = useReservas();
+  const {
+    courts: pistas,
+    createReservation: crearReserva,
+    getAvailability: obtenerDisponibilidad,
+    reservations: reservas,
+    reservationsVersion: reservasVersion
+  } = useReservations();
 
   // Estado de navegación
   const [fechaSeleccionada, setFechaSeleccionada] = useState(obtenerFechaHoy());
@@ -56,33 +62,33 @@ export default function HomeScreen({ navigation }) {
 
   // Hook de horarios
   const {
-    horarios,
-    horariosSemanales,
-    loadingHorarios,
-    recargarHorarios,
-  } = useHorarios({
-    pistaSeleccionada,
-    fechaSeleccionada,
-    vistaActual,
-    obtenerDisponibilidad,
+    schedules: horarios,
+    weeklySchedules: horariosSemanales,
+    loadingSchedules: loadingHorarios,
+    reloadSchedules: recargarHorarios,
+  } = useSchedules({
+    selectedCourt: pistaSeleccionada,
+    selectedDate: fechaSeleccionada,
+    currentView: vistaActual,
+    getAvailability: obtenerDisponibilidad,
     reservasVersion,
     mostrarAlerta,
   });
 
   // Hook de selección de horarios
   const {
-    bloquesSeleccionados,
-    toggleBloqueSeleccionado,
-    limpiarSeleccion,
-    getDatosReserva,
-  } = useSeleccionHorarios({ mostrarAlerta });
+    selectedSlots: bloquesSeleccionados,
+    toggleSlotSelected: toggleBloqueSeleccionado,
+    clearSelection: limpiarSeleccion,
+    getReservationData: getDatosReserva,
+  } = useSlotSelection({ mostrarAlerta });
 
   // Hook de bloqueos (admin)
-  const bloqueosHook = useBloqueos({
-    pistaSeleccionada,
+  const bloqueosHook = useBlockouts({
+    selectedCourt: pistaSeleccionada,
     userId: user?.id,
     mostrarAlerta,
-    onRecargarHorarios: recargarHorarios,
+    onReloadSchedules: recargarHorarios,
   });
 
   // Seleccionar primera pista automáticamente
@@ -180,11 +186,11 @@ export default function HomeScreen({ navigation }) {
     const esOtraProvisional = !horario.disponible && !estaBloqueado && !esMiVivienda && esSegundaDesplazable;
 
     // Modo bloqueo (admin)
-    if (bloqueosHook.modoBloqueo && user?.esAdmin) {
+    if (bloqueosHook.blockoutMode && user?.esAdmin) {
       if (estaBloqueado) {
-        bloqueosHook.toggleBloqueADesbloquear(horario, fecha);
+        bloqueosHook.toggleSlotToUnblock(horario, fecha);
       } else if (horario.disponible) {
-        bloqueosHook.toggleBloqueABloquear(horario, fecha);
+        bloqueosHook.toggleSlotToBlock(horario, fecha);
       } else {
         mostrarAlerta('No se puede bloquear', 'Este horario tiene una reserva activa');
       }
@@ -193,7 +199,7 @@ export default function HomeScreen({ navigation }) {
 
     // Modo normal
     if (estaBloqueado) {
-      bloqueosHook.handleTapBloqueado(horario);
+      bloqueosHook.handleTapBlocked(horario);
     } else if (horario.disponible || esOtraProvisional) {
       toggleBloqueSeleccionado(horario, fecha);
     }
@@ -298,8 +304,8 @@ export default function HomeScreen({ navigation }) {
         <HomeHeader
           userName={user?.nombre}
           esAdmin={user?.esAdmin}
-          modoBloqueo={bloqueosHook.modoBloqueo}
-          onModoBloqueoChange={bloqueosHook.setModoBloqueo}
+          modoBloqueo={bloqueosHook.blockoutMode}
+          onModoBloqueoChange={bloqueosHook.setBlockoutMode}
         />
 
         <VistaSelector
@@ -339,11 +345,11 @@ export default function HomeScreen({ navigation }) {
               fechaSeleccionada={fechaSeleccionada}
               userVivienda={user?.vivienda}
               bloquesSeleccionados={bloquesSeleccionados}
-              bloquesABloquear={bloqueosHook.bloquesABloquear}
-              bloquesADesbloquear={bloqueosHook.bloquesADesbloquear}
-              modoBloqueo={bloqueosHook.modoBloqueo}
+              bloquesABloquear={bloqueosHook.slotsToBlock}
+              bloquesADesbloquear={bloqueosHook.slotsToUnblock}
+              modoBloqueo={bloqueosHook.blockoutMode}
               esAdmin={user?.esAdmin}
-              reservando={reservando || bloqueosHook.procesando}
+              reservando={reservando || bloqueosHook.processing}
               onHorarioPress={handleHorarioPress}
             />
           </View>
@@ -351,7 +357,7 @@ export default function HomeScreen({ navigation }) {
       </ScrollView>
 
       {/* Botón Reservar (modo normal) */}
-      {!bloqueosHook.modoBloqueo && (
+      {!bloqueosHook.blockoutMode && (
         <BotonReservar
           cantidadBloques={bloquesSeleccionados.length}
           onPress={confirmarReserva}
@@ -360,30 +366,30 @@ export default function HomeScreen({ navigation }) {
       )}
 
       {/* Botones Bloquear/Desbloquear (modo admin) */}
-      {bloqueosHook.modoBloqueo && (
+      {bloqueosHook.blockoutMode && (
         <BotonesBloqueo
-          cantidadBloquear={bloqueosHook.bloquesABloquear.length}
-          cantidadDesbloquear={bloqueosHook.bloquesADesbloquear.length}
-          onBloquear={bloqueosHook.abrirModalBloqueo}
-          onDesbloquear={bloqueosHook.eliminarBloqueos}
-          onLimpiar={bloqueosHook.limpiarSeleccionBloqueo}
-          disabled={bloqueosHook.procesando}
+          cantidadBloquear={bloqueosHook.slotsToBlock.length}
+          cantidadDesbloquear={bloqueosHook.slotsToUnblock.length}
+          onBloquear={bloqueosHook.openBlockoutModal}
+          onDesbloquear={bloqueosHook.deleteBlockouts}
+          onLimpiar={bloqueosHook.clearBlockoutSelection}
+          disabled={bloqueosHook.processing}
         />
       )}
 
       {/* Modal de bloqueo */}
       <ModalBloqueo
-        visible={bloqueosHook.modalBloqueo.visible}
-        motivo={bloqueosHook.modalBloqueo.motivo}
-        cantidadHorarios={bloqueosHook.bloquesABloquear.length}
-        onMotivoChange={bloqueosHook.setMotivoBloqueo}
-        onConfirmar={bloqueosHook.crearBloqueos}
-        onCancelar={bloqueosHook.cerrarModalBloqueo}
-        disabled={bloqueosHook.procesando}
+        visible={bloqueosHook.blockoutModal.visible}
+        motivo={bloqueosHook.blockoutModal.motivo}
+        cantidadHorarios={bloqueosHook.slotsToBlock.length}
+        onMotivoChange={bloqueosHook.setBlockoutReason}
+        onConfirmar={bloqueosHook.createBlockouts}
+        onCancelar={bloqueosHook.closeBlockoutModal}
+        disabled={bloqueosHook.processing}
       />
 
       {/* Loading overlay */}
-      {(reservando || bloqueosHook.procesando) && (
+      {(reservando || bloqueosHook.processing) && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>

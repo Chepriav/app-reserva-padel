@@ -1,4 +1,4 @@
-export { NotificacionCard } from './NotificacionCard';
-export { AnuncioCard } from './AnuncioCard';
-export { AnuncioModal } from './AnuncioModal';
+export { NotificationCard } from './NotificationCard';
+export { AnnouncementCard } from './AnnouncementCard';
+export { AnnouncementModal } from './AnnouncementModal';
 export { EmptyState } from './EmptyState';

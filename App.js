@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from './src/context/AuthContext';
-import { ReservasProvider } from './src/context/ReservasContext';
+import { ReservationsProvider } from './src/context/ReservationsContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { registerServiceWorker, setUpdateCallback, applyUpdate } from './src/services/registerServiceWorker';
 import { colors } from './src/constants/colors';
@@ -27,7 +27,7 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <ReservasProvider>
+      <ReservationsProvider>
         <View style={styles.container}>
           {/* Banner de actualización */}
           {updateAvailable && (
@@ -41,7 +41,7 @@ export default function App() {
           <AppNavigator />
         </View>
         <StatusBar style="auto" />
-      </ReservasProvider>
+      </ReservationsProvider>
     </AuthProvider>
   );
 }

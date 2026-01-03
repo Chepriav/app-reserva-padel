@@ -21,14 +21,13 @@ export function useAlert() {
     });
   }, []);
 
-  const showConfirmation = useCallback((config) => {
+  const showConfirmation = useCallback((titleOrConfig, message, onConfirm) => {
     // Supports both object format and (title, message, onConfirm) format
-    if (typeof config === 'string') {
+    if (typeof titleOrConfig === 'string') {
       // Legacy format: (title, message, onConfirm)
-      const [title, message, onConfirm] = [config, arguments[1], arguments[2]];
       setAlertConfig({
         visible: true,
-        title,
+        title: titleOrConfig,
         message,
         buttons: [
           { text: 'Cancelar', style: 'cancel', onPress: () => {} },
@@ -37,17 +36,17 @@ export function useAlert() {
       });
     } else {
       // New format: { title, message, onConfirm, destructive, confirmText }
-      const { title, message, onConfirm, destructive, confirmText } = config;
+      const config = titleOrConfig;
       setAlertConfig({
         visible: true,
-        title,
-        message,
+        title: config.title,
+        message: config.message,
         buttons: [
           { text: 'Cancelar', style: 'cancel', onPress: () => {} },
           {
-            text: confirmText || 'Confirmar',
-            style: destructive ? 'destructive' : 'default',
-            onPress: onConfirm,
+            text: config.confirmText || 'Confirmar',
+            style: config.destructive ? 'destructive' : 'default',
+            onPress: config.onConfirm,
           },
         ],
       });

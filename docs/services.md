@@ -29,7 +29,9 @@
 
 ---
 
-## reservasService.supabase.js
+## reservationsService.supabase.js
+
+> Archivo: `matchesService.js` | Export: `reservasService` / `reservationsService`
 
 ### Pistas
 - `obtenerPistas()` - Lista de pistas
@@ -50,50 +52,54 @@
 
 ---
 
-## partidasService.js
+## matchesService.js
+
+> Archivo: `matchesService.js` | Export: `partidasService` / `matchesService`
 
 ### Consultas
-- `obtenerPartidasActivas()` - Partidas buscando jugadores
-- `obtenerMisPartidas(userId)` - Partidas creadas por usuario
-- `obtenerPartidasApuntado(userId)` - Partidas donde está inscrito
+- `getActiveMatches()` / `obtenerPartidasActivas()` - Partidas buscando jugadores
+- `getMyMatches(userId)` / `obtenerMisPartidas()` - Partidas creadas por usuario
+- `getEnrolledMatches(userId)` / `obtenerPartidasApuntado()` - Partidas donde está inscrito
 
 ### Gestión
-- `crearPartida(partidaData)` - Crea partida/clase
-- `editarPartida(partidaId, creadorId, updates)` - Edita partida
-- `cancelarPartida(partidaId, creadorId)` - Cancela partida
-- `cerrarClase(partidaId, creadorId)` - Cierra inscripciones (solo clases)
+- `createMatch(data)` / `crearPartida()` - Crea partida/clase
+- `editMatch(id, creadorId, updates)` / `editarPartida()` - Edita partida
+- `cancelMatch(id, creadorId)` / `cancelarPartida()` - Cancela partida
+- `closeClass(id, creadorId)` / `cerrarClase()` - Cierra inscripciones (solo clases)
 
 ### Jugadores
-- `solicitarUnirse(partidaId, usuario)` - Solicita unirse
-- `aceptarSolicitud(usuarioId, partidaId, creadorId)` - Acepta solicitud
-- `rechazarSolicitud(usuarioId, partidaId)` - Rechaza solicitud
-- `desapuntarsePartida(partidaId, usuarioId)` - Se desapunta
-- `cancelarSolicitud(partidaId, userId)` - Cancela solicitud propia
-- `anadirJugadorAPartida(partidaId, creadorId, jugadorData)` - Añade jugador
-- `eliminarJugador(jugadorId, partidaId, creadorId)` - Elimina jugador
+- `requestToJoin(id, usuario)` / `solicitarUnirse()` - Solicita unirse
+- `acceptRequest(usuarioId, partidaId, creadorId)` / `aceptarSolicitud()` - Acepta solicitud
+- `rejectRequest(usuarioId, partidaId)` / `rechazarSolicitud()` - Rechaza solicitud
+- `leaveMatch(id, userId)` / `desapuntarsePartida()` - Se desapunta
+- `cancelRequest(id, userId)` / `cancelarSolicitud()` - Cancela solicitud propia
+- `addPlayerToMatch(id, creadorId, data)` / `anadirJugadorAPartida()` - Añade jugador
+- `removePlayer(jugadorId, id, creadorId)` / `eliminarJugador()` - Elimina jugador
 
 ---
 
-## tablonService.js
+## bulletinService.js
+
+> Archivo: `bulletinService.js` | Export: `tablonService` / `bulletinService`
 
 ### Notificaciones (usuario)
-- `obtenerNotificaciones(usuarioId)` - Lista notificaciones
-- `contarNotificacionesNoLeidas(usuarioId)` - Cuenta no leídas
-- `marcarNotificacionLeida(notificacionId)` - Marca como leída
-- `marcarTodasLeidas(usuarioId)` - Marca todas
-- `eliminarNotificacion(notificacionId)` - Elimina
-- `crearNotificacion(usuarioId, tipo, titulo, mensaje, datos)` - Crea
+- `getNotifications(userId)` / `obtenerNotificaciones()` - Lista notificaciones
+- `countUnreadNotifications(userId)` / `contarNotificacionesNoLeidas()` - Cuenta no leídas
+- `markNotificationAsRead(id)` / `marcarNotificacionLeida()` - Marca como leída
+- `markAllAsRead(userId)` / `marcarTodasLeidas()` - Marca todas
+- `deleteNotification(id)` / `eliminarNotificacion()` - Elimina
+- `createNotification(userId, tipo, titulo, mensaje, datos)` / `crearNotificacion()` - Crea
 
 ### Anuncios (usuario)
-- `obtenerAnunciosParaUsuario(usuarioId)` - Lista anuncios
-- `contarAnunciosNoLeidos(usuarioId)` - Cuenta no leídos
-- `marcarAnuncioLeido(anuncioId, usuarioId)` - Marca como leído
+- `getAnnouncementsForUser(userId)` / `obtenerAnunciosParaUsuario()` - Lista anuncios
+- `countUnreadAnnouncements(userId)` / `contarAnunciosNoLeidos()` - Cuenta no leídos
+- `markAnnouncementAsRead(id, userId)` / `marcarAnuncioLeido()` - Marca como leído
 
 ### Anuncios (admin)
-- `obtenerTodosAnuncios()` - Lista todos
-- `crearAnuncio(creadorId, creadorNombre, titulo, mensaje, tipo, destinatarios, usuariosIds)` - Crea
-- `eliminarAnuncio(anuncioId)` - Elimina
-- `obtenerUsuariosAprobados()` - Para selector destinatarios
+- `getAllAnnouncements()` / `obtenerTodosAnuncios()` - Lista todos
+- `createAnnouncement(...)` / `crearAnuncio()` - Crea anuncio
+- `deleteAnnouncement(id)` / `eliminarAnuncio()` - Elimina
+- `getApprovedUsers()` / `obtenerUsuariosAprobados()` - Para selector destinatarios
 
 ---
 
@@ -102,66 +108,58 @@
 ### Push Nativo (Expo)
 - `registerForPushNotifications(userId)` - Registra token
 - `removePushToken(userId)` - Elimina token
-- `savePushToken(userId, token)` - Guarda en BD
-- `getUserPushTokens(userId)` - Obtiene tokens
 
 ### Envío
 - `sendPushNotification(tokens, title, body, data)` - Envía push
 - `notifyViviendaChange(userId, aprobado, viviendaNueva)` - Notifica cambio vivienda
 - `notifyReservationDisplacement(userId, reservaInfo)` - Notifica desplazamiento
-
-### Partidas
-- `notifyPartidaSolicitud(creadorId, solicitanteNombre, partidaInfo)`
-- `notifyPartidaAceptada(usuarioId, creadorNombre, partidaInfo)`
-- `notifyPartidaCompleta(jugadoresIds, creadorNombre, partidaInfo)`
-- `notifyPartidaCancelada(jugadoresIds, creadorNombre, partidaInfo)`
-
-### Listeners
-- `addNotificationListeners(onReceived, onResponse)` - Configura handlers
+- `notifyPartidaSolicitud/Aceptada/Completa/Cancelada(...)` - Notificaciones de partidas
 
 ---
 
 ## webPushService.js
 
 - `isSupported()` - Verifica soporte Web Push
-- `requestPermission()` - Solicita permiso
 - `subscribe(userId)` - Suscribe y guarda
 - `unsubscribe(userId)` - Cancela suscripción
-- `saveSubscription(userId, subscription)` - Guarda en BD
-- `showLocalNotification(title, body, data)` - Notificación local
-
----
-
-## storageService.supabase.js
-
-- `uploadImage(bucket, path, file)` - Sube imagen
-- `getPublicUrl(bucket, path)` - Obtiene URL pública
-- `deleteImage(bucket, path)` - Elimina imagen
 
 ---
 
 ## Context API
 
-### AuthContext
+### useAuth() - AuthContext
 ```javascript
 const {
   user,                      // Usuario actual
   isAuthenticated,           // Boolean
-  notificacionesPendientes,  // Notificaciones de desplazamiento
   login, logout, register, updateProfile, resetPassword,
-  marcarNotificacionesLeidas,
 } = useAuth();
 ```
 
-### ReservasContext
+### useReservations() - ReservationsContext
 ```javascript
 const {
-  reservas,                  // Reservas del usuario
-  pistas,                    // Pistas disponibles
+  reservations,              // Reservas del usuario
+  courts,                    // Pistas disponibles
   loading,
-  crearReserva,
-  cancelarReserva,
-  obtenerDisponibilidad,
-  recargarReservas,
-} = useReservas();
+  createReservation,
+  cancelReservation,
+  getAvailability,
+  reloadReservations,
+} = useReservations();
 ```
+
+---
+
+## Hooks Principales
+
+| Hook | Archivo | Uso |
+|------|---------|-----|
+| `useSchedules` | useSchedules.js | Carga horarios día/semana |
+| `useBlockouts` | useBloqueos.js | Bloqueos admin |
+| `useSlotSelection` | useSlotSelection.js | Selección de horarios |
+| `useMatches` | usePartidas.js | Lista de partidas |
+| `useMatchesActions` | usePartidas.js | Acciones de partidas |
+| `useNotifications` | useTablon.js | Notificaciones usuario |
+| `useAnnouncements` | useTablon.js | Anuncios usuario |
+| `useBulletinCounter` | useTablon.js | Contador del badge |
