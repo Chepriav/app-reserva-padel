@@ -25,15 +25,18 @@ export function ScheduleHeader({ vistaActual, cantidadSeleccionados, onLimpiar }
 
 /**
  * Selected slots information
+ * Always renders to reserve space and prevent layout shift
  */
 export function SelectionInfo({ cantidadBloques }) {
-  if (cantidadBloques === 0) return null;
+  const hasSelection = cantidadBloques > 0;
 
   return (
-    <View style={styles.selectionInfo}>
-      <Text style={styles.selectionText}>
-        {cantidadBloques} bloque{cantidadBloques > 1 ? 's' : ''} seleccionado{cantidadBloques > 1 ? 's' : ''}
-        ({cantidadBloques * 30} min)
+    <View style={[styles.selectionInfo, !hasSelection && styles.selectionInfoHidden]}>
+      <Text style={[styles.selectionText, !hasSelection && styles.selectionTextHidden]}>
+        {hasSelection
+          ? `${cantidadBloques} bloque${cantidadBloques > 1 ? 's' : ''} seleccionado${cantidadBloques > 1 ? 's' : ''} (${cantidadBloques * 30} min)`
+          : 'Selecciona horarios para reservar'
+        }
       </Text>
     </View>
   );
@@ -72,10 +75,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 12,
   },
+  selectionInfoHidden: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: 'dashed',
+  },
   selectionText: {
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  selectionTextHidden: {
+    color: colors.textSecondary,
+    fontWeight: '400',
   },
 });
