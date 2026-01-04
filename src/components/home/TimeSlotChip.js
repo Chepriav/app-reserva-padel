@@ -125,11 +125,13 @@ export const HorarioChip = TimeSlotChip;
 const styles = StyleSheet.create({
   slotChip: {
     backgroundColor: colors.primary,
-    paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    minWidth: 60,
+    width: 64,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   slotChipText: {
     fontSize: 14,
