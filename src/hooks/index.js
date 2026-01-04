@@ -12,6 +12,7 @@ export {
   useAnnouncements,
   useAnnouncementsAdmin,
   useBulletinCounter,
+  refreshBulletinBadge,
 } from './useTablon';
 
 // HomeScreen hooks

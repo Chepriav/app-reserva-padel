@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
-import { useNotifications, useAnnouncements } from '../hooks';
+import { useNotifications, useAnnouncements, refreshBulletinBadge } from '../hooks';
 import {
   NotificationCard,
   AnnouncementCard,
@@ -35,7 +35,7 @@ export default function TablonScreen() {
     markAllAsRead,
     countUnread: countNotifUnread,
     loadNotifications,
-  } = useNotifications(user?.id);
+  } = useNotifications(user?.id, refreshBulletinBadge);
 
   const {
     announcements,
@@ -47,7 +47,7 @@ export default function TablonScreen() {
     closeAnnouncement,
     countUnread: countAnnouncementsUnread,
     loadAnnouncements,
-  } = useAnnouncements(user?.id);
+  } = useAnnouncements(user?.id, refreshBulletinBadge);
 
   useFocusEffect(
     useCallback(() => {

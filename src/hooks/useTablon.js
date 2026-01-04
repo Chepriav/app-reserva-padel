@@ -4,7 +4,7 @@ import { tablonService } from '../services/bulletinService';
 /**
  * Hook to manage user notifications
  */
-export function useNotifications(userId) {
+export function useNotifications(userId, onCountChange) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -31,9 +31,11 @@ export function useNotifications(userId) {
   };
 
   const deleteNotification = async (notificationId) => {
+    const wasUnread = notifications.find(n => n.id === notificationId && !n.leida);
     const result = await tablonService.eliminarNotificacion(notificationId);
     if (result.success) {
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      if (wasUnread) onCountChange?.();
     }
     return result;
   };
@@ -44,6 +46,7 @@ export function useNotifications(userId) {
       setNotifications(prev =>
         prev.map(n => n.id === notificationId ? { ...n, leida: true } : n)
       );
+      onCountChange?.();
     }
     return result;
   };
@@ -52,6 +55,7 @@ export function useNotifications(userId) {
     const result = await tablonService.marcarTodasLeidas(userId);
     if (result.success) {
       setNotifications(prev => prev.map(n => ({ ...n, leida: true })));
+      onCountChange?.();
     }
     return result;
   };
@@ -76,7 +80,7 @@ export function useNotifications(userId) {
 /**
  * Hook to manage announcements (user view)
  */
-export function useAnnouncements(userId) {
+export function useAnnouncements(userId, onCountChange) {
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -115,6 +119,7 @@ export function useAnnouncements(userId) {
         );
         // Also update the selected announcement
         setSelectedAnnouncement(prev => prev ? { ...prev, leido: true } : null);
+        onCountChange?.();
       }
     }
   };
@@ -221,6 +226,9 @@ export function useAnnouncementsAdmin(userId, userName, onSuccess) {
   };
 }
 
+// Singleton para compartir el updateCounts entre componentes
+let globalUpdateCounts = null;
+
 /**
  * Hook to count unread notifications/announcements (for tab badge)
  */
@@ -244,11 +252,17 @@ export function useBulletinCounter(userId) {
     }
   }, [userId]);
 
+  // Guardar referencia global para poder llamar desde otros componentes
+  useEffect(() => {
+    globalUpdateCounts = updateCounts;
+    return () => { globalUpdateCounts = null; };
+  }, [updateCounts]);
+
   useEffect(() => {
     updateCounts();
 
-    // Update every 30 seconds
-    const interval = setInterval(updateCounts, 30000);
+    // Update every 15 seconds (reduced from 30)
+    const interval = setInterval(updateCounts, 15000);
     return () => clearInterval(interval);
   }, [updateCounts]);
 
@@ -258,4 +272,11 @@ export function useBulletinCounter(userId) {
     totalCount: announcementCount + notificationCount,
     updateCounts,
   };
+}
+
+/**
+ * Function to trigger badge update from anywhere
+ */
+export function refreshBulletinBadge() {
+  globalUpdateCounts?.();
 }
