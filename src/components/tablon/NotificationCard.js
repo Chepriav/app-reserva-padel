@@ -45,7 +45,7 @@ function formatearFechaRelativa(fechaStr) {
   return fecha.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
 }
 
-export function NotificacionCard({ notificacion, onMarcarLeida, onEliminar }) {
+export function NotificationCard({ notificacion, onMarcarLeida, onEliminar }) {
   const icon = TIPO_ICONS[notificacion.tipo] || TIPO_ICONS.default;
   const iconColor = TIPO_COLORS[notificacion.tipo] || TIPO_COLORS.default;
 

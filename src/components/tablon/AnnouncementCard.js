@@ -47,7 +47,7 @@ function formatearFecha(fechaStr) {
   return fecha.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
 }
 
-export function AnuncioCard({ anuncio, onPress }) {
+export function AnnouncementCard({ anuncio, onPress }) {
   const config = TIPO_CONFIG[anuncio.tipo] || TIPO_CONFIG.info;
 
   return (

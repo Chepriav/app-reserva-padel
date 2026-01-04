@@ -46,7 +46,7 @@ function formatearFechaCompleta(fechaStr) {
   });
 }
 
-export function AnuncioModal({ anuncio, visible, onClose }) {
+export function AnnouncementModal({ anuncio, visible, onClose }) {
   if (!anuncio) return null;
 
   const config = TIPO_CONFIG[anuncio.tipo] || TIPO_CONFIG.info;
