@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, StyleSheet, ScrollView, ActivityIndicator, findNodeHandle } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useReservations } from '../context/ReservationsContext';
 import { colors } from '../constants/colors';
@@ -52,6 +52,10 @@ export default function HomeScreen({ navigation }) {
   const [reservando, setReservando] = useState(false);
   const [notificacionMostrada, setNotificacionMostrada] = useState(false);
 
+  // Ref para scroll automático
+  const scrollViewRef = useRef(null);
+  const scheduleContainerRef = useRef(null);
+
   // Hook de alertas
   const {
     alertConfig,
@@ -102,6 +106,21 @@ export default function HomeScreen({ navigation }) {
   useEffect(() => {
     limpiarSeleccion();
   }, [fechaSeleccionada, vistaActual]);
+
+  // Auto-scroll cuando se selecciona el primer bloque
+  useEffect(() => {
+    if (bloquesSeleccionados.length === 1 && scheduleContainerRef.current && scrollViewRef.current) {
+      // Hacer scroll para mostrar el contenedor de horarios
+      scheduleContainerRef.current.measureLayout(
+        findNodeHandle(scrollViewRef.current),
+        (_x, y) => {
+          // Scroll un poco más arriba para dar contexto
+          scrollViewRef.current.scrollTo({ y: Math.max(0, y - 50), animated: true });
+        },
+        () => {} // Error callback
+      );
+    }
+  }, [bloquesSeleccionados.length]);
 
   // Mostrar notificación de desplazamiento
   useEffect(() => {
@@ -300,7 +319,7 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent}>
+      <ScrollView ref={scrollViewRef} style={styles.scrollContainer} contentContainerStyle={styles.scrollContent}>
         <HomeHeader
           userName={user?.nombre}
           esAdmin={user?.esAdmin}
@@ -326,7 +345,7 @@ export default function HomeScreen({ navigation }) {
         />
 
         {pistaSeleccionada && (
-          <View style={styles.section}>
+          <View ref={scheduleContainerRef} style={styles.section}>
             <HorariosHeader
               vistaActual={vistaActual}
               cantidadSeleccionados={bloquesSeleccionados.length}
