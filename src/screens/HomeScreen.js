@@ -55,6 +55,7 @@ export default function HomeScreen({ navigation }) {
   // Ref para scroll automático
   const scrollViewRef = useRef(null);
   const scheduleContainerRef = useRef(null);
+  const prevSelectionCount = useRef(0);
 
   // Hook de alertas
   const {
@@ -107,14 +108,17 @@ export default function HomeScreen({ navigation }) {
     limpiarSeleccion();
   }, [fechaSeleccionada, vistaActual]);
 
-  // Auto-scroll cuando se selecciona el primer bloque
+  // Auto-scroll cuando se selecciona el primer bloque (solo al aumentar, no al deseleccionar)
   useEffect(() => {
-    if (bloquesSeleccionados.length === 1 && scheduleContainerRef.current && scrollViewRef.current) {
-      // Hacer scroll para mostrar el contenedor de horarios
+    const currentCount = bloquesSeleccionados.length;
+    const wasEmpty = prevSelectionCount.current === 0;
+    prevSelectionCount.current = currentCount;
+
+    // Solo hacer scroll cuando pasamos de 0 a 1 (primera selección)
+    if (currentCount === 1 && wasEmpty && scheduleContainerRef.current && scrollViewRef.current) {
       scheduleContainerRef.current.measureLayout(
         findNodeHandle(scrollViewRef.current),
         (_x, y) => {
-          // Scroll un poco más arriba para dar contexto
           scrollViewRef.current.scrollTo({ y: Math.max(0, y - 50), animated: true });
         },
         () => {} // Error callback
