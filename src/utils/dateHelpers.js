@@ -47,11 +47,17 @@ export const formatReadableDate = (dateInput) => {
 };
 
 // Generate available time slots for the day
-export const generateAvailableSlots = () => {
+// Accepts optional config for custom opening/closing times and break periods
+export const generateAvailableSlots = (config = null, date = null) => {
   const slots = [];
-  const [openingHour] = SCHEDULE_CONFIG.openingTime.split(':').map(Number);
-  const [closingHour] = SCHEDULE_CONFIG.closingTime.split(':').map(Number);
-  const duration = SCHEDULE_CONFIG.slotDuration;
+
+  // Use provided config or fall back to default
+  const openingTime = config?.horaApertura || SCHEDULE_CONFIG.openingTime;
+  const closingTime = config?.horaCierre || SCHEDULE_CONFIG.closingTime;
+  const duration = config?.duracionBloque || SCHEDULE_CONFIG.slotDuration;
+
+  const [openingHour] = openingTime.split(':').map(Number);
+  const [closingHour] = closingTime.split(':').map(Number);
 
   let currentMinutes = openingHour * 60; // Convert to minutes
   const closingMinutes = closingHour * 60;
@@ -66,15 +72,55 @@ export const generateAvailableSlots = () => {
     const endMins = endMinutes % 60;
     const endTime = `${String(endHours).padStart(2, '0')}:${String(endMins).padStart(2, '0')}`;
 
-    slots.push({
-      horaInicio: startTime,
-      horaFin: endTime,
-    });
+    // Skip slots that fall within break time (if configured)
+    const isInBreakTime = shouldSkipSlot(startTime, endTime, config, date);
+
+    if (!isInBreakTime) {
+      slots.push({
+        horaInicio: startTime,
+        horaFin: endTime,
+      });
+    }
 
     currentMinutes += duration;
   }
 
   return slots;
+};
+
+// Helper function to check if a slot should be skipped due to break time
+const shouldSkipSlot = (slotStart, slotEnd, config, date) => {
+  if (!config?.pausaInicio || !config?.pausaFin) {
+    return false; // No break configured
+  }
+
+  // Check if break applies to this day of week
+  if (config.pausaDiasSemana && Array.isArray(config.pausaDiasSemana)) {
+    const dateObj = date ? (typeof date === 'string' ? new Date(date + 'T00:00:00') : date) : new Date();
+    const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 6 = Saturday
+
+    if (!config.pausaDiasSemana.includes(dayOfWeek)) {
+      return false; // Break doesn't apply to this day
+    }
+  }
+
+  // Convert times to minutes for comparison
+  const timeToMinutes = (time) => {
+    const [h, m] = time.split(':').map(Number);
+    return h * 60 + m;
+  };
+
+  const slotStartMin = timeToMinutes(slotStart);
+  const slotEndMin = timeToMinutes(slotEnd);
+  const breakStartMin = timeToMinutes(config.pausaInicio);
+  const breakEndMin = timeToMinutes(config.pausaFin);
+
+  // Slot overlaps with break if it starts, ends, or contains the break period
+  return (
+    (slotStartMin >= breakStartMin && slotStartMin < breakEndMin) ||
+    (slotEndMin > breakStartMin && slotEndMin <= breakEndMin) ||
+    (slotStartMin <= breakStartMin && slotEndMin >= breakEndMin)
+  );
 };
 
 // Check if date/time is in the future

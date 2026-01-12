@@ -3,6 +3,7 @@ import { horasHasta, stringToDate, generarHorariosDisponibles, formatearFechaLeg
 import { LIMITES_RESERVA } from '../constants/config';
 import { notificationService } from './notificationService';
 import { partidasService } from './matchesService';
+import { scheduleConfigService } from './scheduleConfigService';
 
 /**
  * Converts time in HH:MM format to total minutes
@@ -188,8 +189,8 @@ export const reservasService = {
     try {
       console.log('[obtenerDisponibilidad] Consultando pista:', pistaId, 'fecha:', fecha);
 
-      // Get reservations and blockouts in parallel
-      const [reservasResult, bloqueosResult] = await Promise.all([
+      // Get reservations, blockouts, and schedule config in parallel
+      const [reservasResult, bloqueosResult, configResult] = await Promise.all([
         supabase
           .from('reservas')
           .select('*')
@@ -197,6 +198,7 @@ export const reservasService = {
           .eq('fecha', fecha)
           .eq('estado', 'confirmada'),
         this.getBlockouts(pistaId, fecha),
+        scheduleConfigService.getConfig(),
       ]);
 
       const { data, error } = reservasResult;
@@ -207,9 +209,11 @@ export const reservasService = {
       }
 
       const bloqueos = bloqueosResult.success ? bloqueosResult.data : [];
+      const scheduleConfig = configResult.success ? configResult.data : null;
 
       console.log('[obtenerDisponibilidad] Reservas confirmadas encontradas:', data?.length, data?.map(r => ({ id: r.id, vivienda: r.vivienda, estado: r.estado, prioridad: r.prioridad })));
       console.log('[obtenerDisponibilidad] Bloqueos encontrados:', bloqueos.length);
+      console.log('[obtenerDisponibilidad] Configuración horarios:', scheduleConfig);
 
       let reservasExistentes = data.map(mapReservaToCamelCase);
 
@@ -251,7 +255,8 @@ export const reservasService = {
         }
       }
 
-      const horariosGenerados = generarHorariosDisponibles();
+      // Generate time slots with schedule config (filters out break times)
+      const horariosGenerados = generarHorariosDisponibles(scheduleConfig, fecha);
 
       const horariosDisponibles = horariosGenerados.map((horario) => {
         const bloqueInicioMin = timeToMinutes(horario.horaInicio);
@@ -700,14 +705,7 @@ export const reservasService = {
         return { success: false, error: 'Esta reserva ya fue cancelada' };
       }
 
-      // Verify advance time
-      const horasAntes = horasHasta(reserva.fecha, reserva.hora_inicio);
-      if (horasAntes < LIMITS.MIN_HOURS_TO_CANCEL) {
-        return {
-          success: false,
-          error: `Solo puedes cancelar con mínimo ${LIMITS.MIN_HOURS_TO_CANCEL} horas de anticipación`,
-        };
-      }
+      // No time restriction - users can cancel anytime
 
       // Update status
       const { error: updateError } = await supabase

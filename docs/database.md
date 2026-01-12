@@ -182,6 +182,27 @@ CREATE TABLE public.web_push_subscriptions (
 );
 ```
 
+## Tabla: configuracion_horarios
+```sql
+CREATE TABLE public.configuracion_horarios (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  hora_apertura TIME NOT NULL DEFAULT '08:00',
+  hora_cierre TIME NOT NULL DEFAULT '22:00',
+  duracion_bloque INTEGER NOT NULL DEFAULT 30,
+  pausa_inicio TIME,                    -- Inicio de pausa (ej: hora de comida)
+  pausa_fin TIME,                       -- Fin de pausa
+  motivo_pausa TEXT DEFAULT 'Hora de comida',
+  pausa_dias_semana INTEGER[],         -- Días donde aplica (0=Dom, 6=Sáb), NULL=todos
+  actualizado_por UUID REFERENCES public.users(id),
+  actualizado_en TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+**Funciones RPC:**
+- `get_schedule_config()`: Obtiene la configuración actual de horarios
+- `update_schedule_config(...)`: Actualiza la configuración (solo admins)
+
 ## Mapeo de Campos (JavaScript ↔ PostgreSQL)
 
 | JavaScript | PostgreSQL |

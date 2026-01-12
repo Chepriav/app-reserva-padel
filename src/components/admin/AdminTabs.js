@@ -65,6 +65,20 @@ export function AdminTabs({
           Mensajes
         </Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.tab, tabActiva === 'configuracion' && styles.tabActive]}
+        onPress={() => onTabChange('configuracion')}
+      >
+        <Text
+          style={[
+            styles.tabText,
+            tabActiva === 'configuracion' && styles.tabTextActive,
+          ]}
+        >
+          Configuración
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }

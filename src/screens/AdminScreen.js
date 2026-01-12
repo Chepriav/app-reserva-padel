@@ -19,6 +19,7 @@ import {
   UsuariosContent,
   MensajesContent,
   LoadingContent,
+  ScheduleConfigSection,
 } from '../components/admin';
 
 export default function AdminScreen() {
@@ -173,6 +174,9 @@ export default function AdminScreen() {
             onEliminar={handleDeleteAnnouncement}
           />
         );
+
+      case 'configuracion':
+        return <ScheduleConfigSection userId={user?.id} />;
 
       default:
         return null;
