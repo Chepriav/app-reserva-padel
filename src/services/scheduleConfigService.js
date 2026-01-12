@@ -84,13 +84,13 @@ export const scheduleConfigService = {
       const { data, error } = await supabase
         .rpc('update_schedule_config', {
           p_user_id: userId,
-          p_hora_apertura: config.horaApertura || null,
-          p_hora_cierre: config.horaCierre || null,
-          p_duracion_bloque: config.duracionBloque || null,
-          p_pausa_inicio: config.pausaInicio || null,
-          p_pausa_fin: config.pausaFin || null,
-          p_motivo_pausa: config.motivoPausa || null,
-          p_pausa_dias_semana: config.pausaDiasSemana || null,
+          p_hora_apertura: config.horaApertura,
+          p_hora_cierre: config.horaCierre,
+          p_duracion_bloque: config.duracionBloque,
+          p_pausa_inicio: config.pausaInicio,
+          p_pausa_fin: config.pausaFin,
+          p_motivo_pausa: config.motivoPausa,
+          p_pausa_dias_semana: config.pausaDiasSemana,
         });
 
       console.log('[ScheduleConfig] RPC response data:', data);
