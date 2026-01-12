@@ -28,17 +28,7 @@ export function ScheduleConfigSection({ userId }) {
     pausaDiasSemana: null, // null = todos los días
   });
 
-  const [pausaEnabled, setPausaEnabled] = useState(false);
-
-  const diasSemana = [
-    { value: 0, label: 'Dom' },
-    { value: 1, label: 'Lun' },
-    { value: 2, label: 'Mar' },
-    { value: 3, label: 'Mié' },
-    { value: 4, label: 'Jue' },
-    { value: 5, label: 'Vie' },
-    { value: 6, label: 'Sáb' },
-  ];
+  const [breakEnabled, setBreakEnabled] = useState(false);
 
   useEffect(() => {
     loadConfig();
@@ -48,7 +38,7 @@ export function ScheduleConfigSection({ userId }) {
     setLoading(true);
     const result = await scheduleConfigService.getConfig();
     if (result.success) {
-      // Limpiar segundos de las horas
+      // Strip seconds from times (HH:MM:SS -> HH:MM)
       const cleanConfig = {
         ...result.data,
         horaApertura: result.data.horaApertura?.slice(0, 5) || '08:00',
@@ -57,69 +47,57 @@ export function ScheduleConfigSection({ userId }) {
         pausaFin: result.data.pausaFin?.slice(0, 5) || '',
       };
       setConfig(cleanConfig);
-      setPausaEnabled(!!result.data.pausaInicio && !!result.data.pausaFin);
+      setBreakEnabled(!!result.data.pausaInicio && !!result.data.pausaFin);
     }
     setLoading(false);
   };
 
   const handleSave = async () => {
-    console.log('[ScheduleConfig] handleSave ejecutado');
+    console.log('[ScheduleConfig] handleSave called');
     console.log('[ScheduleConfig] userId:', userId);
-    console.log('[ScheduleConfig] config actual:', config);
+    console.log('[ScheduleConfig] current config:', config);
 
-    // Validaciones
+    // Validations
     if (!config.horaApertura || !config.horaCierre) {
       Alert.alert('Error', 'Debes especificar hora de apertura y cierre');
       return;
     }
 
-    if (pausaEnabled && (!config.pausaInicio || !config.pausaFin)) {
+    if (breakEnabled && (!config.pausaInicio || !config.pausaFin)) {
       Alert.alert('Error', 'Debes especificar hora de inicio y fin de la pausa');
       return;
     }
 
-    // Si la pausa está deshabilitada, limpiar los valores
+    // If break is disabled, clear values
     const configToSave = {
       ...config,
-      pausaInicio: pausaEnabled ? config.pausaInicio : null,
-      pausaFin: pausaEnabled ? config.pausaFin : null,
-      motivoPausa: pausaEnabled ? config.motivoPausa : null,
-      pausaDiasSemana: pausaEnabled ? config.pausaDiasSemana : null,
+      pausaInicio: breakEnabled ? config.pausaInicio : null,
+      pausaFin: breakEnabled ? config.pausaFin : null,
+      motivoPausa: breakEnabled ? config.motivoPausa : null,
+      pausaDiasSemana: breakEnabled ? config.pausaDiasSemana : null,
     };
 
-    console.log('[ScheduleConfig] Guardando configuración:', configToSave);
+    console.log('[ScheduleConfig] Saving config:', configToSave);
     setSaving(true);
 
     try {
       const result = await scheduleConfigService.updateConfig(userId, configToSave);
-      console.log('[ScheduleConfig] Resultado:', result);
+      console.log('[ScheduleConfig] Result:', result);
 
       setSaving(false);
 
       if (result.success) {
         Alert.alert('Éxito', 'Configuración guardada correctamente');
-        await loadConfig(); // Recargar para ver cambios
+        await loadConfig(); // Reload to see changes
       } else {
-        console.error('[ScheduleConfig] Error al guardar:', result.error);
+        console.error('[ScheduleConfig] Save error:', result.error);
         Alert.alert('Error', result.error || 'Error al guardar configuración');
       }
     } catch (error) {
-      console.error('[ScheduleConfig] Excepción al guardar:', error);
+      console.error('[ScheduleConfig] Save exception:', error);
       setSaving(false);
       Alert.alert('Error', 'Error inesperado al guardar: ' + error.message);
     }
-  };
-
-  const toggleDiaSemana = (dia) => {
-    const current = config.pausaDiasSemana || [];
-    const newDias = current.includes(dia)
-      ? current.filter(d => d !== dia)
-      : [...current, dia];
-
-    setConfig({
-      ...config,
-      pausaDiasSemana: newDias.length === 0 ? null : newDias,
-    });
   };
 
   if (loading) {
@@ -174,15 +152,15 @@ export function ScheduleConfigSection({ userId }) {
 
       <TouchableOpacity
         style={styles.checkboxContainer}
-        onPress={() => setPausaEnabled(!pausaEnabled)}
+        onPress={() => setBreakEnabled(!breakEnabled)}
       >
-        <View style={[styles.checkbox, pausaEnabled && styles.checkboxChecked]}>
-          {pausaEnabled && <Text style={styles.checkboxIcon}>✓</Text>}
+        <View style={[styles.checkbox, breakEnabled && styles.checkboxChecked]}>
+          {breakEnabled && <Text style={styles.checkboxIcon}>✓</Text>}
         </View>
         <Text style={styles.checkboxLabel}>Habilitar pausa</Text>
       </TouchableOpacity>
 
-      {pausaEnabled && (
+      {breakEnabled && (
         <>
           <View style={styles.row}>
             <View style={styles.inputGroup}>
@@ -247,6 +225,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
     padding: 16,
+    paddingTop: 12,
   },
   loadingContainer: {
     flex: 1,
@@ -258,23 +237,23 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: colors.text,
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: 0,
+    marginBottom: 6,
   },
   sectionDescription: {
     fontSize: 14,
     color: colors.textSecondary,
-    marginBottom: 16,
+    marginBottom: 12,
     lineHeight: 20,
   },
   row: {
     flexDirection: Platform.OS === 'web' ? 'row' : 'column',
     gap: 12,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   inputGroup: {
     flex: 1,
-    marginBottom: 16,
+    marginBottom: 8,
   },
   label: {
     fontSize: 14,
@@ -294,12 +273,12 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     backgroundColor: colors.border,
-    marginVertical: 24,
+    marginVertical: 16,
   },
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
   },
   checkbox: {
     width: 24,

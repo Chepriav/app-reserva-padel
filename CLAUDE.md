@@ -49,13 +49,14 @@ src/
 
 | Concepto | Valor |
 |----------|-------|
-| Horario | 08:00 - 22:00 |
+| Horario | 08:00 - 22:00 (configurable por admin) |
 | Bloques | 30 min |
 | Máx por reserva | 3 bloques (1.5h) |
 | Máx reservas/vivienda | 1 |
 | Anticipación máxima | 7 días |
 | Cancelación | Sin límite de tiempo |
 | Protección desplazamiento | 24h |
+| Pausas/Descansos | Configurable por admin (ej: hora de comida) |
 
 ## Prioridades
 
@@ -66,12 +67,13 @@ Ver `docs/features/reservas.md` para reglas de conversión.
 
 ## Convenciones
 
+- **Código**: Inglés (variables, funciones, componentes, comentarios)
+- **Texto usuario final**: Español (mensajes, labels, alertas)
 - Componentes: PascalCase
 - Funciones/variables: camelCase
 - Columnas PostgreSQL: snake_case
 - Hooks: `use[Feature]`
 - Callbacks: `on[Acción]`
-- Mensajes de error: español
 
 ## Arquitectura
 
@@ -105,6 +107,7 @@ EXPO_PUBLIC_VAPID_PUBLIC_KEY=BNRg...
 | `docs/features/tablon.md` | Tablón de anuncios |
 | `docs/features/bloqueos.md` | Bloqueos admin |
 | `docs/features/push.md` | Notificaciones push |
+| `docs/features/horarios-configurables.md` | Configuración horarios y pausas |
 
 ## Colores Principales
 
