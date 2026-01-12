@@ -48,7 +48,15 @@ export function ScheduleConfigSection({ userId }) {
     setLoading(true);
     const result = await scheduleConfigService.getConfig();
     if (result.success) {
-      setConfig(result.data);
+      // Limpiar segundos de las horas
+      const cleanConfig = {
+        ...result.data,
+        horaApertura: result.data.horaApertura?.slice(0, 5) || '08:00',
+        horaCierre: result.data.horaCierre?.slice(0, 5) || '22:00',
+        pausaInicio: result.data.pausaInicio?.slice(0, 5) || '',
+        pausaFin: result.data.pausaFin?.slice(0, 5) || '',
+      };
+      setConfig(cleanConfig);
       setPausaEnabled(!!result.data.pausaInicio && !!result.data.pausaFin);
     }
     setLoading(false);
@@ -138,7 +146,9 @@ export function ScheduleConfigSection({ userId }) {
             onChangeText={(text) => setConfig({ ...config, horaApertura: text })}
             placeholder="08:00"
             placeholderTextColor={colors.textSecondary}
+            maxLength={5}
           />
+          <Text style={styles.helperText}>Formato: HH:MM (ej: 08:00)</Text>
         </View>
 
         <View style={styles.inputGroup}>
@@ -149,27 +159,17 @@ export function ScheduleConfigSection({ userId }) {
             onChangeText={(text) => setConfig({ ...config, horaCierre: text })}
             placeholder="22:00"
             placeholderTextColor={colors.textSecondary}
+            maxLength={5}
           />
+          <Text style={styles.helperText}>Formato: HH:MM (ej: 22:00)</Text>
         </View>
-      </View>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Duración del Bloque (minutos)</Text>
-        <TextInput
-          style={styles.input}
-          value={String(config.duracionBloque)}
-          onChangeText={(text) => setConfig({ ...config, duracionBloque: parseInt(text) || 30 })}
-          placeholder="30"
-          keyboardType="numeric"
-          placeholderTextColor={colors.textSecondary}
-        />
       </View>
 
       <View style={styles.separator} />
 
-      <Text style={styles.sectionTitle}>Pausa (Hora de Comida)</Text>
+      <Text style={styles.sectionTitle}>Pausa</Text>
       <Text style={styles.sectionDescription}>
-        Define un horario no reservable (ejemplo: hora de comida de 14:00 a 16:30)
+        Define un horario no reservable (ej: 14:00 - 16:30)
       </Text>
 
       <TouchableOpacity
@@ -186,69 +186,30 @@ export function ScheduleConfigSection({ userId }) {
         <>
           <View style={styles.row}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Inicio de Pausa</Text>
+              <Text style={styles.label}>Inicio</Text>
               <TextInput
                 style={styles.input}
                 value={config.pausaInicio || ''}
                 onChangeText={(text) => setConfig({ ...config, pausaInicio: text })}
                 placeholder="14:00"
                 placeholderTextColor={colors.textSecondary}
+                maxLength={5}
               />
+              <Text style={styles.helperText}>Formato: HH:MM</Text>
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Fin de Pausa</Text>
+              <Text style={styles.label}>Fin</Text>
               <TextInput
                 style={styles.input}
                 value={config.pausaFin || ''}
                 onChangeText={(text) => setConfig({ ...config, pausaFin: text })}
                 placeholder="16:30"
                 placeholderTextColor={colors.textSecondary}
+                maxLength={5}
               />
+              <Text style={styles.helperText}>Formato: HH:MM</Text>
             </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Motivo</Text>
-            <TextInput
-              style={styles.input}
-              value={config.motivoPausa || ''}
-              onChangeText={(text) => setConfig({ ...config, motivoPausa: text })}
-              placeholder="Hora de comida"
-              placeholderTextColor={colors.textSecondary}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Días de la semana (deja vacío para todos los días)</Text>
-            <View style={styles.diasContainer}>
-              {diasSemana.map((dia) => (
-                <TouchableOpacity
-                  key={dia.value}
-                  style={[
-                    styles.diaButton,
-                    config.pausaDiasSemana?.includes(dia.value) && styles.diaButtonActive,
-                  ]}
-                  onPress={() => toggleDiaSemana(dia.value)}
-                >
-                  <Text
-                    style={[
-                      styles.diaButtonText,
-                      config.pausaDiasSemana?.includes(dia.value) && styles.diaButtonTextActive,
-                    ]}
-                  >
-                    {dia.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            {!config.pausaDiasSemana || config.pausaDiasSemana.length === 0 ? (
-              <Text style={styles.helperText}>La pausa aplicará todos los días</Text>
-            ) : (
-              <Text style={styles.helperText}>
-                La pausa aplicará solo los días seleccionados
-              </Text>
-            )}
           </View>
         </>
       )}
@@ -268,13 +229,13 @@ export function ScheduleConfigSection({ userId }) {
       <View style={styles.infoBox}>
         <Text style={styles.infoTitle}>ℹ️ Información</Text>
         <Text style={styles.infoText}>
-          • Los bloques que caen dentro de la pausa no se mostrarán en el calendario de reservas
+          • Los bloques de la pausa no aparecerán en el calendario
         </Text>
         <Text style={styles.infoText}>
-          • Los cambios aplicarán inmediatamente para todas las nuevas reservas
+          • La pausa aplicará todos los días de la semana
         </Text>
         <Text style={styles.infoText}>
-          • Las reservas existentes no se verán afectadas
+          • Las reservas existentes no se modificarán
         </Text>
       </View>
     </View>
