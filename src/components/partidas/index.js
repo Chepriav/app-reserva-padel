@@ -1,7 +1,7 @@
 // New English exports
-export { default as MatchCard, PartidaCard } from './MatchCard';
-export { default as ParticipantsList, ParticipantesList } from './ParticipantsList';
-export { default as PendingRequests, SolicitudesPendientes } from './PendingRequests';
-export { default as CreateMatchModal, CrearPartidaModal } from './CreateMatchModal';
-export { default as PlayersEditor, JugadoresEditor } from './PlayersEditor';
-export { default as AddPlayerModal, AddJugadorModal } from './AddPlayerModal';
+export { default as MatchCard } from './MatchCard';
+export { default as ParticipantsList} from './ParticipantsList';
+export { default as PendingRequests } from './PendingRequests';
+export { default as CreateMatchModal } from './CreateMatchModal';
+export { default as PlayersEditor } from './PlayersEditor';
+export { default as AddPlayerModal } from './AddPlayerModal';

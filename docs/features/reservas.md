@@ -3,8 +3,9 @@
 ## Concepto de Prioridades
 
 El sistema limita reservas **por vivienda** (no por usuario):
+- **Máximo 1 reserva activa por vivienda**
 - **Primera reserva** → Garantizada (G) - No puede ser desplazada
-- **Segunda reserva** → Provisional (P) - Puede ser desplazada por otra vivienda
+- _Segunda reserva (deshabilitada)_ → Provisional (P) - Sistema soporta 2 reservas pero límite actual es 1
 
 ## Reglas de Conversión P → G
 
@@ -42,8 +43,8 @@ Una vivienda puede desplazar la reserva P de otra vivienda si:
 ## Flujo de Reserva
 
 1. Usuario selecciona bloques de 30 min (máx 3 = 1.5h)
-2. Sistema valida límites (máx 2 reservas por vivienda)
-3. Sistema calcula prioridad (G o P)
+2. Sistema valida límites (máx 1 reserva por vivienda)
+3. Sistema calcula prioridad (siempre G con límite actual)
 4. Si hay desplazamiento, muestra confirmación
 5. Crea reserva vía RPC
 6. Notifica a vivienda desplazada (si aplica)

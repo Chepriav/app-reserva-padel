@@ -98,14 +98,7 @@ export const canMakeReservation = (user, newReservation, currentReservations) =>
 
 // Check if a reservation can be cancelled
 export const canCancelReservation = (reservation) => {
-  const remainingHours = hoursUntil(reservation.fecha, reservation.horaInicio);
-  if (remainingHours < RESERVATION_LIMITS.minCancellationHours) {
-    return {
-      valid: false,
-      valido: false,
-      error: `Solo puedes cancelar con al menos ${RESERVATION_LIMITS.minCancellationHours} horas de anticipación`,
-    };
-  }
+  // No time restriction - always allow cancellation
   return { valid: true, valido: true };
 };
 

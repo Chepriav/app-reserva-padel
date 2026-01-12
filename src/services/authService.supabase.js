@@ -79,6 +79,86 @@ const mapUserToSnakeCase = (data) => {
   return mapped;
 };
 
+const cleanupUserRelations = async (userId, { removeAdminContent = true } = {}) => {
+  const { data: reservasData, error: reservasFetchError } = await supabase
+    .from('reservas')
+    .select('id')
+    .eq('usuario_id', userId);
+
+  if (reservasFetchError) {
+    console.error('Error fetching reservations:', reservasFetchError.message);
+  }
+
+  const reservaIds = (reservasData || []).map((reserva) => reserva.id).filter(Boolean);
+
+  if (reservaIds.length > 0) {
+    const { error: partidasReservaError } = await supabase
+      .from('partidas')
+      .delete()
+      .in('reserva_id', reservaIds);
+
+    if (partidasReservaError) {
+      console.error('Error deleting matches for reservations:', partidasReservaError.message);
+    }
+  }
+
+  const { error: partidasError } = await supabase
+    .from('partidas')
+    .delete()
+    .eq('creador_id', userId);
+
+  if (partidasError) {
+    console.error('Error deleting matches:', partidasError.message);
+  }
+
+  const { error: jugadoresError } = await supabase
+    .from('partidas_jugadores')
+    .delete()
+    .eq('usuario_id', userId);
+
+  if (jugadoresError) {
+    console.error('Error deleting match participations:', jugadoresError.message);
+  }
+
+  const { error: reservasError } = await supabase
+    .from('reservas')
+    .delete()
+    .eq('usuario_id', userId);
+
+  if (reservasError) {
+    console.error('Error deleting reservations:', reservasError.message);
+  }
+
+  const { error: bloqueosError } = await supabase
+    .from('bloqueos_horarios')
+    .update({ creado_por: null })
+    .eq('creado_por', userId);
+
+  if (bloqueosError) {
+    console.error('Error clearing blockout creator:', bloqueosError.message);
+  }
+
+  if (removeAdminContent) {
+    const { error: anunciosAdminError } = await supabase
+      .from('anuncios_admin')
+      .delete()
+      .eq('creador_id', userId);
+
+    if (anunciosAdminError) {
+      console.error('Error deleting admin announcements:', anunciosAdminError.message);
+    }
+  }
+
+  const { error: anunciosError } = await supabase
+    .from('anuncios_destinatarios')
+    .delete()
+    .eq('usuario_id', userId);
+
+  if (anunciosError) {
+    console.error('Error deleting bulletin read status:', anunciosError.message);
+  }
+};
+
 /**
  * Authentication service with Supabase
  */
@@ -344,44 +424,51 @@ export const authService = {
   },
 
   /**
-   * Deletes a user (admin/manager only) - only from users table
+   * Deletes a user (admin/manager only)
+   * Cascades deletion across all related tables
+   * NOTE: Does not delete from auth.users - user can't login because users table entry is gone
    */
   async deleteUser(userId) {
     try {
-      // First delete from users table
-      const { error } = await supabase
+      await cleanupUserRelations(userId, { removeAdminContent: true });
+
+      // Delete from users table
+      // Note: The following have CASCADE delete on users.id:
+      // - notificaciones_usuario (CASCADE)
+      // - push_tokens (CASCADE)
+      // - web_push_subscriptions (CASCADE)
+      const { error: userError } = await supabase
         .from('users')
         .delete()
         .eq('id', userId);
 
-      if (error) {
+      if (userError) {
+        console.error('Error deleting user:', userError.message);
         return { success: false, error: 'Error al eliminar usuario' };
       }
 
+      // Note: We do NOT delete from auth.users here
+      // The user entry in auth.users remains but they can't login because
+      // the users table entry (required for the app) is deleted
+      // This is safer and doesn't require Service Role Key
+
       return { success: true };
     } catch (error) {
+      console.error('Exception deleting user:', error);
       return { success: false, error: 'Error al eliminar usuario' };
     }
   },
 
   /**
    * Deletes the current user's account (self-deletion)
-   * Deletes reservations and users table entry. The on_user_deleted
+   * Deletes related records and users table entry. The on_user_deleted
    * trigger automatically removes from auth.users.
    */
   async deleteOwnAccount(userId) {
     try {
-      // 1. Delete user's reservations
-      const { error: reservasError } = await supabase
-        .from('reservas')
-        .delete()
-        .eq('usuario_id', userId);
+      await cleanupUserRelations(userId, { removeAdminContent: true });
 
-      if (reservasError) {
-        console.log('Error eliminando reservas:', reservasError.message);
-      }
-
-      // 2. Delete from users table
+      // Delete from users table
       // The on_user_deleted trigger automatically removes from auth.users
       const { error: userError } = await supabase
         .from('users')

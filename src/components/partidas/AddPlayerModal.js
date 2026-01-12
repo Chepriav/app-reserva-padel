@@ -20,34 +20,27 @@ export default function AddPlayerModal({
   visible,
   modalState,
   setModalState,
-  // Support both English and Spanish prop names
   users,
-  usuarios = users,
   loadingUsers,
-  loadingUsuarios = loadingUsers,
   currentPlayers,
-  jugadoresActuales = currentPlayers,
   onAddCommunity,
-  onAddUrbanizacion = onAddCommunity,
   onAddExternal,
-  onAddExterno = onAddExternal,
   onClose,
-  onCerrar = onClose,
 }) {
-  const { tipo, busqueda, nombreExterno, nivelExterno } = modalState || {};
+  const { type, search, externalName, externalLevel } = modalState || {};
 
   const updateState = (updates) => {
     setModalState(prev => ({ ...prev, ...updates }));
   };
 
-  const filteredUsers = getFilteredUsers(usuarios, busqueda, jugadoresActuales);
+  const filteredUsers = getFilteredUsers(users, search, currentPlayers);
 
   return (
     <Modal
       visible={visible}
       transparent
       animationType="fade"
-      onRequestClose={onCerrar}
+      onRequestClose={onClose}
     >
       <View style={styles.overlay}>
         <View style={styles.content}>
@@ -55,30 +48,30 @@ export default function AddPlayerModal({
 
           {/* Type selector */}
           <PlayerTypeSelector
-            type={tipo}
-            onChange={(newType) => updateState({ tipo: newType })}
+            type={type}
+            onChange={(newType) => updateState({ type: newType })}
           />
 
           {/* Content based on type */}
-          {tipo === 'urbanizacion' ? (
+          {type === 'urbanizacion' ? (
             <SearchUser
-              search={busqueda}
-              onSearchChange={(text) => updateState({ busqueda: text })}
+              search={search}
+              onSearchChange={(text) => updateState({ search: text })}
               users={filteredUsers}
-              loading={loadingUsuarios}
-              onSelect={onAddUrbanizacion}
+              loading={loadingUsers}
+              onSelect={onAddCommunity}
             />
           ) : (
             <ExternalPlayer
-              name={nombreExterno}
-              level={nivelExterno}
-              onNameChange={(text) => updateState({ nombreExterno: text })}
-              onLevelChange={(level) => updateState({ nivelExterno: level })}
-              onAdd={onAddExterno}
+              name={externalName}
+              level={externalLevel}
+              onNameChange={(text) => updateState({ externalName: text })}
+              onLevelChange={(level) => updateState({ externalLevel: level })}
+              onAdd={onAddExternal}
             />
           )}
 
-          <TouchableOpacity style={styles.closeButton} onPress={onCerrar}>
+          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <Text style={styles.closeButtonText}>Cerrar</Text>
           </TouchableOpacity>
         </View>
@@ -107,7 +100,7 @@ function getFilteredUsers(users, search, currentPlayers) {
   // Mark already added
   return filtered.slice(0, 20).map(u => ({
     ...u,
-    alreadyAdded: players.some(j => j.tipo === 'urbanizacion' && j.usuario?.id === u.id),
+    alreadyAdded: players.some(p => p.tipo === 'urbanizacion' && p.usuario?.id === u.id),
   }));
 }
 

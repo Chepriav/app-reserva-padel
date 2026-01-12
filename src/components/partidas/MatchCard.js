@@ -10,37 +10,26 @@ import PendingRequests from './PendingRequests';
  * Card displaying match or class information
  */
 export default function MatchCard({
-  // Support both English and Spanish prop names
   match,
-  partida = match,
   currentUserId,
-  usuarioActualId = currentUserId,
   onCancel,
-  onCancelar = onCancel,
   onEdit,
-  onEditar = onEdit,
   onRequestJoin,
-  onSolicitarUnirse = onRequestJoin,
   onCancelRequest,
-  onCancelarSolicitud = onCancelRequest,
   onLeave,
-  onDesapuntarse = onLeave,
   onAcceptRequest,
-  onAceptarSolicitud = onAcceptRequest,
   onRejectRequest,
-  onRechazarSolicitud = onRejectRequest,
   onCloseClass,
-  onCerrarClase = onCloseClass,
   showCreatorActions = true,
 }) {
-  const confirmedPlayers = partida?.jugadores?.filter(j => j.estado === 'confirmado') || [];
-  const pendingPlayers = partida?.jugadores?.filter(j => j.estado === 'pendiente') || [];
+  const confirmedPlayers = match?.jugadores?.filter(p => p.estado === 'confirmado') || [];
+  const pendingPlayers = match?.jugadores?.filter(p => p.estado === 'pendiente') || [];
   const playersCount = 1 + confirmedPlayers.length;
-  const maxParticipants = partida?.maxParticipantes || 4;
-  const isComplete = partida?.estado === 'completa' || playersCount >= maxParticipants;
-  const isClass = partida?.esClase || false;
+  const maxParticipants = match?.maxParticipantes || 4;
+  const isComplete = match?.estado === 'completa' || playersCount >= maxParticipants;
+  const isClass = match?.esClase || false;
 
-  const myRequest = partida?.jugadores?.find(j => j.usuarioId === usuarioActualId);
+  const myRequest = match?.jugadores?.find(p => p.usuarioId === currentUserId);
   const isConfirmed = myRequest?.estado === 'confirmado';
   const isPending = myRequest?.estado === 'pendiente';
 
@@ -59,58 +48,58 @@ export default function MatchCard({
       )}
 
       <Header
-        creatorName={partida?.creadorNombre}
-        creatorApartment={partida?.creadorVivienda}
+        creatorName={match?.creadorNombre}
+        creatorApartment={match?.creadorVivienda}
         playersCount={playersCount}
         maxParticipants={maxParticipants}
         isComplete={isComplete}
         isClass={isClass}
       />
 
-      <DateInfo match={partida} />
+      <DateInfo match={match} />
 
       {/* Class-specific info */}
-      {isClass && <ClassInfo match={partida} />}
+      {isClass && <ClassInfo match={match} />}
 
       {/* Preferred level (only for regular matches) */}
-      {!isClass && partida?.nivelPreferido && (
-        <PreferredLevel level={partida.nivelPreferido} />
+      {!isClass && match?.nivelPreferido && (
+        <PreferredLevel level={match.nivelPreferido} />
       )}
 
-      {partida?.mensaje?.trim() && (
-        <Message text={partida.mensaje} />
+      {match?.mensaje?.trim() && (
+        <Message text={match.mensaje} />
       )}
 
       <ParticipantsList
-        creator={{ nombre: partida?.creadorNombre, vivienda: partida?.creadorVivienda, foto: partida?.creadorFoto, nivel: partida?.creadorNivel }}
+        creator={{ nombre: match?.creadorNombre, vivienda: match?.creadorVivienda, foto: match?.creadorFoto, nivel: match?.creadorNivel }}
         players={confirmedPlayers}
         isClass={isClass}
       />
 
-      {partida?.esCreador && pendingPlayers.length > 0 && (
+      {match?.esCreador && pendingPlayers.length > 0 && (
         <PendingRequests
           requests={pendingPlayers}
-          onAccept={(userId) => onAceptarSolicitud(userId, partida)}
-          onReject={(userId) => onRechazarSolicitud(userId, partida)}
+          onAccept={(userId) => onAcceptRequest(userId, match)}
+          onReject={(userId) => onRejectRequest(userId, match)}
           isClass={isClass}
         />
       )}
 
       <Actions
-        match={partida}
-        isCreator={partida?.esCreador}
+        match={match}
+        isCreator={match?.esCreador}
         myRequest={myRequest}
         isConfirmed={isConfirmed}
         isPending={isPending}
         isComplete={isComplete}
         isClass={isClass}
         showCreatorActions={showCreatorActions}
-        onCancel={() => onCancelar(partida)}
-        onEdit={() => onEditar?.(partida)}
-        onRequestJoin={() => onSolicitarUnirse(partida)}
-        onCancelRequest={() => onCancelarSolicitud(partida)}
-        onLeave={() => onDesapuntarse(partida)}
-        onCloseClass={() => onCerrarClase?.(partida)}
+        onCancel={() => onCancel(match)}
+        onEdit={() => onEdit?.(match)}
+        onRequestJoin={() => onRequestJoin(match)}
+        onCancelRequest={() => onCancelRequest(match)}
+        onLeave={() => onLeave(match)}
+        onCloseClass={() => onCloseClass?.(match)}
       />
     </View>
   );

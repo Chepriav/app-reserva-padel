@@ -52,14 +52,15 @@ src/
 | Horario | 08:00 - 22:00 |
 | Bloques | 30 min |
 | Máx por reserva | 3 bloques (1.5h) |
-| Máx reservas/vivienda | 2 |
+| Máx reservas/vivienda | 1 |
 | Anticipación máxima | 7 días |
+| Cancelación | Sin límite de tiempo |
 | Protección desplazamiento | 24h |
 
 ## Prioridades
 
 - **Primera reserva** → Garantizada (G) - No desplazable
-- **Segunda reserva** → Provisional (P) - Desplazable por otra vivienda
+- _Segunda reserva (deshabilitada)_ → Sistema soporta 2 reservas pero límite actual es 1
 
 Ver `docs/features/reservas.md` para reglas de conversión.
 

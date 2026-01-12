@@ -10,10 +10,10 @@ export const SLOT_DURATION = 30;
 
 // Reservation limits
 export const RESERVATION_LIMITS = {
-  maxActiveReservations: 2, // Per apartment
+  maxActiveReservations: 1, // Per apartment (reduced from 2)
   minAdvanceHours: 0,
   maxAdvanceDays: 7,
-  minCancellationHours: 1.5, // 1 hour and 30 minutes
+  minCancellationHours: 0, // No time limit - can cancel anytime
 };
 
 // Priority labels for UI (Spanish - user-facing)

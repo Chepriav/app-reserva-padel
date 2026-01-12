@@ -76,15 +76,26 @@ export function ScheduleConfigSection({ userId }) {
       pausaDiasSemana: pausaEnabled ? config.pausaDiasSemana : null,
     };
 
+    console.log('[ScheduleConfig] Guardando configuración:', configToSave);
     setSaving(true);
-    const result = await scheduleConfigService.updateConfig(userId, configToSave);
-    setSaving(false);
 
-    if (result.success) {
-      Alert.alert('Éxito', 'Configuración guardada correctamente');
-      loadConfig(); // Recargar para ver cambios
-    } else {
-      Alert.alert('Error', result.error || 'Error al guardar configuración');
+    try {
+      const result = await scheduleConfigService.updateConfig(userId, configToSave);
+      console.log('[ScheduleConfig] Resultado:', result);
+
+      setSaving(false);
+
+      if (result.success) {
+        Alert.alert('Éxito', 'Configuración guardada correctamente');
+        await loadConfig(); // Recargar para ver cambios
+      } else {
+        console.error('[ScheduleConfig] Error al guardar:', result.error);
+        Alert.alert('Error', result.error || 'Error al guardar configuración');
+      }
+    } catch (error) {
+      console.error('[ScheduleConfig] Excepción al guardar:', error);
+      setSaving(false);
+      Alert.alert('Error', 'Error inesperado al guardar: ' + error.message);
     }
   };
 

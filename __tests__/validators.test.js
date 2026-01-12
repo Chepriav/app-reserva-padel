@@ -65,20 +65,19 @@ describe('puedeReservar', () => {
     expect(result.error).toContain('pasados');
   });
 
-  test('rechaza si ya tiene 2 reservas activas', () => {
+  test('rechaza si ya tiene 1 reserva activa', () => {
     const reservasActuales = [
-      { id: '1', usuarioId: 'user1', estado: 'confirmada', fecha: getFutureDate(1), horaInicio: '10:00' },
-      { id: '2', usuarioId: 'user1', estado: 'confirmada', fecha: getFutureDate(2), horaInicio: '11:00' },
+      { id: '1', usuarioId: 'user1', estado: 'confirmada', vivienda: '1-3-B', fecha: getFutureDate(2), horaInicio: '10:00', horaFin: '11:00' },
     ];
     const nuevaReserva = {
       fecha: getFutureDate(3),
-      horaInicio: '12:00',
+      horaInicio: '14:00',
       pistaId: 'pista1',
     };
 
     const result = puedeReservar(usuario, nuevaReserva, reservasActuales);
     expect(result.valido).toBe(false);
-    expect(result.error).toContain('2 reservas');
+    expect(result.error).toContain('1 reserva');
   });
 
   test('rechaza si ya tiene reserva a la misma hora', () => {
@@ -109,11 +108,11 @@ describe('puedeCancelar', () => {
     expect(result.valido).toBe(true);
   });
 
-  test('rechaza cancelar con menos de 1.5 horas de anticipación', () => {
+  test('permite cancelación en cualquier momento (incluso inmediata)', () => {
     const ahora = new Date();
     const fecha = ahora.toISOString().split('T')[0];
     const horaActual = ahora.getHours();
-    // Reserva en 30 minutos (menos de 1.5 horas)
+    // Reserva en 30 minutos (antes era rechazada)
     const minutosReserva = ahora.getMinutes() + 30;
     const horaReserva = minutosReserva >= 60
       ? `${String(horaActual + 1).padStart(2, '0')}:${String(minutosReserva - 60).padStart(2, '0')}`
@@ -122,8 +121,8 @@ describe('puedeCancelar', () => {
     const reserva = { fecha, horaInicio: horaReserva };
 
     const result = puedeCancelar(reserva);
-    expect(result.valido).toBe(false);
-    expect(result.error).toContain('hora');
+    // Now should allow cancellation at any time
+    expect(result.valido).toBe(true);
   });
 });
 

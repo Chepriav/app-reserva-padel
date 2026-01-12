@@ -192,7 +192,7 @@ export function useMatchesActions(userId, onSuccess) {
 export function useCreateMatchModal(userId) {
   const [visible, setVisible] = useState(false);
   const [modalState, setModalState] = useState({
-    tipo: 'abierta',
+    type: 'abierta',
     selectedReservation: null,
     message: '',
     preferredLevel: null,
@@ -211,7 +211,7 @@ export function useCreateMatchModal(userId) {
   const open = async () => {
     setPlayers([]);
     setModalState({
-      tipo: 'abierta',
+      type: 'abierta',
       selectedReservation: null,
       message: '',
       preferredLevel: null,

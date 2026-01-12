@@ -29,36 +29,27 @@ export default function CreateMatchModal({
   visible,
   modalState,
   setModalState,
-  // Support both English and Spanish prop names
   players,
-  jugadores = players,
   user,
-  usuario = user,
   futureReservations,
-  reservasFuturas = futureReservations,
   onOpenPlayerModal,
-  onAbrirModalJugador = onOpenPlayerModal,
   onRemovePlayer,
-  onRemoveJugador = onRemovePlayer,
   onCreate,
-  onCrear = onCreate,
   onClose,
-  onCerrar = onClose,
   editMode = false,
-  modoEditar = editMode,
 }) {
   const {
-    tipo,
-    reservaSeleccionada,
-    mensaje,
-    nivelPreferido,
+    type,
+    selectedReservation,
+    message,
+    preferredLevel,
     saving,
-    esClase,
-    niveles,
-    minParticipantes,
-    maxParticipantes,
-    precioAlumno,
-    precioGrupo,
+    isClass,
+    levels,
+    minParticipants,
+    maxParticipants,
+    pricePerStudent,
+    pricePerGroup,
   } = modalState;
 
   const updateState = (updates) => {
@@ -66,10 +57,10 @@ export default function CreateMatchModal({
   };
 
   const getTitle = () => {
-    if (modoEditar) {
-      return esClase ? 'Editar clase' : 'Editar partida';
+    if (editMode) {
+      return isClass ? 'Editar clase' : 'Editar partida';
     }
-    return esClase ? 'Organizar clase' : 'Buscar jugadores';
+    return isClass ? 'Organizar clase' : 'Buscar jugadores';
   };
 
   return (
@@ -77,10 +68,10 @@ export default function CreateMatchModal({
       visible={visible}
       transparent
       animationType="fade"
-      onRequestClose={onCerrar}
+      onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={[styles.content, esClase && styles.contentClass]}>
+        <View style={[styles.content, isClass && styles.contentClass]}>
           <Text style={styles.title}>{getTitle()}</Text>
 
           <ScrollView
@@ -89,79 +80,79 @@ export default function CreateMatchModal({
             nestedScrollEnabled
           >
             <ModeSelector
-              isClass={esClase}
+              isClass={isClass}
               onChange={(newMode) => updateState({
-                esClase: newMode,
-                nivelPreferido: null,
-                niveles: [],
-                minParticipantes: 2,
-                maxParticipantes: newMode ? 8 : 4,
+                isClass: newMode,
+                preferredLevel: null,
+                levels: [],
+                minParticipants: 2,
+                maxParticipants: newMode ? 8 : 4,
               })}
             />
 
             <TypeSelector
-              type={tipo}
-              isClass={esClase}
+              type={type}
+              isClass={isClass}
               onChange={(newType) => updateState({
-                tipo: newType,
-                reservaSeleccionada: newType === 'abierta' ? null : reservaSeleccionada,
+                type: newType,
+                selectedReservation: newType === 'abierta' ? null : selectedReservation,
               })}
             />
 
-            {tipo === 'con_reserva' && (
+            {type === 'con_reserva' && (
               <ReservationSelector
-                reservations={reservasFuturas}
-                selected={reservaSeleccionada}
-                onSelect={(reservation) => updateState({ reservaSeleccionada: reservation })}
+                reservations={futureReservations}
+                selected={selectedReservation}
+                onSelect={(reservation) => updateState({ selectedReservation: reservation })}
               />
             )}
 
-            {esClase && (
+            {isClass && (
               <>
                 <ParticipantsSelector
-                  minParticipants={minParticipantes}
-                  maxParticipants={maxParticipantes}
-                  onChangeMin={(val) => updateState({ minParticipantes: val })}
-                  onChangeMax={(val) => updateState({ maxParticipantes: val })}
+                  minParticipants={minParticipants}
+                  maxParticipants={maxParticipants}
+                  onChangeMin={(val) => updateState({ minParticipants: val })}
+                  onChangeMax={(val) => updateState({ maxParticipants: val })}
                 />
                 <LevelsMultiSelector
-                  levels={niveles}
-                  onChange={(newLevels) => updateState({ niveles: newLevels })}
+                  levels={levels}
+                  onChange={(newLevels) => updateState({ levels: newLevels })}
                 />
                 <PriceInput
-                  pricePerStudent={precioAlumno}
-                  pricePerGroup={precioGrupo}
+                  pricePerStudent={pricePerStudent}
+                  pricePerGroup={pricePerGroup}
                   onChange={(prices) => updateState(prices)}
                 />
               </>
             )}
 
-            {!esClase && (
+            {!isClass && (
               <LevelSelector
-                level={nivelPreferido}
-                onChange={(level) => updateState({ nivelPreferido: level })}
+                level={preferredLevel}
+                onChange={(level) => updateState({ preferredLevel: level })}
               />
             )}
 
             <PlayersEditor
-              players={jugadores}
-              user={usuario}
-              onAddPlayer={onAbrirModalJugador}
-              onRemovePlayer={onRemoveJugador}
-              isClass={esClase}
-              maxParticipants={esClase ? maxParticipantes : 4}
+              players={players}
+              user={user}
+              onAddPlayer={onOpenPlayerModal}
+              onRemovePlayer={onRemovePlayer}
+              isClass={isClass}
+              maxParticipants={isClass ? maxParticipants : 4}
             />
 
             <Text style={styles.label}>Mensaje (opcional)</Text>
             <TextInput
               style={styles.messageInput}
-              placeholder={esClase
+              placeholder={isClass
                 ? 'Ej: Clase para mejorar el revés...'
                 : 'Ej: Buscamos pareja para partido amistoso...'
               }
               placeholderTextColor={colors.textSecondary}
-              value={mensaje}
-              onChangeText={(text) => updateState({ mensaje: text })}
+              value={message}
+              onChangeText={(text) => updateState({ message: text })}
               multiline
               maxLength={200}
             />
@@ -170,14 +161,14 @@ export default function CreateMatchModal({
           <View style={styles.buttons}>
             <TouchableOpacity
               style={styles.cancelButton}
-              onPress={onCerrar}
+              onPress={onClose}
               disabled={saving}
             >
               <Text style={styles.cancelButtonText}>Cerrar</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.createButton, saving && styles.buttonDisabled]}
-              onPress={onCrear}
+              onPress={onCreate}
               disabled={saving}
             >
               {saving ? (
