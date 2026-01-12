@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Schedule Config</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <h1>Test Schedule Config RPC</h1>
+  <div id="results"></div>
+
+  <script type="module">
+    // Reemplaza con tus credenciales de Supabase
+    const SUPABASE_URL = 'TU_URL_DE_SUPABASE';
+    const SUPABASE_ANON_KEY = 'TU_ANON_KEY';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const results = document.getElementById('results');
+
+    async function testConfig() {
+      results.innerHTML += '<h2>1. Testing get_schedule_config...</h2>';
+
+      try {
+        const { data: getData, error: getError } = await supabase.rpc('get_schedule_config');
+
+        if (getError) {
+          results.innerHTML += `<p style="color: red;">❌ Error: ${JSON.stringify(getError)}</p>`;
+        } else {
+          results.innerHTML += `<p style="color: green;">✅ Success!</p>`;
+          results.innerHTML += `<pre>${JSON.stringify(getData, null, 2)}</pre>`;
+        }
+      } catch (e) {
+        results.innerHTML += `<p style="color: red;">❌ Exception: ${e.message}</p>`;
+      }
+
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        results.innerHTML += '<p style="color: orange;">⚠️ No user logged in. Cannot test update.</p>';
+        return;
+      }
+
+      results.innerHTML += `<h2>2. Current user: ${user.id}</h2>`;
+
+      results.innerHTML += '<h2>3. Testing update_schedule_config...</h2>';
+
+      try {
+        const { data: updateData, error: updateError } = await supabase.rpc('update_schedule_config', {
+          p_user_id: user.id,
+          p_hora_apertura: '08:00',
+          p_hora_cierre: '22:00',
+          p_duracion_bloque: 30,
+          p_pausa_inicio: '14:00',
+          p_pausa_fin: '16:30',
+          p_motivo_pausa: 'Hora de comida - TEST',
+          p_pausa_dias_semana: null
+        });
+
+        if (updateError) {
+          results.innerHTML += `<p style="color: red;">❌ Error: ${JSON.stringify(updateError)}</p>`;
+        } else {
+          results.innerHTML += `<p style="color: green;">✅ Update Success!</p>`;
+          results.innerHTML += `<pre>${JSON.stringify(updateData, null, 2)}</pre>`;
+        }
+      } catch (e) {
+        results.innerHTML += `<p style="color: red;">❌ Exception: ${e.message}</p>`;
+      }
+    }
+
+    testConfig();
+  </script>
+</body>
+</html>

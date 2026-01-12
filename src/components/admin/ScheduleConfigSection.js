@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  ScrollView,
   ActivityIndicator,
   Alert,
   Platform,
@@ -56,6 +55,10 @@ export function ScheduleConfigSection({ userId }) {
   };
 
   const handleSave = async () => {
+    console.log('[ScheduleConfig] handleSave ejecutado');
+    console.log('[ScheduleConfig] userId:', userId);
+    console.log('[ScheduleConfig] config actual:', config);
+
     // Validaciones
     if (!config.horaApertura || !config.horaCierre) {
       Alert.alert('Error', 'Debes especificar hora de apertura y cierre');
@@ -120,7 +123,7 @@ export function ScheduleConfigSection({ userId }) {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <Text style={styles.sectionTitle}>Horario de Apertura y Cierre</Text>
       <Text style={styles.sectionDescription}>
         Configura los horarios en que las pistas están disponibles para reserva
@@ -274,7 +277,7 @@ export function ScheduleConfigSection({ userId }) {
           • Las reservas existentes no se verán afectadas
         </Text>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
