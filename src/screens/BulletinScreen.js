@@ -13,17 +13,22 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
-import { useNotifications, useAnnouncements, refreshBulletinBadge } from '../hooks';
+import { useNotifications, useAnnouncements, useAnnouncementsAdmin, refreshBulletinBadge } from '../hooks';
 import {
   NotificationCard,
   AnnouncementCard,
   AnnouncementModal,
   EmptyState,
 } from '../components/tablon';
+import { CreateAnnouncementModal } from '../components/admin';
 
 export default function TablonScreen() {
   const { user } = useAuth();
   const [tabActivo, setTabActivo] = useState('anuncios');
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [usuarios, setUsuarios] = useState([]);
+
+  const isAdmin = user?.es_admin === true;
 
   const {
     notifications,
@@ -37,6 +42,12 @@ export default function TablonScreen() {
     loadNotifications,
   } = useNotifications(user?.id, refreshBulletinBadge);
 
+  // Use admin hook if user is admin, regular hook otherwise
+  const adminAnnouncementsHook = useAnnouncementsAdmin(user?.id, refreshBulletinBadge);
+  const userAnnouncementsHook = useAnnouncements(user?.id, refreshBulletinBadge);
+
+  const announcementsHook = isAdmin ? adminAnnouncementsHook : userAnnouncementsHook;
+
   const {
     announcements,
     loading: loadingAnnouncements,
@@ -47,7 +58,11 @@ export default function TablonScreen() {
     closeAnnouncement,
     countUnread: countAnnouncementsUnread,
     loadAnnouncements,
-  } = useAnnouncements(user?.id, refreshBulletinBadge);
+    // Admin-specific functions
+    createAnnouncement,
+    deleteAnnouncement,
+    loadUsers,
+  } = announcementsHook;
 
   useFocusEffect(
     useCallback(() => {
@@ -58,6 +73,54 @@ export default function TablonScreen() {
       }
     }, [tabActivo, loadNotifications, loadAnnouncements])
   );
+
+  // Load users when admin opens create modal
+  const handleOpenCreateModal = async () => {
+    if (isAdmin && loadUsers) {
+      const usersResult = await loadUsers();
+      if (usersResult.success) {
+        setUsuarios(usersResult.users || []);
+      }
+    }
+    setCreateModalVisible(true);
+  };
+
+  const handleCreateAnnouncement = async (announcementData) => {
+    if (!isAdmin || !createAnnouncement) return;
+
+    const result = await createAnnouncement(announcementData);
+    if (result.success) {
+      setCreateModalVisible(false);
+      Alert.alert('Éxito', 'Mensaje creado correctamente');
+      loadAnnouncements();
+    } else {
+      Alert.alert('Error', result.error || 'No se pudo crear el mensaje');
+    }
+  };
+
+  const handleDeleteAnnouncement = async (announcementId) => {
+    if (!isAdmin || !deleteAnnouncement) return;
+
+    Alert.alert(
+      'Confirmar',
+      '¿Estás seguro de eliminar este mensaje?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            const result = await deleteAnnouncement(announcementId);
+            if (result.success) {
+              Alert.alert('Éxito', 'Mensaje eliminado');
+            } else {
+              Alert.alert('Error', result.error || 'No se pudo eliminar el mensaje');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const handleDeleteNotification = async (id) => {
     const result = await deleteNotification(id);
@@ -99,7 +162,12 @@ export default function TablonScreen() {
   );
 
   const renderAnuncio = ({ item }) => (
-    <AnnouncementCard anuncio={item} onPress={viewAnnouncement} />
+    <AnnouncementCard
+      anuncio={item}
+      onPress={viewAnnouncement}
+      isAdmin={isAdmin}
+      onDelete={handleDeleteAnnouncement}
+    />
   );
 
   return (
@@ -170,7 +238,10 @@ export default function TablonScreen() {
             data={announcements}
             renderItem={renderAnuncio}
             keyExtractor={item => item.id}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={[
+              styles.listContent,
+              isAdmin && { paddingBottom: 100 }
+            ]}
             refreshControl={
               <RefreshControl
                 refreshing={refreshingAnnouncements}
@@ -189,7 +260,27 @@ export default function TablonScreen() {
           anuncio={selectedAnnouncement}
           visible={!!selectedAnnouncement}
           onClose={closeAnnouncement}
+          isAdmin={isAdmin}
+          onDelete={handleDeleteAnnouncement}
         />
+
+        {isAdmin && (
+          <>
+            <TouchableOpacity
+              style={styles.floatingButton}
+              onPress={handleOpenCreateModal}
+            >
+              <Text style={styles.floatingButtonText}>+ Nuevo mensaje</Text>
+            </TouchableOpacity>
+
+            <CreateAnnouncementModal
+              visible={createModalVisible}
+              onClose={() => setCreateModalVisible(false)}
+              onCrear={handleCreateAnnouncement}
+              usuarios={usuarios}
+            />
+          </>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -273,5 +364,25 @@ const styles = StyleSheet.create({
   listContent: {
     flexGrow: 1,
     paddingVertical: 10,
+  },
+  floatingButton: {
+    position: 'absolute',
+    bottom: Platform.OS === 'web' ? 20 : 30,
+    left: 20,
+    right: 20,
+    backgroundColor: colors.primary,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  floatingButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

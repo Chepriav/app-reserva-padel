@@ -10,6 +10,5 @@ export { ScheduleConfigSection } from './ScheduleConfigSection';
 export {
   SolicitudesContent,
   UsuariosContent,
-  MensajesContent,
   LoadingContent,
 } from './AdminContent';

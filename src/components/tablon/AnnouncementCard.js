@@ -47,8 +47,17 @@ function formatearFecha(fechaStr) {
   return fecha.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
 }
 
-export function AnnouncementCard({ anuncio, onPress }) {
+export function AnnouncementCard({ anuncio, onPress, isAdmin, onDelete }) {
   const config = TIPO_CONFIG[anuncio.tipo] || TIPO_CONFIG.info;
+
+  const handleDelete = (e) => {
+    if (e && e.stopPropagation) {
+      e.stopPropagation(); // Prevent card press
+    }
+    if (onDelete) {
+      onDelete(anuncio.id);
+    }
+  };
 
   return (
     <TouchableOpacity
@@ -70,6 +79,16 @@ export function AnnouncementCard({ anuncio, onPress }) {
 
         {!anuncio.leido && <View style={styles.badgeNoLeido} />}
       </View>
+
+      {isAdmin && (
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={handleDelete}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="trash-outline" size={18} color={colors.error} />
+        </TouchableOpacity>
+      )}
 
       <Text style={[styles.titulo, anuncio.leido && styles.tituloLeido]} numberOfLines={1}>
         {anuncio.titulo}
@@ -169,5 +188,14 @@ const styles = StyleSheet.create({
   fecha: {
     fontSize: 12,
     color: colors.disabled,
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    padding: 6,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 15,
+    zIndex: 10,
   },
 });

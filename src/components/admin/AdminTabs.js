@@ -53,20 +53,6 @@ export function AdminTabs({
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.tab, tabActiva === 'mensajes' && styles.tabActive]}
-        onPress={() => onTabChange('mensajes')}
-      >
-        <Text
-          style={[
-            styles.tabText,
-            tabActiva === 'mensajes' && styles.tabTextActive,
-          ]}
-        >
-          Mensajes
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
         style={[styles.tab, tabActiva === 'configuracion' && styles.tabActive]}
         onPress={() => onTabChange('configuracion')}
       >
@@ -99,6 +85,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    paddingHorizontal: 16,
   },
   tab: {
     flex: 1,

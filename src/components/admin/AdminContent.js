@@ -11,7 +11,6 @@ import { colors } from '../../constants/colors';
 import { SolicitudCard } from './SolicitudCard';
 import { UsuarioCard } from './UsuarioCard';
 import { ApartmentChangeCard } from './ApartmentChangeCard';
-import { AnnouncementAdminCard } from './AnnouncementAdminCard';
 
 /**
  * Estado vacío genérico
@@ -129,50 +128,6 @@ export function UsuariosContent({
 }
 
 /**
- * Contenido de la tab Mensajes
- */
-export function MensajesContent({
-  anuncios,
-  loadingAnuncios,
-  onNuevoMensaje,
-  onEliminar,
-}) {
-  return (
-    <View style={styles.mensajesContainer}>
-      <TouchableOpacity
-        style={styles.nuevoMensajeButton}
-        onPress={onNuevoMensaje}
-      >
-        <Ionicons name="add-circle-outline" size={22} color="#fff" />
-        <Text style={styles.nuevoMensajeText}>Nuevo mensaje</Text>
-      </TouchableOpacity>
-
-      {loadingAnuncios ? (
-        <ActivityIndicator
-          size="large"
-          color={colors.primary}
-          style={{ marginTop: 30 }}
-        />
-      ) : anuncios.length > 0 ? (
-        anuncios.map((anuncio) => (
-          <AnnouncementAdminCard
-            key={anuncio.id}
-            anuncio={anuncio}
-            onEliminar={onEliminar}
-          />
-        ))
-      ) : (
-        <EmptyState
-          icon="megaphone-outline"
-          text="No hay mensajes"
-          subtext="Crea tu primer mensaje para los usuarios"
-        />
-      )}
-    </View>
-  );
-}
-
-/**
  * Loading spinner
  */
 export function LoadingContent() {
@@ -221,23 +176,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: colors.primary,
-  },
-  mensajesContainer: {
-    flex: 1,
-  },
-  nuevoMensajeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: 10,
-    paddingVertical: 14,
-    marginBottom: 16,
-    gap: 8,
-  },
-  nuevoMensajeText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });

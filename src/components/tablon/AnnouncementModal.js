@@ -46,10 +46,17 @@ function formatearFechaCompleta(fechaStr) {
   });
 }
 
-export function AnnouncementModal({ anuncio, visible, onClose }) {
+export function AnnouncementModal({ anuncio, visible, onClose, isAdmin, onDelete }) {
   if (!anuncio) return null;
 
   const config = TIPO_CONFIG[anuncio.tipo] || TIPO_CONFIG.info;
+
+  const handleDelete = () => {
+    onClose(); // Close modal first
+    if (onDelete) {
+      onDelete(anuncio.id);
+    }
+  };
 
   return (
     <Modal
@@ -92,8 +99,21 @@ export function AnnouncementModal({ anuncio, visible, onClose }) {
           </ScrollView>
 
           <View style={styles.footer}>
+            {isAdmin && (
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={handleDelete}
+              >
+                <Text style={styles.deleteButtonText}>Eliminar</Text>
+              </TouchableOpacity>
+            )}
+
             <TouchableOpacity
-              style={[styles.button, { backgroundColor: config.color }]}
+              style={[
+                styles.button,
+                { backgroundColor: config.color },
+                isAdmin && { flex: 1 }
+              ]}
               onPress={onClose}
             >
               <Text style={styles.buttonText}>Entendido</Text>
@@ -192,6 +212,8 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   footer: {
+    flexDirection: 'row',
+    gap: 8,
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: colors.border,
@@ -202,6 +224,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  deleteButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    backgroundColor: colors.error,
+  },
+  deleteButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import {
-  useAnnouncementsAdmin,
   useAdminData,
   useAdminActions,
   useEditApartmentModal,
@@ -11,13 +10,11 @@ import {
 import { colors } from '../constants/colors';
 import { CustomAlert } from '../components/CustomAlert';
 import {
-  CreateAnnouncementModal,
   EditApartmentModal,
   AdminHeader,
   AdminTabs,
   SolicitudesContent,
   UsuariosContent,
-  MensajesContent,
   LoadingContent,
   ScheduleConfigSection,
 } from '../components/admin';
@@ -25,7 +22,6 @@ import {
 export default function AdminScreen() {
   const { user } = useAuth();
   const [tabActiva, setTabActiva] = useState('solicitudes');
-  const [crearAnuncioVisible, setCrearAnuncioVisible] = useState(false);
 
   // Hook de alertas
   const { alertConfig, mostrarAlerta, mostrarConfirmacion, cerrarAlerta } = useAlert();
@@ -44,21 +40,6 @@ export default function AdminScreen() {
     updateUser,
     removeUser,
   } = useAdminData();
-
-  // Hook de anuncios admin
-  const {
-    announcements,
-    users: usersForAnnouncements,
-    loading: loadingAnnouncements,
-    creating: creatingAnnouncement,
-    loadAnnouncements,
-    loadUsers,
-    createAnnouncement,
-    deleteAnnouncement,
-  } = useAnnouncementsAdmin(user?.id, user?.nombre, () => {
-    setCrearAnuncioVisible(false);
-    mostrarAlerta('Mensaje enviado', 'El mensaje ha sido enviado correctamente');
-  });
 
   // Hook de acciones admin
   const {
@@ -84,8 +65,8 @@ export default function AdminScreen() {
 
   // Cargar datos cuando cambia la tab
   useEffect(() => {
-    loadTabData(tabActiva, loadAnnouncements, loadUsers);
-  }, [tabActiva, loadTabData, loadAnnouncements, loadUsers]);
+    loadTabData(tabActiva);
+  }, [tabActiva, loadTabData]);
 
   // Handler para guardar vivienda
   const onSaveVivienda = useCallback(async () => {
@@ -98,42 +79,6 @@ export default function AdminScreen() {
       editApartmentModal.setSaving(false);
     }
   }, [editApartmentModal, handleSaveApartment]);
-
-  // Handler para nuevo mensaje
-  const onNuevoMensaje = useCallback(() => {
-    loadUsers();
-    setCrearAnuncioVisible(true);
-  }, [loadUsers]);
-
-  // Handler para crear anuncio
-  const onCrearAnuncio = useCallback(async (data) => {
-    const result = await createAnnouncement(
-      data.titulo,
-      data.mensaje,
-      data.tipo,
-      data.destinatarios,
-      data.usuariosIds
-    );
-    if (!result.success) {
-      mostrarAlerta('Error', result.error || 'No se pudo enviar el mensaje');
-    }
-  }, [createAnnouncement, mostrarAlerta]);
-
-  // Handler para eliminar anuncio con confirmación
-  const handleDeleteAnnouncement = useCallback((announcementId) => {
-    mostrarConfirmacion(
-      'Eliminar mensaje',
-      '¿Estás seguro de que quieres eliminar este mensaje?',
-      async () => {
-        const result = await deleteAnnouncement(announcementId);
-        if (result.success) {
-          mostrarAlerta('Mensaje eliminado', 'El mensaje ha sido eliminado correctamente');
-        } else {
-          mostrarAlerta('Error', result.error || 'No se pudo eliminar el mensaje');
-        }
-      }
-    );
-  }, [deleteAnnouncement, mostrarConfirmacion, mostrarAlerta]);
 
   // Renderizar contenido según tab activa
   const renderContent = () => {
@@ -162,16 +107,6 @@ export default function AdminScreen() {
             onToggleAdmin={handleToggleAdmin}
             onEditVivienda={editApartmentModal.open}
             onDelete={handleDeleteUser}
-          />
-        );
-
-      case 'mensajes':
-        return (
-          <MensajesContent
-            anuncios={announcements}
-            loadingAnuncios={loadingAnnouncements}
-            onNuevoMensaje={onNuevoMensaje}
-            onEliminar={handleDeleteAnnouncement}
           />
         );
 
@@ -216,16 +151,6 @@ export default function AdminScreen() {
         onChangePuerta={editApartmentModal.setDoor}
         onSave={onSaveVivienda}
         onClose={editApartmentModal.close}
-      />
-
-      {/* Modal crear anuncio */}
-      <CreateAnnouncementModal
-        visible={crearAnuncioVisible}
-        onClose={() => setCrearAnuncioVisible(false)}
-        onCrear={onCrearAnuncio}
-        usuarios={usersForAnnouncements}
-        loadingUsuarios={false}
-        creating={creatingAnnouncement}
       />
 
       {/* Alert */}
