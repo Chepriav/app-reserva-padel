@@ -11,14 +11,10 @@ export const scheduleConfigService = {
    */
   async getConfig() {
     try {
-      console.log('[ScheduleConfig] Obteniendo configuración...');
       const { data, error } = await supabase
         .rpc('get_schedule_config');
 
-      console.log('[ScheduleConfig] get_schedule_config response:', { data, error });
-
       if (error) {
-        console.error('[ScheduleConfig] Error fetching config:', error);
         return { success: false, error: 'Error al obtener configuración de horarios' };
       }
 
@@ -26,7 +22,6 @@ export const scheduleConfigService = {
       const config = data?.[0];
 
       if (!config) {
-        console.log('[ScheduleConfig] No config found, using defaults');
         // Return default config if none exists
         return {
           success: true,
@@ -41,8 +36,6 @@ export const scheduleConfigService = {
           },
         };
       }
-
-      console.log('[ScheduleConfig] Config encontrada:', config);
 
       return {
         success: true,
@@ -62,7 +55,6 @@ export const scheduleConfigService = {
         },
       };
     } catch (error) {
-      console.error('[ScheduleConfig] Exception:', error);
       return { success: false, error: 'Error al obtener configuración de horarios' };
     }
   },
@@ -75,17 +67,6 @@ export const scheduleConfigService = {
    */
   async updateConfig(userId, config) {
     try {
-      console.log('[ScheduleConfig] Llamando RPC con params:', {
-        p_user_id: userId,
-        p_hora_apertura: config.horaApertura || null,
-        p_hora_cierre: config.horaCierre || null,
-        p_duracion_bloque: config.duracionBloque || null,
-        p_pausa_inicio: config.pausaInicio || null,
-        p_pausa_fin: config.pausaFin || null,
-        p_motivo_pausa: config.motivoPausa || null,
-        p_pausa_dias_semana: config.pausaDiasSemana || null,
-      });
-
       const { data, error } = await supabase
         .rpc('update_schedule_config', {
           p_user_id: userId,
@@ -103,11 +84,7 @@ export const scheduleConfigService = {
           p_finde_hora_cierre: config.findeHoraCierre,
         });
 
-      console.log('[ScheduleConfig] RPC response data:', data);
-      console.log('[ScheduleConfig] RPC response error:', error);
-
       if (error) {
-        console.error('[ScheduleConfig] Supabase error:', error);
         return { success: false, error: error.message || 'Error al actualizar configuración' };
       }
 
@@ -126,7 +103,6 @@ export const scheduleConfigService = {
         data: data.config || data,
       };
     } catch (error) {
-      console.error('[ScheduleConfig] Exception:', error);
       return { success: false, error: error.message || 'Error al actualizar configuración' };
     }
   },

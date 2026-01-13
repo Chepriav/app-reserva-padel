@@ -65,10 +65,6 @@ export function ScheduleConfigSection({ userId }) {
   };
 
   const handleSave = async () => {
-    console.log('[ScheduleConfig] handleSave called');
-    console.log('[ScheduleConfig] userId:', userId);
-    console.log('[ScheduleConfig] current config:', config);
-
     // Validations
     if (config.usarHorariosDiferenciados) {
       if (!config.semanaHoraApertura || !config.semanaHoraCierre) {
@@ -100,24 +96,19 @@ export function ScheduleConfigSection({ userId }) {
       pausaDiasSemana: breakEnabled ? config.pausaDiasSemana : null,
     };
 
-    console.log('[ScheduleConfig] Saving config:', configToSave);
     setSaving(true);
 
     try {
       const result = await scheduleConfigService.updateConfig(userId, configToSave);
-      console.log('[ScheduleConfig] Result:', result);
-
       setSaving(false);
 
       if (result.success) {
         showAlert('Éxito', 'Configuración guardada correctamente');
         await loadConfig(); // Reload to see changes
       } else {
-        console.error('[ScheduleConfig] Save error:', result.error);
         showAlert('Error', result.error || 'Error al guardar configuración');
       }
     } catch (error) {
-      console.error('[ScheduleConfig] Save exception:', error);
       setSaving(false);
       showAlert('Error', 'Error inesperado al guardar: ' + error.message);
     }
@@ -420,32 +411,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
     fontWeight: '500',
-  },
-  diasContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 8,
-  },
-  diaButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  diaButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  diaButtonText: {
-    fontSize: 14,
-    color: colors.text,
-    fontWeight: '500',
-  },
-  diaButtonTextActive: {
-    color: '#fff',
   },
   helperText: {
     fontSize: 12,
