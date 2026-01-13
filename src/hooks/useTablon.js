@@ -148,11 +148,13 @@ export function useAnnouncements(userId, onCountChange) {
 /**
  * Hook for admin actions (announcement management)
  */
-export function useAnnouncementsAdmin(userId, userName, onSuccess) {
+export function useAnnouncementsAdmin(userId, onCountChange) {
   const [announcements, setAnnouncements] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
 
   const loadAnnouncements = useCallback(async () => {
     setLoading(true);
@@ -168,37 +170,67 @@ export function useAnnouncementsAdmin(userId, userName, onSuccess) {
     if (result.success) {
       setUsers(result.data);
     }
+    return result;
   }, []);
 
   useEffect(() => {
     loadAnnouncements();
   }, [loadAnnouncements]);
 
-  const createAnnouncement = async (title, message, type, recipients, userIds) => {
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadAnnouncements();
+    setRefreshing(false);
+  };
+
+  const viewAnnouncement = async (announcement) => {
+    setSelectedAnnouncement(announcement);
+    // Admin doesn't need to mark as read
+  };
+
+  const closeAnnouncement = () => {
+    setSelectedAnnouncement(null);
+  };
+
+  const countUnread = () => {
+    // Admin sees all announcements, not just unread
+    return 0;
+  };
+
+  const createAnnouncement = async (announcementData) => {
     setCreating(true);
 
     const result = await tablonService.crearAnuncio(
       userId,
-      userName,
-      title,
-      message,
-      type,
-      recipients,
-      userIds
+      announcementData.userName || 'Admin',
+      announcementData.title,
+      announcementData.message,
+      announcementData.type,
+      announcementData.recipients,
+      announcementData.userIds
     );
 
     if (result.success) {
       // Send push notification
       const { notificationService } = require('../services/notificationService');
 
-      if (recipients === 'todos') {
-        await notificationService.notifyNuevoAnuncio(title, message, result.data.id);
+      if (announcementData.recipients === 'todos') {
+        await notificationService.notifyNuevoAnuncio(
+          announcementData.title,
+          announcementData.message,
+          result.data.id
+        );
       } else {
-        await notificationService.notifyNuevoAnuncio(title, message, result.data.id, userIds);
+        await notificationService.notifyNuevoAnuncio(
+          announcementData.title,
+          announcementData.message,
+          result.data.id,
+          announcementData.userIds
+        );
       }
 
       await loadAnnouncements();
-      onSuccess?.();
+      onCountChange?.();
     }
 
     setCreating(false);
@@ -209,7 +241,7 @@ export function useAnnouncementsAdmin(userId, userName, onSuccess) {
     const result = await tablonService.eliminarAnuncio(announcementId);
     if (result.success) {
       setAnnouncements(prev => prev.filter(a => a.id !== announcementId));
-      onSuccess?.();
+      onCountChange?.();
     }
     return result;
   };
@@ -218,9 +250,15 @@ export function useAnnouncementsAdmin(userId, userName, onSuccess) {
     announcements,
     users,
     loading,
+    refreshing,
     creating,
+    selectedAnnouncement,
     loadAnnouncements,
     loadUsers,
+    onRefresh,
+    viewAnnouncement,
+    closeAnnouncement,
+    countUnread,
     createAnnouncement,
     deleteAnnouncement,
   };

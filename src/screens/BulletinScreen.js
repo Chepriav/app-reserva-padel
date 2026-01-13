@@ -7,13 +7,13 @@ import {
   FlatList,
   RefreshControl,
   Platform,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications, useAnnouncements, useAnnouncementsAdmin, refreshBulletinBadge } from '../hooks';
+import { useAlert } from '../hooks/useAlert';
 import {
   NotificationCard,
   AnnouncementCard,
@@ -21,14 +21,16 @@ import {
   EmptyState,
 } from '../components/tablon';
 import { CreateAnnouncementModal } from '../components/admin';
+import { CustomAlert } from '../components/CustomAlert';
 
 export default function TablonScreen() {
   const { user } = useAuth();
+  const { alertConfig, showAlert, showConfirmation, closeAlert } = useAlert();
   const [tabActivo, setTabActivo] = useState('anuncios');
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [usuarios, setUsuarios] = useState([]);
 
-  const isAdmin = user?.es_admin === true;
+  const isAdmin = user?.esAdmin === true;
 
   const {
     notifications,
@@ -79,7 +81,7 @@ export default function TablonScreen() {
     if (isAdmin && loadUsers) {
       const usersResult = await loadUsers();
       if (usersResult.success) {
-        setUsuarios(usersResult.users || []);
+        setUsuarios(usersResult.data || []);
       }
     }
     setCreateModalVisible(true);
@@ -91,63 +93,53 @@ export default function TablonScreen() {
     const result = await createAnnouncement(announcementData);
     if (result.success) {
       setCreateModalVisible(false);
-      Alert.alert('Éxito', 'Mensaje creado correctamente');
+      showAlert('Éxito', 'Mensaje creado correctamente');
       loadAnnouncements();
     } else {
-      Alert.alert('Error', result.error || 'No se pudo crear el mensaje');
+      showAlert('Error', result.error || 'No se pudo crear el mensaje');
     }
   };
 
   const handleDeleteAnnouncement = async (announcementId) => {
     if (!isAdmin || !deleteAnnouncement) return;
 
-    Alert.alert(
-      'Confirmar',
-      '¿Estás seguro de eliminar este mensaje?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            const result = await deleteAnnouncement(announcementId);
-            if (result.success) {
-              Alert.alert('Éxito', 'Mensaje eliminado');
-            } else {
-              Alert.alert('Error', result.error || 'No se pudo eliminar el mensaje');
-            }
-          },
-        },
-      ]
-    );
+    showConfirmation({
+      title: 'Confirmar',
+      message: '¿Estás seguro de eliminar este mensaje?',
+      destructive: true,
+      confirmText: 'Eliminar',
+      onConfirm: async () => {
+        const result = await deleteAnnouncement(announcementId);
+        if (result.success) {
+          showAlert('Éxito', 'Mensaje eliminado correctamente');
+        } else {
+          showAlert('Error', result.error || 'No se pudo eliminar el mensaje');
+        }
+      },
+    });
   };
 
   const handleDeleteNotification = async (id) => {
     const result = await deleteNotification(id);
     if (!result.success) {
-      Alert.alert('Error', 'No se pudo eliminar la notificación');
+      showAlert('Error', 'No se pudo eliminar la notificación');
     }
   };
 
   const handleMarkAllAsRead = async () => {
     if (countNotifUnread() === 0) return;
 
-    Alert.alert(
-      'Marcar todas como leídas',
-      '¿Marcar todas las notificaciones como leídas?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Marcar',
-          onPress: async () => {
-            const result = await markAllAsRead();
-            if (!result.success) {
-              Alert.alert('Error', 'No se pudieron marcar las notificaciones');
-            }
-          },
-        },
-      ]
-    );
+    showConfirmation({
+      title: 'Marcar todas como leídas',
+      message: '¿Marcar todas las notificaciones como leídas?',
+      confirmText: 'Marcar',
+      onConfirm: async () => {
+        const result = await markAllAsRead();
+        if (!result.success) {
+          showAlert('Error', 'No se pudieron marcar las notificaciones');
+        }
+      },
+    });
   };
 
   const unreadNotifCount = countNotifUnread();
@@ -264,7 +256,7 @@ export default function TablonScreen() {
           onDelete={handleDeleteAnnouncement}
         />
 
-        {isAdmin && (
+        {isAdmin && tabActivo === 'anuncios' && (
           <>
             <TouchableOpacity
               style={styles.floatingButton}
@@ -281,6 +273,14 @@ export default function TablonScreen() {
             />
           </>
         )}
+
+        <CustomAlert
+          visible={alertConfig.visible}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          buttons={alertConfig.buttons}
+          onDismiss={closeAlert}
+        />
       </View>
     </SafeAreaView>
   );
@@ -379,6 +379,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
+    zIndex: 1000, // Ensure it's on top
   },
   floatingButtonText: {
     color: '#fff',
