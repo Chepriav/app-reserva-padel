@@ -14,11 +14,15 @@ export function Legend() {
       </View>
       <View style={styles.legendItem}>
         <View style={[styles.legendColor, { backgroundColor: colors.guaranteedReservation }]} />
-        <Text style={styles.legendText}>Garantizada</Text>
+        <Text style={styles.legendText}>Tu reserva</Text>
       </View>
       <View style={styles.legendItem}>
-        <View style={[styles.legendColor, { backgroundColor: colors.provisionalReservation }]} />
-        <Text style={styles.legendText}>Provisional</Text>
+        <View style={[styles.legendColor, styles.legendColorReserved]} />
+        <Text style={styles.legendText}>Reservado</Text>
+      </View>
+      <View style={styles.legendItem}>
+        <View style={[styles.legendColor, styles.legendColorBlocked]} />
+        <Text style={styles.legendText}>No disponible</Text>
       </View>
     </View>
   );
@@ -46,6 +50,17 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 4,
+  },
+  legendColorReserved: {
+    backgroundColor: colors.displaceable,
+    borderWidth: 2,
+    borderColor: colors.guaranteedReservation,
+  },
+  legendColorBlocked: {
+    backgroundColor: colors.disabled,
+    borderWidth: 2,
+    borderColor: colors.blockout,
+    opacity: 0.7,
   },
   legendText: {
     fontSize: 12,

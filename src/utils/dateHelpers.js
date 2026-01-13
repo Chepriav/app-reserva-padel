@@ -51,9 +51,31 @@ export const formatReadableDate = (dateInput) => {
 export const generateAvailableSlots = (config = null, date = null) => {
   const slots = [];
 
-  // Use provided config or fall back to default
-  const openingTime = config?.horaApertura || SCHEDULE_CONFIG.openingTime;
-  const closingTime = config?.horaCierre || SCHEDULE_CONFIG.closingTime;
+  let openingTime, closingTime;
+
+  // Check if using differentiated schedules (weekday vs weekend)
+  if (config?.usarHorariosDiferenciados) {
+    // Determine day of week
+    const dateObj = date ? (typeof date === 'string' ? new Date(date + 'T00:00:00') : date) : new Date();
+    const dayOfWeek = dateObj.getDay(); // 0=Sunday, 1-5=Monday-Friday, 6=Saturday
+
+    // 0 (Sunday) and 6 (Saturday) = weekend
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+    if (isWeekend) {
+      openingTime = config.findeHoraApertura || SCHEDULE_CONFIG.openingTime;
+      closingTime = config.findeHoraCierre || SCHEDULE_CONFIG.closingTime;
+    } else {
+      // Monday-Friday
+      openingTime = config.semanaHoraApertura || SCHEDULE_CONFIG.openingTime;
+      closingTime = config.semanaHoraCierre || SCHEDULE_CONFIG.closingTime;
+    }
+  } else {
+    // Unified mode (current behavior)
+    openingTime = config?.horaApertura || SCHEDULE_CONFIG.openingTime;
+    closingTime = config?.horaCierre || SCHEDULE_CONFIG.closingTime;
+  }
+
   const duration = config?.duracionBloque || SCHEDULE_CONFIG.slotDuration;
 
   const [openingHour] = openingTime.split(':').map(Number);

@@ -238,6 +238,100 @@ JavaScript `Date.getDay()`:
 9. ✅ Validación: apertura < cierre
 10. ✅ Validación: inicio pausa < fin pausa
 
+## Horarios Diferenciados (Weekday/Weekend)
+
+Sistema agregado para permitir horarios diferentes entre semana y fin de semana.
+
+### Configuración
+
+El admin puede elegir entre dos modos:
+
+**Modo Unificado (default):**
+- Un solo horario para toda la semana
+- Usa `hora_apertura` y `hora_cierre`
+- Comportamiento legacy (sin cambios)
+
+**Modo Diferenciado:**
+- Horarios separados para días laborables y fin de semana
+- Lunes-Viernes: `semana_hora_apertura` - `semana_hora_cierre`
+- Sábado-Domingo: `finde_hora_apertura` - `finde_hora_cierre`
+- Activado por `usar_horarios_diferenciados: true`
+
+### Lógica de Aplicación
+
+La función `generateAvailableSlots(config, date)` determina automáticamente qué horario usar:
+
+1. Obtiene el día de la semana de la fecha (JavaScript `Date.getDay()`)
+2. Si `usar_horarios_diferenciados = true`:
+   - Día 0 (Domingo) o 6 (Sábado) → usa horarios de fin de semana
+   - Día 1-5 (Lunes-Viernes) → usa horarios de semana
+3. Si `usar_horarios_diferenciados = false`:
+   - Usa `hora_apertura` y `hora_cierre` para todos los días
+
+### Ejemplo de Configuración
+
+```javascript
+// Modo diferenciado habilitado
+{
+  usarHorariosDiferenciados: true,
+  semanaHoraApertura: '08:00',   // Lunes-Viernes
+  semanaHoraCierre: '22:00',
+  findeHoraApertura: '09:00',    // Sábado-Domingo
+  findeHoraCierre: '23:00',
+  duracionBloque: 30,
+  pausaInicio: '14:00',
+  pausaFin: '16:30',
+  pausaDiasSemana: [1,2,3,4,5]   // Pausa solo entre semana
+}
+```
+
+**Resultado:**
+- Lunes 15 de enero: Bloques de 08:00 a 22:00 (menos pausa 14:00-16:30)
+- Sábado 18 de enero: Bloques de 09:00 a 23:00 (sin pausa)
+
+### Base de Datos
+
+**Columnas agregadas:**
+```sql
+usar_horarios_diferenciados BOOLEAN DEFAULT false
+semana_hora_apertura TIME DEFAULT NULL
+semana_hora_cierre TIME DEFAULT NULL
+finde_hora_apertura TIME DEFAULT NULL
+finde_hora_cierre TIME DEFAULT NULL
+```
+
+**Funciones RPC actualizadas:**
+- `get_schedule_config()`: Incluye nuevos campos
+- `update_schedule_config()`: Acepta nuevos parámetros y valida horarios diferenciados
+
+### Validaciones
+
+**Cliente:**
+- Si modo diferenciado: validar que ambos pares (semana + finde) estén completos
+- Apertura < Cierre en cada par de horarios
+
+**Servidor:**
+- Admin check
+- Si `usar_horarios_diferenciados = true`:
+  - Validar que `semana_hora_apertura` y `semana_hora_cierre` no sean NULL
+  - Validar que `finde_hora_apertura` y `finde_hora_cierre` no sean NULL
+  - Validar que `semana_hora_apertura < semana_hora_cierre`
+  - Validar que `finde_hora_apertura < finde_hora_cierre`
+
+### Backwards Compatibility
+
+- Las columnas nuevas son opcionales (nullable)
+- Default value: `usar_horarios_diferenciados = false`
+- Si false, el sistema funciona exactamente como antes
+- No requiere migración de datos existentes
+
+### UI Admin
+
+**ScheduleConfigSection:**
+- Checkbox "Usar horarios diferentes para semana y fin de semana"
+- Si activado: muestra 2 secciones ("Lunes a Viernes" y "Sábado y Domingo")
+- Si desactivado: muestra campos únicos (comportamiento legacy)
+
 ## Notas Técnicas
 
 ### Performance
@@ -253,3 +347,4 @@ JavaScript `Date.getDay()`:
 ### Compatibilidad
 - Backwards compatible: si no hay config, usa valores por defecto
 - Si falla obtener config, usa SCHEDULE_CONFIG de constants/config.js
+- Horarios diferenciados: fallback a horario unificado si campos específicos son NULL

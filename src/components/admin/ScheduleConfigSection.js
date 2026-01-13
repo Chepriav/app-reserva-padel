@@ -26,6 +26,11 @@ export function ScheduleConfigSection({ userId }) {
     pausaFin: '',
     motivoPausa: 'Hora de comida',
     pausaDiasSemana: null, // null = todos los días
+    usarHorariosDiferenciados: false,
+    semanaHoraApertura: '08:00',
+    semanaHoraCierre: '22:00',
+    findeHoraApertura: '09:00',
+    findeHoraCierre: '23:00',
   });
 
   const [breakEnabled, setBreakEnabled] = useState(false);
@@ -45,6 +50,11 @@ export function ScheduleConfigSection({ userId }) {
         horaCierre: result.data.horaCierre?.slice(0, 5) || '22:00',
         pausaInicio: result.data.pausaInicio?.slice(0, 5) || '',
         pausaFin: result.data.pausaFin?.slice(0, 5) || '',
+        usarHorariosDiferenciados: result.data.usarHorariosDiferenciados || false,
+        semanaHoraApertura: result.data.semanaHoraApertura?.slice(0, 5) || '08:00',
+        semanaHoraCierre: result.data.semanaHoraCierre?.slice(0, 5) || '22:00',
+        findeHoraApertura: result.data.findeHoraApertura?.slice(0, 5) || '09:00',
+        findeHoraCierre: result.data.findeHoraCierre?.slice(0, 5) || '23:00',
       };
       setConfig(cleanConfig);
       setBreakEnabled(!!result.data.pausaInicio && !!result.data.pausaFin);
@@ -58,9 +68,20 @@ export function ScheduleConfigSection({ userId }) {
     console.log('[ScheduleConfig] current config:', config);
 
     // Validations
-    if (!config.horaApertura || !config.horaCierre) {
-      Alert.alert('Error', 'Debes especificar hora de apertura y cierre');
-      return;
+    if (config.usarHorariosDiferenciados) {
+      if (!config.semanaHoraApertura || !config.semanaHoraCierre) {
+        Alert.alert('Error', 'Debes especificar horarios de lunes a viernes');
+        return;
+      }
+      if (!config.findeHoraApertura || !config.findeHoraCierre) {
+        Alert.alert('Error', 'Debes especificar horarios de fin de semana');
+        return;
+      }
+    } else {
+      if (!config.horaApertura || !config.horaCierre) {
+        Alert.alert('Error', 'Debes especificar hora de apertura y cierre');
+        return;
+      }
     }
 
     if (breakEnabled && (!config.pausaInicio || !config.pausaFin)) {
@@ -115,33 +136,112 @@ export function ScheduleConfigSection({ userId }) {
         Configura los horarios en que las pistas están disponibles para reserva
       </Text>
 
-      <View style={styles.row}>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Hora de Apertura</Text>
-          <TextInput
-            style={styles.input}
-            value={config.horaApertura}
-            onChangeText={(text) => setConfig({ ...config, horaApertura: text })}
-            placeholder="08:00"
-            placeholderTextColor={colors.textSecondary}
-            maxLength={5}
-          />
-          <Text style={styles.helperText}>Formato: HH:MM (ej: 08:00)</Text>
+      <TouchableOpacity
+        style={styles.checkboxContainer}
+        onPress={() => setConfig({
+          ...config,
+          usarHorariosDiferenciados: !config.usarHorariosDiferenciados
+        })}
+      >
+        <View style={[styles.checkbox, config.usarHorariosDiferenciados && styles.checkboxChecked]}>
+          {config.usarHorariosDiferenciados && <Text style={styles.checkboxIcon}>✓</Text>}
         </View>
+        <Text style={styles.checkboxLabel}>
+          Usar horarios diferentes para semana y fin de semana
+        </Text>
+      </TouchableOpacity>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Hora de Cierre</Text>
-          <TextInput
-            style={styles.input}
-            value={config.horaCierre}
-            onChangeText={(text) => setConfig({ ...config, horaCierre: text })}
-            placeholder="22:00"
-            placeholderTextColor={colors.textSecondary}
-            maxLength={5}
-          />
-          <Text style={styles.helperText}>Formato: HH:MM (ej: 22:00)</Text>
-        </View>
-      </View>
+      {config.usarHorariosDiferenciados ? (
+        <>
+          <Text style={styles.subsectionTitle}>Lunes a Viernes</Text>
+          <View style={styles.row}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Apertura</Text>
+              <TextInput
+                style={styles.input}
+                value={config.semanaHoraApertura}
+                onChangeText={(text) => setConfig({ ...config, semanaHoraApertura: text })}
+                placeholder="08:00"
+                placeholderTextColor={colors.textSecondary}
+                maxLength={5}
+              />
+              <Text style={styles.helperText}>Formato: HH:MM</Text>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Cierre</Text>
+              <TextInput
+                style={styles.input}
+                value={config.semanaHoraCierre}
+                onChangeText={(text) => setConfig({ ...config, semanaHoraCierre: text })}
+                placeholder="22:00"
+                placeholderTextColor={colors.textSecondary}
+                maxLength={5}
+              />
+              <Text style={styles.helperText}>Formato: HH:MM</Text>
+            </View>
+          </View>
+
+          <Text style={styles.subsectionTitle}>Sábado y Domingo</Text>
+          <View style={styles.row}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Apertura</Text>
+              <TextInput
+                style={styles.input}
+                value={config.findeHoraApertura}
+                onChangeText={(text) => setConfig({ ...config, findeHoraApertura: text })}
+                placeholder="09:00"
+                placeholderTextColor={colors.textSecondary}
+                maxLength={5}
+              />
+              <Text style={styles.helperText}>Formato: HH:MM</Text>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Cierre</Text>
+              <TextInput
+                style={styles.input}
+                value={config.findeHoraCierre}
+                onChangeText={(text) => setConfig({ ...config, findeHoraCierre: text })}
+                placeholder="23:00"
+                placeholderTextColor={colors.textSecondary}
+                maxLength={5}
+              />
+              <Text style={styles.helperText}>Formato: HH:MM</Text>
+            </View>
+          </View>
+        </>
+      ) : (
+        <>
+          <View style={styles.row}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Hora de Apertura</Text>
+              <TextInput
+                style={styles.input}
+                value={config.horaApertura}
+                onChangeText={(text) => setConfig({ ...config, horaApertura: text })}
+                placeholder="08:00"
+                placeholderTextColor={colors.textSecondary}
+                maxLength={5}
+              />
+              <Text style={styles.helperText}>Formato: HH:MM (ej: 08:00)</Text>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Hora de Cierre</Text>
+              <TextInput
+                style={styles.input}
+                value={config.horaCierre}
+                onChangeText={(text) => setConfig({ ...config, horaCierre: text })}
+                placeholder="22:00"
+                placeholderTextColor={colors.textSecondary}
+                maxLength={5}
+              />
+              <Text style={styles.helperText}>Formato: HH:MM (ej: 22:00)</Text>
+            </View>
+          </View>
+        </>
+      )}
 
       <View style={styles.separator} />
 
@@ -245,6 +345,13 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: 12,
     lineHeight: 20,
+  },
+  subsectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginTop: 16,
+    marginBottom: 8,
   },
   row: {
     flexDirection: Platform.OS === 'web' ? 'row' : 'column',

@@ -54,6 +54,11 @@ export const scheduleConfigService = {
           pausaFin: config.pausa_fin,
           motivoPausa: config.motivo_pausa,
           pausaDiasSemana: config.pausa_dias_semana,
+          usarHorariosDiferenciados: config.usar_horarios_diferenciados || false,
+          semanaHoraApertura: config.semana_hora_apertura,
+          semanaHoraCierre: config.semana_hora_cierre,
+          findeHoraApertura: config.finde_hora_apertura,
+          findeHoraCierre: config.finde_hora_cierre,
         },
       };
     } catch (error) {
@@ -91,6 +96,11 @@ export const scheduleConfigService = {
           p_pausa_fin: config.pausaFin,
           p_motivo_pausa: config.motivoPausa,
           p_pausa_dias_semana: config.pausaDiasSemana,
+          p_usar_horarios_diferenciados: config.usarHorariosDiferenciados,
+          p_semana_hora_apertura: config.semanaHoraApertura,
+          p_semana_hora_cierre: config.semanaHoraCierre,
+          p_finde_hora_apertura: config.findeHoraApertura,
+          p_finde_hora_cierre: config.findeHoraCierre,
         });
 
       console.log('[ScheduleConfig] RPC response data:', data);
