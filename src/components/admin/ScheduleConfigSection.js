@@ -323,7 +323,8 @@ export function ScheduleConfigSection({ userId }) {
         visible={alertConfig.visible}
         title={alertConfig.title}
         message={alertConfig.message}
-        onClose={closeAlert}
+        buttons={alertConfig.buttons}
+        onDismiss={closeAlert}
       />
     </View>
   );
