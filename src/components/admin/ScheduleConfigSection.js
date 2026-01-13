@@ -6,16 +6,18 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   Platform,
 } from 'react-native';
 import { colors } from '../../constants/colors';
 import { scheduleConfigService } from '../../services/scheduleConfigService';
+import { useAlert } from '../../hooks/useAlert';
+import { CustomAlert } from '../CustomAlert';
 
 /**
  * Section for configuring schedule settings (opening/closing times, lunch break)
  */
 export function ScheduleConfigSection({ userId }) {
+  const { alertConfig, showAlert, closeAlert } = useAlert();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [config, setConfig] = useState({
@@ -70,22 +72,22 @@ export function ScheduleConfigSection({ userId }) {
     // Validations
     if (config.usarHorariosDiferenciados) {
       if (!config.semanaHoraApertura || !config.semanaHoraCierre) {
-        Alert.alert('Error', 'Debes especificar horarios de lunes a viernes');
+        showAlert('Error', 'Debes especificar horarios de lunes a viernes');
         return;
       }
       if (!config.findeHoraApertura || !config.findeHoraCierre) {
-        Alert.alert('Error', 'Debes especificar horarios de fin de semana');
+        showAlert('Error', 'Debes especificar horarios de fin de semana');
         return;
       }
     } else {
       if (!config.horaApertura || !config.horaCierre) {
-        Alert.alert('Error', 'Debes especificar hora de apertura y cierre');
+        showAlert('Error', 'Debes especificar hora de apertura y cierre');
         return;
       }
     }
 
     if (breakEnabled && (!config.pausaInicio || !config.pausaFin)) {
-      Alert.alert('Error', 'Debes especificar hora de inicio y fin de la pausa');
+      showAlert('Error', 'Debes especificar hora de inicio y fin de la pausa');
       return;
     }
 
@@ -108,16 +110,16 @@ export function ScheduleConfigSection({ userId }) {
       setSaving(false);
 
       if (result.success) {
-        Alert.alert('Éxito', 'Configuración guardada correctamente');
+        showAlert('Éxito', 'Configuración guardada correctamente');
         await loadConfig(); // Reload to see changes
       } else {
         console.error('[ScheduleConfig] Save error:', result.error);
-        Alert.alert('Error', result.error || 'Error al guardar configuración');
+        showAlert('Error', result.error || 'Error al guardar configuración');
       }
     } catch (error) {
       console.error('[ScheduleConfig] Save exception:', error);
       setSaving(false);
-      Alert.alert('Error', 'Error inesperado al guardar: ' + error.message);
+      showAlert('Error', 'Error inesperado al guardar: ' + error.message);
     }
   };
 
@@ -316,6 +318,13 @@ export function ScheduleConfigSection({ userId }) {
           • Las reservas existentes no se modificarán
         </Text>
       </View>
+
+      <CustomAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={closeAlert}
+      />
     </View>
   );
 }
