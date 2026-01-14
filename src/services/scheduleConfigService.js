@@ -21,6 +21,8 @@ export const scheduleConfigService = {
       // RPC returns array, get first element
       const config = data?.[0];
 
+      console.log('[scheduleConfigService] getConfig raw data:', config);
+
       if (!config) {
         // Return default config if none exists
         return {
@@ -52,6 +54,10 @@ export const scheduleConfigService = {
           semanaHoraCierre: config.semana_hora_cierre,
           findeHoraApertura: config.finde_hora_apertura,
           findeHoraCierre: config.finde_hora_cierre,
+          findePausaInicio: config.finde_pausa_inicio,
+          findePausaFin: config.finde_pausa_fin,
+          findeMotivoPausa: config.finde_motivo_pausa,
+          findePausaDiasSemana: config.finde_pausa_dias_semana,
         },
       };
     } catch (error) {
@@ -67,7 +73,13 @@ export const scheduleConfigService = {
    */
   async updateConfig(userId, config) {
     try {
-      const { data, error } = await supabase
+      console.log('[scheduleConfigService] updateConfig called with:', {
+        findePausaInicio: config.findePausaInicio,
+        findePausaFin: config.findePausaFin,
+        usarHorariosDiferenciados: config.usarHorariosDiferenciados,
+      });
+
+      const { data, error} = await supabase
         .rpc('update_schedule_config', {
           p_user_id: userId,
           p_hora_apertura: config.horaApertura,
@@ -82,7 +94,13 @@ export const scheduleConfigService = {
           p_semana_hora_cierre: config.semanaHoraCierre,
           p_finde_hora_apertura: config.findeHoraApertura,
           p_finde_hora_cierre: config.findeHoraCierre,
+          p_finde_pausa_inicio: config.findePausaInicio,
+          p_finde_pausa_fin: config.findePausaFin,
+          p_finde_motivo_pausa: config.findeMotivoPausa,
+          p_finde_pausa_dias_semana: config.findePausaDiasSemana,
         });
+
+      console.log('[scheduleConfigService] RPC response:', { data, error });
 
       if (error) {
         return { success: false, error: error.message || 'Error al actualizar configuración' };
@@ -116,17 +134,44 @@ export const scheduleConfigService = {
    * @returns {boolean} True if slot overlaps with break time
    */
   isSlotInBreakTime(slotStart, slotEnd, config, date = new Date()) {
-    // No break configured
-    if (!config.pausaInicio || !config.pausaFin) {
+    const dateObj = typeof date === 'string' ? new Date(date + 'T00:00:00') : date;
+    const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 6 = Saturday
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+
+    // Determine which break configuration to use
+    let pausaInicio, pausaFin, pausaDiasSemana;
+
+    if (config.usarHorariosDiferenciados) {
+      // When using differentiated schedules, use specific breaks for each day type
+      if (isWeekend) {
+        // Weekend: only use weekend break if configured
+        pausaInicio = config.findePausaInicio;
+        pausaFin = config.findePausaFin;
+        pausaDiasSemana = config.findePausaDiasSemana;
+        console.log('[isSlotInBreakTime] Weekend break:', { pausaInicio, pausaFin, isWeekend, dayOfWeek });
+      } else {
+        // Weekday: use weekday break
+        pausaInicio = config.pausaInicio;
+        pausaFin = config.pausaFin;
+        pausaDiasSemana = config.pausaDiasSemana;
+        console.log('[isSlotInBreakTime] Weekday break:', { pausaInicio, pausaFin, isWeekend, dayOfWeek });
+      }
+    } else {
+      // Not using differentiated schedules: use general break for all days
+      pausaInicio = config.pausaInicio;
+      pausaFin = config.pausaFin;
+      pausaDiasSemana = config.pausaDiasSemana;
+      console.log('[isSlotInBreakTime] General break:', { pausaInicio, pausaFin, isWeekend, dayOfWeek });
+    }
+
+    // No break configured for this day type
+    if (!pausaInicio || !pausaFin) {
       return false;
     }
 
-    // Check if break applies to this day of week
-    if (config.pausaDiasSemana && Array.isArray(config.pausaDiasSemana)) {
-      const dateObj = typeof date === 'string' ? new Date(date + 'T00:00:00') : date;
-      const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 6 = Saturday
-
-      if (!config.pausaDiasSemana.includes(dayOfWeek)) {
+    // Check if break applies to this specific day of week
+    if (pausaDiasSemana && Array.isArray(pausaDiasSemana)) {
+      if (!pausaDiasSemana.includes(dayOfWeek)) {
         return false; // Break doesn't apply to this day
       }
     }
@@ -139,8 +184,8 @@ export const scheduleConfigService = {
 
     const slotStartMin = timeToMinutes(slotStart);
     const slotEndMin = timeToMinutes(slotEnd);
-    const breakStartMin = timeToMinutes(config.pausaInicio);
-    const breakEndMin = timeToMinutes(config.pausaFin);
+    const breakStartMin = timeToMinutes(pausaInicio);
+    const breakEndMin = timeToMinutes(pausaFin);
 
     // Check if slot overlaps with break time
     // Slot overlaps if:

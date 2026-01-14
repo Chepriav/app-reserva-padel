@@ -33,9 +33,14 @@ export function ScheduleConfigSection({ userId }) {
     semanaHoraCierre: '22:00',
     findeHoraApertura: '09:00',
     findeHoraCierre: '23:00',
+    findePausaInicio: '',
+    findePausaFin: '',
+    findeMotivoPausa: 'Hora de comida',
+    findePausaDiasSemana: null,
   });
 
   const [breakEnabled, setBreakEnabled] = useState(false);
+  const [weekendBreakEnabled, setWeekendBreakEnabled] = useState(false);
 
   useEffect(() => {
     loadConfig();
@@ -57,9 +62,14 @@ export function ScheduleConfigSection({ userId }) {
         semanaHoraCierre: result.data.semanaHoraCierre?.slice(0, 5) || '22:00',
         findeHoraApertura: result.data.findeHoraApertura?.slice(0, 5) || '09:00',
         findeHoraCierre: result.data.findeHoraCierre?.slice(0, 5) || '23:00',
+        findePausaInicio: result.data.findePausaInicio?.slice(0, 5) || '',
+        findePausaFin: result.data.findePausaFin?.slice(0, 5) || '',
+        findeMotivoPausa: result.data.findeMotivoPausa || 'Hora de comida',
+        findePausaDiasSemana: result.data.findePausaDiasSemana || null,
       };
       setConfig(cleanConfig);
       setBreakEnabled(!!result.data.pausaInicio && !!result.data.pausaFin);
+      setWeekendBreakEnabled(!!result.data.findePausaInicio && !!result.data.findePausaFin);
     }
     setLoading(false);
   };
@@ -87,6 +97,11 @@ export function ScheduleConfigSection({ userId }) {
       return;
     }
 
+    if (weekendBreakEnabled && config.usarHorariosDiferenciados && (!config.findePausaInicio || !config.findePausaFin)) {
+      showAlert('Error', 'Debes especificar hora de inicio y fin de la pausa de fin de semana');
+      return;
+    }
+
     // If break is disabled, clear values
     const configToSave = {
       ...config,
@@ -94,7 +109,18 @@ export function ScheduleConfigSection({ userId }) {
       pausaFin: breakEnabled ? config.pausaFin : null,
       motivoPausa: breakEnabled ? config.motivoPausa : null,
       pausaDiasSemana: breakEnabled ? config.pausaDiasSemana : null,
+      findePausaInicio: (weekendBreakEnabled && config.usarHorariosDiferenciados) ? config.findePausaInicio : null,
+      findePausaFin: (weekendBreakEnabled && config.usarHorariosDiferenciados) ? config.findePausaFin : null,
+      findeMotivoPausa: (weekendBreakEnabled && config.usarHorariosDiferenciados) ? config.findeMotivoPausa : null,
+      findePausaDiasSemana: (weekendBreakEnabled && config.usarHorariosDiferenciados) ? config.findePausaDiasSemana : null,
     };
+
+    console.log('[ScheduleConfig] Saving config:', {
+      weekendBreakEnabled,
+      usarHorariosDiferenciados: config.usarHorariosDiferenciados,
+      findePausaInicio: configToSave.findePausaInicio,
+      findePausaFin: configToSave.findePausaFin,
+    });
 
     setSaving(true);
 
@@ -255,6 +281,7 @@ export function ScheduleConfigSection({ userId }) {
 
       {breakEnabled && (
         <>
+          <Text style={styles.subsectionTitle}>Pausa de Lunes a Viernes</Text>
           <View style={styles.row}>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Inicio</Text>
@@ -282,6 +309,59 @@ export function ScheduleConfigSection({ userId }) {
               <Text style={styles.helperText}>Formato: HH:MM</Text>
             </View>
           </View>
+        </>
+      )}
+
+      {config.usarHorariosDiferenciados && (
+        <>
+          <View style={styles.separator} />
+
+          <Text style={styles.sectionTitle}>Pausa de Fin de Semana</Text>
+          <Text style={styles.sectionDescription}>
+            Define un horario de pausa específico para sábados y domingos
+          </Text>
+
+          <TouchableOpacity
+            style={styles.checkboxContainer}
+            onPress={() => setWeekendBreakEnabled(!weekendBreakEnabled)}
+          >
+            <View style={[styles.checkbox, weekendBreakEnabled && styles.checkboxChecked]}>
+              {weekendBreakEnabled && <Text style={styles.checkboxIcon}>✓</Text>}
+            </View>
+            <Text style={styles.checkboxLabel}>Habilitar pausa de fin de semana</Text>
+          </TouchableOpacity>
+
+          {weekendBreakEnabled && (
+            <>
+              <View style={styles.row}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Inicio</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={config.findePausaInicio || ''}
+                    onChangeText={(text) => setConfig({ ...config, findePausaInicio: text })}
+                    placeholder="14:00"
+                    placeholderTextColor={colors.textSecondary}
+                    maxLength={5}
+                  />
+                  <Text style={styles.helperText}>Formato: HH:MM</Text>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Fin</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={config.findePausaFin || ''}
+                    onChangeText={(text) => setConfig({ ...config, findePausaFin: text })}
+                    placeholder="16:30"
+                    placeholderTextColor={colors.textSecondary}
+                    maxLength={5}
+                  />
+                  <Text style={styles.helperText}>Formato: HH:MM</Text>
+                </View>
+              </View>
+            </>
+          )}
         </>
       )}
 

@@ -112,16 +112,41 @@ export const generateAvailableSlots = (config = null, date = null) => {
 
 // Helper function to check if a slot should be skipped due to break time
 const shouldSkipSlot = (slotStart, slotEnd, config, date) => {
-  if (!config?.pausaInicio || !config?.pausaFin) {
-    return false; // No break configured
+  const dateObj = date ? (typeof date === 'string' ? new Date(date + 'T00:00:00') : date) : new Date();
+  const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 6 = Saturday
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+  // Determine which break configuration to use
+  let pausaInicio, pausaFin, pausaDiasSemana;
+
+  if (config?.usarHorariosDiferenciados) {
+    // When using differentiated schedules, use specific breaks for each day type
+    if (isWeekend) {
+      // Weekend: only use weekend break if configured
+      pausaInicio = config.findePausaInicio;
+      pausaFin = config.findePausaFin;
+      pausaDiasSemana = config.findePausaDiasSemana;
+    } else {
+      // Weekday: use weekday break
+      pausaInicio = config.pausaInicio;
+      pausaFin = config.pausaFin;
+      pausaDiasSemana = config.pausaDiasSemana;
+    }
+  } else {
+    // Not using differentiated schedules: use general break for all days
+    pausaInicio = config?.pausaInicio;
+    pausaFin = config?.pausaFin;
+    pausaDiasSemana = config?.pausaDiasSemana;
   }
 
-  // Check if break applies to this day of week
-  if (config.pausaDiasSemana && Array.isArray(config.pausaDiasSemana)) {
-    const dateObj = date ? (typeof date === 'string' ? new Date(date + 'T00:00:00') : date) : new Date();
-    const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 6 = Saturday
+  // No break configured for this day type
+  if (!pausaInicio || !pausaFin) {
+    return false;
+  }
 
-    if (!config.pausaDiasSemana.includes(dayOfWeek)) {
+  // Check if break applies to this specific day of week
+  if (pausaDiasSemana && Array.isArray(pausaDiasSemana)) {
+    if (!pausaDiasSemana.includes(dayOfWeek)) {
       return false; // Break doesn't apply to this day
     }
   }
@@ -134,8 +159,8 @@ const shouldSkipSlot = (slotStart, slotEnd, config, date) => {
 
   const slotStartMin = timeToMinutes(slotStart);
   const slotEndMin = timeToMinutes(slotEnd);
-  const breakStartMin = timeToMinutes(config.pausaInicio);
-  const breakEndMin = timeToMinutes(config.pausaFin);
+  const breakStartMin = timeToMinutes(pausaInicio);
+  const breakEndMin = timeToMinutes(pausaFin);
 
   // Slot overlaps with break if it starts, ends, or contains the break period
   return (

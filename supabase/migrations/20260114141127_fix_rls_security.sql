@@ -1,0 +1,3 @@
+-- This migration was already applied to remote database
+-- Placeholder to keep migration history in sync
+-- Enables RLS on push_tokens, web_push_subscriptions, notificaciones_desplazamiento, conversion_queue
