@@ -12,7 +12,6 @@ import { colors } from '../../constants/colors';
 import { scheduleConfigService } from '../../services/scheduleConfigService';
 import { useAlert } from '../../hooks/useAlert';
 import { CustomAlert } from '../CustomAlert';
-import { BreakTimesConfig } from './BreakTimesConfig';
 
 /**
  * Section for configuring schedule settings (opening/closing times, lunch break)
