@@ -663,41 +663,33 @@ export const authService = {
   async handlePasswordRecoveryUrl(url) {
     const { type, accessToken, refreshToken, code } = parseRecoveryParams(url);
 
-    console.log('[authService] handlePasswordRecoveryUrl:', { type, hasCode: !!code, hasTokens: !!(accessToken && refreshToken) });
-
     if (type !== 'recovery') {
-      console.log('[authService] Not a recovery URL, type:', type);
       return { handled: false };
     }
 
     if (code) {
-      console.log('[authService] Exchanging code for session');
       const { error } = await supabase.auth.exchangeCodeForSession(code);
       if (error) {
-        console.error('[authService] Error exchanging code:', error.message);
+        console.error('Error exchanging recovery code:', error.message);
         return { handled: true, error: error.message };
       }
-      console.log('[authService] Session established successfully');
       return { handled: true };
     }
 
     if (accessToken && refreshToken) {
-      console.log('[authService] Setting session with tokens');
       const { error } = await supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken,
       });
 
       if (error) {
-        console.error('[authService] Error setting session:', error.message);
+        console.error('Error setting recovery session:', error.message);
         return { handled: true, error: error.message };
       }
 
-      console.log('[authService] Session established successfully');
       return { handled: true };
     }
 
-    console.error('[authService] Missing recovery tokens or code');
     return { handled: true, error: 'Missing recovery tokens' };
   },
 

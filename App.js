@@ -32,8 +32,6 @@ export default function App() {
       const isResetPath = url.includes('reset-password');
 
       if (hasRecoveryCode || isResetPath) {
-        console.log('[App] Handling recovery URL:', url);
-
         // Handle password recovery tokens
         const result = await authService.handlePasswordRecoveryUrl(url);
 
@@ -48,7 +46,7 @@ export default function App() {
             setPendingRecoveryNavigation(true);
           }
         } else if (result.error) {
-          console.error('[App] Error handling recovery URL:', result.error);
+          console.error('Error handling password recovery:', result.error);
           // Still navigate to reset password screen, it will show appropriate error
           if (navigationRef.isReady()) {
             navigationRef.navigate('ResetPassword');
