@@ -106,7 +106,17 @@ export default function ResetPasswordScreen({ navigation }) {
           {
             text: 'Aceptar',
             onPress: async () => {
+              setAlertConfig({ ...alertConfig, visible: false });
               await authService.logout();
+              // Force navigation to login by reloading on web
+              if (typeof window !== 'undefined') {
+                window.location.href = '/';
+              } else {
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'Login' }],
+                });
+              }
             },
           },
         ],
