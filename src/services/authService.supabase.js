@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { supabase } from './supabaseConfig';
 import { storageService } from './storageService.supabase';
 
@@ -77,6 +78,47 @@ const mapUserToSnakeCase = (data) => {
   if (data.nivelJuego !== undefined) mapped.nivel_juego = data.nivelJuego;
   if (data.fotoPerfil !== undefined) mapped.foto_perfil = data.fotoPerfil;
   return mapped;
+};
+
+const getPasswordResetRedirect = () => {
+  const envRedirect = process.env.EXPO_PUBLIC_PASSWORD_RESET_REDIRECT_URL;
+  if (envRedirect) return envRedirect;
+
+  if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.origin) {
+    return `${window.location.origin}/reset-password`;
+  }
+
+  return null;
+};
+
+const parseRecoveryParams = (url) => {
+  if (!url) return {};
+
+  try {
+    const parsedUrl = new URL(url);
+    const hash = parsedUrl.hash ? parsedUrl.hash.substring(1) : '';
+    const hashParams = new URLSearchParams(hash);
+    const searchParams = parsedUrl.searchParams;
+    const getParam = (key) => hashParams.get(key) || searchParams.get(key);
+
+    const type = getParam('type');
+    const code = getParam('code');
+    const accessToken = getParam('access_token');
+    const refreshToken = getParam('refresh_token');
+
+    // If there's a code parameter, it's likely a recovery flow (PKCE)
+    const isRecovery = type === 'recovery' || (code && !type);
+
+    return {
+      type: isRecovery ? 'recovery' : type,
+      accessToken,
+      refreshToken,
+      code,
+    };
+  } catch (error) {
+    console.error('Error parsing recovery params:', error);
+    return {};
+  }
 };
 
 const cleanupUserRelations = async (userId, { removeAdminContent = true } = {}) => {
@@ -593,7 +635,11 @@ export const authService = {
    */
   async resetPassword(email) {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      const redirectTo = getPasswordResetRedirect();
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        email,
+        redirectTo ? { redirectTo } : undefined
+      );
 
       if (error) {
         return {
@@ -608,6 +654,67 @@ export const authService = {
       };
     } catch (error) {
       return { success: false, error: 'Error al enviar el correo de recuperación' };
+    }
+  },
+
+  /**
+   * Handles password recovery deep links (sets session if possible)
+   */
+  async handlePasswordRecoveryUrl(url) {
+    const { type, accessToken, refreshToken, code } = parseRecoveryParams(url);
+
+    console.log('[authService] handlePasswordRecoveryUrl:', { type, hasCode: !!code, hasTokens: !!(accessToken && refreshToken) });
+
+    if (type !== 'recovery') {
+      console.log('[authService] Not a recovery URL, type:', type);
+      return { handled: false };
+    }
+
+    if (code) {
+      console.log('[authService] Exchanging code for session');
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      if (error) {
+        console.error('[authService] Error exchanging code:', error.message);
+        return { handled: true, error: error.message };
+      }
+      console.log('[authService] Session established successfully');
+      return { handled: true };
+    }
+
+    if (accessToken && refreshToken) {
+      console.log('[authService] Setting session with tokens');
+      const { error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      if (error) {
+        console.error('[authService] Error setting session:', error.message);
+        return { handled: true, error: error.message };
+      }
+
+      console.log('[authService] Session established successfully');
+      return { handled: true };
+    }
+
+    console.error('[authService] Missing recovery tokens or code');
+    return { handled: true, error: 'Missing recovery tokens' };
+  },
+
+  /**
+   * Updates the current user's password (requires recovery session)
+   */
+  async updatePassword(newPassword) {
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+      if (error) {
+        return { success: false, error: getErrorMessage(error, 'Error al actualizar contraseña') };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Error al actualizar contraseña' };
     }
   },
 

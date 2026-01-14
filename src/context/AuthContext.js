@@ -63,6 +63,11 @@ export const AuthProvider = ({ children }) => {
         if (event === 'SIGNED_OUT' || !session) {
           setUser(null);
           setIsAuthenticated(false);
+        } else if (event === 'PASSWORD_RECOVERY') {
+          // Password recovery session - don't set authenticated state
+          // User should only access ResetPasswordScreen
+          console.log('[Auth] Password recovery session detected');
+          // Don't change authentication state
         } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           // Get updated user data
           const result = await authService.getCurrentUser();

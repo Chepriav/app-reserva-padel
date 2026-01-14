@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Linking, Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from './src/context/AuthContext';
 import { ReservationsProvider } from './src/context/ReservationsContext';
-import AppNavigator from './src/navigation/AppNavigator';
+import AppNavigator, { navigationRef } from './src/navigation/AppNavigator';
 import { registerServiceWorker, setUpdateCallback, applyUpdate } from './src/services/registerServiceWorker';
 import { colors } from './src/constants/colors';
+import { authService } from './src/services/authService.supabase';
 
 export default function App() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [pendingRecoveryNavigation, setPendingRecoveryNavigation] = useState(false);
 
   useEffect(() => {
     // Registrar Service Worker solo en web
@@ -20,6 +22,62 @@ export default function App() {
       registerServiceWorker();
     }
   }, []);
+
+  useEffect(() => {
+    const handleRecoveryUrl = async (url) => {
+      if (!url) return;
+
+      // Check if URL has recovery code parameter
+      const hasRecoveryCode = url.includes('?code=') || url.includes('&code=');
+      const isResetPath = url.includes('reset-password');
+
+      if (hasRecoveryCode || isResetPath) {
+        console.log('[App] Handling recovery URL:', url);
+
+        // Handle password recovery tokens
+        const result = await authService.handlePasswordRecoveryUrl(url);
+
+        if (result.handled && !result.error) {
+          // Session was set successfully, wait a bit for it to propagate
+          await new Promise(resolve => setTimeout(resolve, 200));
+
+          // Navigate to reset password screen
+          if (navigationRef.isReady()) {
+            navigationRef.navigate('ResetPassword');
+          } else {
+            setPendingRecoveryNavigation(true);
+          }
+        } else if (result.error) {
+          console.error('[App] Error handling recovery URL:', result.error);
+          // Still navigate to reset password screen, it will show appropriate error
+          if (navigationRef.isReady()) {
+            navigationRef.navigate('ResetPassword');
+          } else {
+            setPendingRecoveryNavigation(true);
+          }
+        }
+      }
+    };
+
+    Linking.getInitialURL().then((url) => {
+      handleRecoveryUrl(url);
+    });
+
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      handleRecoveryUrl(url);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  const handleNavigationReady = () => {
+    if (pendingRecoveryNavigation && navigationRef.isReady()) {
+      navigationRef.navigate('ResetPassword');
+      setPendingRecoveryNavigation(false);
+    }
+  };
 
   const handleUpdate = () => {
     applyUpdate();
@@ -38,7 +96,7 @@ export default function App() {
               </TouchableOpacity>
             </View>
           )}
-          <AppNavigator />
+          <AppNavigator onReady={handleNavigationReady} />
         </View>
         <StatusBar style="auto" />
       </ReservationsProvider>

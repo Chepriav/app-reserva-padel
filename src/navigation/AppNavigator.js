@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { useAuth } from '../context/AuthContext';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import TabNavigator from './TabNavigator';
 import { ActivityIndicator, View } from 'react-native';
 import { colors } from '../constants/colors';
@@ -23,7 +24,7 @@ export function navigateFromNotification(screenName) {
   }
 }
 
-export default function AppNavigator() {
+export default function AppNavigator({ onReady }) {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
@@ -35,7 +36,7 @@ export default function AppNavigator() {
   }
 
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer ref={navigationRef} onReady={onReady}>
       <Stack.Navigator
         screenOptions={{
           headerShown: true,
@@ -49,11 +50,18 @@ export default function AppNavigator() {
         }}
       >
         {isAuthenticated ? (
-          <Stack.Screen
-            name="Main"
-            component={TabNavigator}
-            options={{ headerShown: false }}
-          />
+          <>
+            <Stack.Screen
+              name="Main"
+              component={TabNavigator}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="ResetPassword"
+              component={ResetPasswordScreen}
+              options={{ title: 'Restablecer contraseña' }}
+            />
+          </>
         ) : (
           <>
             <Stack.Screen
@@ -68,6 +76,11 @@ export default function AppNavigator() {
                 title: 'Registro de Vecino',
                 cardStyle: { flex: 1 },
               }}
+            />
+            <Stack.Screen
+              name="ResetPassword"
+              component={ResetPasswordScreen}
+              options={{ title: 'Restablecer contraseña' }}
             />
           </>
         )}
