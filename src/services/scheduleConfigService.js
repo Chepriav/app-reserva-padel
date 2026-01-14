@@ -21,8 +21,6 @@ export const scheduleConfigService = {
       // RPC returns array, get first element
       const config = data?.[0];
 
-      console.log('[scheduleConfigService] getConfig raw data:', config);
-
       if (!config) {
         // Return default config if none exists
         return {
@@ -73,12 +71,6 @@ export const scheduleConfigService = {
    */
   async updateConfig(userId, config) {
     try {
-      console.log('[scheduleConfigService] updateConfig called with:', {
-        findePausaInicio: config.findePausaInicio,
-        findePausaFin: config.findePausaFin,
-        usarHorariosDiferenciados: config.usarHorariosDiferenciados,
-      });
-
       const { data, error} = await supabase
         .rpc('update_schedule_config', {
           p_user_id: userId,
@@ -99,8 +91,6 @@ export const scheduleConfigService = {
           p_finde_motivo_pausa: config.findeMotivoPausa,
           p_finde_pausa_dias_semana: config.findePausaDiasSemana,
         });
-
-      console.log('[scheduleConfigService] RPC response:', { data, error });
 
       if (error) {
         return { success: false, error: error.message || 'Error al actualizar configuración' };
@@ -148,20 +138,17 @@ export const scheduleConfigService = {
         pausaInicio = config.findePausaInicio;
         pausaFin = config.findePausaFin;
         pausaDiasSemana = config.findePausaDiasSemana;
-        console.log('[isSlotInBreakTime] Weekend break:', { pausaInicio, pausaFin, isWeekend, dayOfWeek });
       } else {
         // Weekday: use weekday break
         pausaInicio = config.pausaInicio;
         pausaFin = config.pausaFin;
         pausaDiasSemana = config.pausaDiasSemana;
-        console.log('[isSlotInBreakTime] Weekday break:', { pausaInicio, pausaFin, isWeekend, dayOfWeek });
       }
     } else {
       // Not using differentiated schedules: use general break for all days
       pausaInicio = config.pausaInicio;
       pausaFin = config.pausaFin;
       pausaDiasSemana = config.pausaDiasSemana;
-      console.log('[isSlotInBreakTime] General break:', { pausaInicio, pausaFin, isWeekend, dayOfWeek });
     }
 
     // No break configured for this day type

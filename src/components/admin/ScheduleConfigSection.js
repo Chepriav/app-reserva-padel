@@ -12,6 +12,7 @@ import { colors } from '../../constants/colors';
 import { scheduleConfigService } from '../../services/scheduleConfigService';
 import { useAlert } from '../../hooks/useAlert';
 import { CustomAlert } from '../CustomAlert';
+import { BreakTimesConfig } from './BreakTimesConfig';
 
 /**
  * Section for configuring schedule settings (opening/closing times, lunch break)
@@ -114,13 +115,6 @@ export function ScheduleConfigSection({ userId }) {
       findeMotivoPausa: (weekendBreakEnabled && config.usarHorariosDiferenciados) ? config.findeMotivoPausa : null,
       findePausaDiasSemana: (weekendBreakEnabled && config.usarHorariosDiferenciados) ? config.findePausaDiasSemana : null,
     };
-
-    console.log('[ScheduleConfig] Saving config:', {
-      weekendBreakEnabled,
-      usarHorariosDiferenciados: config.usarHorariosDiferenciados,
-      findePausaInicio: configToSave.findePausaInicio,
-      findePausaFin: configToSave.findePausaFin,
-    });
 
     setSaving(true);
 
