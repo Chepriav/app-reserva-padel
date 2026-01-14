@@ -1,0 +1,6 @@
+nombre,codigo,email
+Usuario Válido,1-1-A,valido@example.com
+Usuario Escalera Inválida,10-1-A,invalido1@example.com
+Usuario Piso Inválido,1-10-A,invalido2@example.com
+Usuario Puerta Inválida,1-1-Z,invalido3@example.com
+Usuario Formato Incorrecto,1-A,invalido4@example.com

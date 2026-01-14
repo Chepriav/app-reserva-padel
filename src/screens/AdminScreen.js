@@ -7,6 +7,7 @@ import {
   useEditApartmentModal,
   useAlert,
 } from '../hooks';
+import { useUserImport } from '../hooks/useUserImport';
 import { colors } from '../constants/colors';
 import { CustomAlert } from '../components/CustomAlert';
 import {
@@ -17,14 +18,24 @@ import {
   UsuariosContent,
   LoadingContent,
   ScheduleConfigSection,
+  ImportUsersModal,
+  ImportResultsModal,
 } from '../components/admin';
 
 export default function AdminScreen() {
   const { user } = useAuth();
   const [tabActiva, setTabActiva] = useState('solicitudes');
 
+  // Import modals state
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showResultsModal, setShowResultsModal] = useState(false);
+  const [importResults, setImportResults] = useState(null);
+
   // Hook de alertas
   const { alertConfig, mostrarAlerta, mostrarConfirmacion, cerrarAlerta } = useAlert();
+
+  // Hook de importación
+  const { startImport } = useUserImport();
 
   // Hook de datos
   const {
@@ -80,6 +91,31 @@ export default function AdminScreen() {
     }
   }, [editApartmentModal, handleSaveApartment]);
 
+  // Handler para abrir modal de importación
+  const handleOpenImport = useCallback(() => {
+    setShowImportModal(true);
+  }, []);
+
+  // Handler para importar usuarios
+  const handleImportUsers = useCallback(async (userData, onProgress, onUserResult) => {
+    await startImport(userData, onProgress, onUserResult);
+  }, [startImport]);
+
+  // Handler para completar importación
+  const handleImportComplete = useCallback((results) => {
+    setShowImportModal(false);
+    setImportResults(results);
+    setShowResultsModal(true);
+  }, []);
+
+  // Handler para cerrar modal de resultados
+  const handleCloseResults = useCallback(() => {
+    setShowResultsModal(false);
+    setImportResults(null);
+    // Reload users list
+    loadTabData('usuarios');
+  }, [loadTabData]);
+
   // Renderizar contenido según tab activa
   const renderContent = () => {
     if (loading) {
@@ -107,6 +143,7 @@ export default function AdminScreen() {
             onToggleAdmin={handleToggleAdmin}
             onEditVivienda={editApartmentModal.open}
             onDelete={handleDeleteUser}
+            onImportUsers={handleOpenImport}
           />
         );
 
@@ -151,6 +188,21 @@ export default function AdminScreen() {
         onChangePuerta={editApartmentModal.setDoor}
         onSave={onSaveVivienda}
         onClose={editApartmentModal.close}
+      />
+
+      {/* Modal importar usuarios */}
+      <ImportUsersModal
+        visible={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onComplete={handleImportComplete}
+        onImport={handleImportUsers}
+      />
+
+      {/* Modal resultados de importación */}
+      <ImportResultsModal
+        visible={showResultsModal}
+        results={importResults}
+        onClose={handleCloseResults}
       />
 
       {/* Alert */}

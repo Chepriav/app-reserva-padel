@@ -445,6 +445,129 @@ export const authService = {
   },
 
   /**
+   * Generate a cryptographically secure random password
+   * @returns {string} 12-character alphanumeric password
+   */
+  generateRandomPassword() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    const array = new Uint8Array(12);
+    crypto.getRandomValues(array);
+    return Array.from(array, byte => chars[byte % chars.length]).join('');
+  },
+
+  /**
+   * Import multiple users from CSV data with progress feedback
+   * @param {Array} userData - Array of {nombre, email, vivienda} objects
+   * @param {Function} onProgress - Callback (current, total, currentUser) => void
+   * @param {Function} onUserResult - Callback (user, success, error) => void
+   * @param {Object} signal - AbortSignal for cancellation
+   * @returns {Promise<{success: boolean, results: Array}>}
+   */
+  async importUsersFromData(userData, onProgress, onUserResult, signal = null) {
+    const results = [];
+    const BATCH_SIZE = 10;
+    const BATCH_DELAY = 500; // ms
+
+    for (let i = 0; i < userData.length; i++) {
+      // Check for cancellation
+      if (signal?.aborted) {
+        break;
+      }
+
+      const user = userData[i];
+
+      // Report progress
+      if (onProgress) {
+        onProgress(i + 1, userData.length, user);
+      }
+
+      try {
+        // Generate temporary password
+        const tempPassword = this.generateRandomPassword();
+
+        // Create user using existing register flow
+        const result = await this.register({
+          nombre: user.nombre,
+          email: user.email,
+          telefono: '000000000', // Placeholder - users can update later
+          vivienda: user.vivienda,
+          password: tempPassword,
+        });
+
+        if (result.success) {
+          // Auto-approve the user
+          const approveResult = await this.approveUser(result.data.id);
+
+          if (approveResult.success) {
+            // Send password reset email (non-blocking)
+            try {
+              await supabase.auth.resetPasswordForEmail(user.email, {
+                redirectTo: `${window.location.origin}/reset-password`,
+              });
+            } catch (emailError) {
+              console.warn('Failed to send reset email:', emailError);
+              // Don't fail the import if email fails
+            }
+
+            results.push({
+              user,
+              success: true,
+              userId: result.data.id,
+            });
+
+            if (onUserResult) {
+              onUserResult(user, true, null);
+            }
+          } else {
+            // User created but approval failed
+            results.push({
+              user,
+              success: false,
+              error: 'Usuario creado pero no se pudo aprobar automáticamente',
+            });
+
+            if (onUserResult) {
+              onUserResult(user, false, 'Error al aprobar usuario');
+            }
+          }
+        } else {
+          // User creation failed
+          results.push({
+            user,
+            success: false,
+            error: result.error,
+          });
+
+          if (onUserResult) {
+            onUserResult(user, false, result.error);
+          }
+        }
+      } catch (error) {
+        results.push({
+          user,
+          success: false,
+          error: error.message || 'Error desconocido',
+        });
+
+        if (onUserResult) {
+          onUserResult(user, false, error.message);
+        }
+      }
+
+      // Add delay after each batch to avoid rate limits
+      if ((i + 1) % BATCH_SIZE === 0 && i < userData.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
+      }
+    }
+
+    return {
+      success: true,
+      results,
+      cancelled: signal?.aborted || false,
+    };
+  },
+
+  /**
    * Toggles the admin role for a user (admin only)
    */
   async toggleAdminRole(userId, esAdmin) {

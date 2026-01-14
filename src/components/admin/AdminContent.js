@@ -11,6 +11,7 @@ import { colors } from '../../constants/colors';
 import { SolicitudCard } from './SolicitudCard';
 import { UsuarioCard } from './UsuarioCard';
 import { ApartmentChangeCard } from './ApartmentChangeCard';
+import { ImportUsersButton } from './ImportUsersButton';
 
 /**
  * Estado vacío genérico
@@ -106,23 +107,31 @@ export function UsuariosContent({
   onToggleAdmin,
   onEditVivienda,
   onDelete,
+  onImportUsers,
 }) {
-  if (usuarios.length === 0) {
-    return <EmptyState text="No hay usuarios" />;
-  }
-
   return (
     <>
-      {usuarios.map((usuario) => (
-        <UsuarioCard
-          key={usuario.id}
-          usuario={usuario}
-          currentUserId={currentUserId}
-          onToggleAdmin={onToggleAdmin}
-          onEditVivienda={onEditVivienda}
-          onDelete={onDelete}
-        />
-      ))}
+      {/* Header with import button */}
+      <View style={styles.usuariosHeader}>
+        <Text style={styles.usuariosTitle}>Usuarios Registrados</Text>
+        <ImportUsersButton onPress={onImportUsers} />
+      </View>
+
+      {/* User list */}
+      {usuarios.length === 0 ? (
+        <EmptyState text="No hay usuarios" />
+      ) : (
+        usuarios.map((usuario) => (
+          <UsuarioCard
+            key={usuario.id}
+            usuario={usuario}
+            currentUserId={currentUserId}
+            onToggleAdmin={onToggleAdmin}
+            onEditVivienda={onEditVivienda}
+            onDelete={onDelete}
+          />
+        ))
+      )}
     </>
   );
 }
@@ -176,5 +185,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: colors.primary,
+  },
+  usuariosHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  usuariosTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
   },
 });
