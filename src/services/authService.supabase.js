@@ -457,6 +457,7 @@ export const authService = {
 
   /**
    * Import multiple users from CSV data with progress feedback
+   * Uses direct database insertion + password reset email approach
    * @param {Array} userData - Array of {nombre, email, vivienda} objects
    * @param {Function} onProgress - Callback (current, total, currentUser) => void
    * @param {Function} onUserResult - Callback (user, success, error) => void
@@ -482,65 +483,134 @@ export const authService = {
       }
 
       try {
-        // Generate temporary password
-        const tempPassword = this.generateRandomPassword();
+        // Check if email already exists
+        const { data: existingUsers, error: checkError } = await supabase
+          .from('users')
+          .select('email')
+          .eq('email', user.email)
+          .limit(1);
 
-        // Create user using existing register flow
-        const result = await this.register({
-          nombre: user.nombre,
-          email: user.email,
-          telefono: '000000000', // Placeholder - users can update later
-          vivienda: user.vivienda,
-          password: tempPassword,
-        });
-
-        if (result.success) {
-          // Auto-approve the user
-          const approveResult = await this.approveUser(result.data.id);
-
-          if (approveResult.success) {
-            // Send password reset email (non-blocking)
-            try {
-              await supabase.auth.resetPasswordForEmail(user.email, {
-                redirectTo: `${window.location.origin}/reset-password`,
-              });
-            } catch (emailError) {
-              console.warn('Failed to send reset email:', emailError);
-              // Don't fail the import if email fails
-            }
-
-            results.push({
-              user,
-              success: true,
-              userId: result.data.id,
-            });
-
-            if (onUserResult) {
-              onUserResult(user, true, null);
-            }
-          } else {
-            // User created but approval failed
-            results.push({
-              user,
-              success: false,
-              error: 'Usuario creado pero no se pudo aprobar automáticamente',
-            });
-
-            if (onUserResult) {
-              onUserResult(user, false, 'Error al aprobar usuario');
-            }
-          }
-        } else {
-          // User creation failed
+        if (checkError) {
           results.push({
             user,
             success: false,
-            error: result.error,
+            error: 'Error al verificar email',
+          });
+          if (onUserResult) {
+            onUserResult(user, false, 'Error al verificar email');
+          }
+          continue;
+        }
+
+        if (existingUsers && existingUsers.length > 0) {
+          results.push({
+            user,
+            success: false,
+            error: 'El email ya está registrado',
+          });
+          if (onUserResult) {
+            onUserResult(user, false, 'Email ya registrado');
+          }
+          continue;
+        }
+
+        // Generate temporary password
+        const tempPassword = this.generateRandomPassword();
+
+        // Try to create user with signUp
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+          email: user.email,
+          password: tempPassword,
+          options: {
+            emailRedirectTo: `${window.location.origin}/reset-password`,
+            data: {
+              nombre: user.nombre,
+              vivienda: user.vivienda,
+            },
+          },
+        });
+
+        if (signUpError) {
+          // If signUp is disabled, report specific error
+          if (signUpError.message?.includes('Signups not allowed') ||
+              signUpError.message?.includes('disabled') ||
+              signUpError.status === 400) {
+            results.push({
+              user,
+              success: false,
+              error: 'Registro deshabilitado en Supabase. Habilita "Enable email signups" en Auth Settings.',
+            });
+            if (onUserResult) {
+              onUserResult(user, false, 'Registro deshabilitado en Supabase');
+            }
+          } else {
+            results.push({
+              user,
+              success: false,
+              error: signUpError.message || 'Error al crear usuario',
+            });
+            if (onUserResult) {
+              onUserResult(user, false, signUpError.message);
+            }
+          }
+          continue;
+        }
+
+        if (!authData?.user) {
+          results.push({
+            user,
+            success: false,
+            error: 'No se pudo crear el usuario en auth',
+          });
+          if (onUserResult) {
+            onUserResult(user, false, 'Error en auth');
+          }
+          continue;
+        }
+
+        // Insert into users table with approved status
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert({
+            id: authData.user.id,
+            nombre: user.nombre,
+            email: user.email,
+            telefono: '000000000', // Placeholder
+            vivienda: user.vivienda,
+            es_admin: false,
+            estado_aprobacion: 'aprobado', // Auto-approve
           });
 
+        if (insertError) {
+          results.push({
+            user,
+            success: false,
+            error: 'Error al crear perfil de usuario',
+          });
           if (onUserResult) {
-            onUserResult(user, false, result.error);
+            onUserResult(user, false, 'Error al crear perfil');
           }
+          continue;
+        }
+
+        // Send password reset email
+        try {
+          await supabase.auth.resetPasswordForEmail(user.email, {
+            redirectTo: `${window.location.origin}/reset-password`,
+          });
+        } catch (emailError) {
+          console.warn('Failed to send reset email:', emailError);
+          // Don't fail the import if email fails
+        }
+
+        results.push({
+          user,
+          success: true,
+          userId: authData.user.id,
+        });
+
+        if (onUserResult) {
+          onUserResult(user, true, null);
         }
       } catch (error) {
         results.push({
