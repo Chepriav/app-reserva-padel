@@ -101,20 +101,19 @@ export default function ResetPasswordScreen({ navigation }) {
       setAlertConfig({
         visible: true,
         title: 'Contrasena actualizada',
-        message: 'Ya puedes iniciar sesion con tu nueva contrasena.',
+        message: 'Tu contrasena ha sido actualizada correctamente.',
         buttons: [
           {
-            text: 'Aceptar',
-            onPress: async () => {
+            text: 'Continuar',
+            onPress: () => {
               setAlertConfig({ ...alertConfig, visible: false });
-              await authService.logout();
-              // Force navigation to login by reloading on web
+              // Navigate to home - user is already authenticated
               if (typeof window !== 'undefined') {
                 window.location.href = '/';
               } else {
                 navigation.reset({
                   index: 0,
-                  routes: [{ name: 'Login' }],
+                  routes: [{ name: 'Main' }],
                 });
               }
             },
