@@ -293,18 +293,20 @@ Test User 3,1-1-C,test3@example.com
 
 ### Nuevos Archivos
 - `src/services/csvImportService.js` - Servicio de parsing CSV
+- `src/services/userImportService.js` - Servicio de creación de usuarios por lotes
 - `src/components/admin/ImportUsersButton.js` - Botón de importación
 - `src/components/admin/ImportUsersModal.js` - Modal principal
 - `src/components/admin/ImportResultsModal.js` - Modal de resultados
 - `src/hooks/useUserImport.js` - Hook de gestión de estado
 - `test-cases/*.csv` - Archivos de prueba
+- `supabase/migrations/20260116_allow_admin_insert_users.sql` - Política RLS para admins
 
 ### Archivos Modificados
 - `package.json` - Agregada dependencia `papaparse`
-- `src/services/authService.supabase.js` - Agregadas funciones de importación
 - `src/components/admin/AdminContent.js` - Agregado header con botón
 - `src/screens/AdminScreen.js` - Integrados modales y handlers
 - `src/components/admin/index.js` - Exportados nuevos componentes
+- `.env.example` - Añadida variable `EXPO_PUBLIC_PASSWORD_RESET_REDIRECT_URL`
 
 ## Dependencias
 

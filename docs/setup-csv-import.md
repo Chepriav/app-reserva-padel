@@ -84,6 +84,26 @@ Si quieres proteger contra registros no deseados:
 2. Configura **Site URL** para tu dominio específico
 3. Configura **Redirect URLs** solo para tus dominios autorizados
 
+## Configuración de URLs para Email de Reset
+
+Para que los enlaces de "resetear contraseña" funcionen correctamente:
+
+### En Supabase Dashboard:
+
+1. Ve a **Authentication** → **URL Configuration**
+2. **Site URL**: `https://tu-app.vercel.app`
+3. **Redirect URLs**: Añadir `https://tu-app.vercel.app/reset-password`
+
+### En tu aplicación:
+
+Añade a tu archivo `.env`:
+
+```env
+EXPO_PUBLIC_PASSWORD_RESET_REDIRECT_URL=https://tu-app.vercel.app/reset-password
+```
+
+**Importante**: Si no configuras esto, los enlaces de reset apuntarán a `localhost` cuando importes usuarios desde desarrollo, lo cual no funcionará cuando el usuario abra el email.
+
 ## Testing Post-Configuración
 
 Una vez habilitado, prueba con:

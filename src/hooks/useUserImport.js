@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { authService } from '../services/authService.supabase';
+import { importUsersFromData } from '../services/userImportService';
 
 /**
  * Custom hook for managing user import state and operations
@@ -32,8 +32,8 @@ export function useUserImport() {
     abortControllerRef.current = new AbortController();
 
     try {
-      // Call auth service to import users
-      const result = await authService.importUsersFromData(
+      // Call import service
+      const result = await importUsersFromData(
         userData,
         onProgress,
         onUserResult,
