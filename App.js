@@ -3,14 +3,31 @@ import { Linking, Platform, View, Text, TouchableOpacity, StyleSheet } from 'rea
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from './src/context/AuthContext';
 import { ReservationsProvider } from './src/context/ReservationsContext';
-import AppNavigator, { navigationRef } from './src/navigation/AppNavigator';
+import AppNavigator, { navigationRef, setRecoveryFlow } from './src/navigation/AppNavigator';
 import { registerServiceWorker, setUpdateCallback, applyUpdate } from './src/services/registerServiceWorker';
 import { colors } from './src/constants/colors';
 import { authService } from './src/services/authService.supabase';
 
+// Check for recovery URL immediately on load (before React renders)
+const getInitialRecoveryState = () => {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    const url = window.location.href;
+    const hasCode = url.includes('?code=') || url.includes('&code=');
+    const isResetPath = url.includes('reset-password');
+    if (hasCode || isResetPath) {
+      setRecoveryFlow(true);
+      return true;
+    }
+  }
+  return false;
+};
+
+const initialRecoveryState = getInitialRecoveryState();
+
 export default function App() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [pendingRecoveryNavigation, setPendingRecoveryNavigation] = useState(false);
+  const [initialRecoveryFlow, setInitialRecoveryFlow] = useState(initialRecoveryState);
 
   useEffect(() => {
     // Registrar Service Worker solo en web
@@ -32,34 +49,31 @@ export default function App() {
       const isResetPath = url.includes('reset-password');
 
       if (hasRecoveryCode || isResetPath) {
-        // Handle password recovery tokens
+        setRecoveryFlow(true);
+        setInitialRecoveryFlow(true);
+
         const result = await authService.handlePasswordRecoveryUrl(url);
 
-        if (result.handled && !result.error) {
-          // Session was set successfully, wait a bit for it to propagate
-          await new Promise(resolve => setTimeout(resolve, 200));
-
-          // Navigate to reset password screen
-          if (navigationRef.isReady()) {
-            navigationRef.navigate('ResetPassword');
-          } else {
-            setPendingRecoveryNavigation(true);
-          }
-        } else if (result.error) {
-          console.error('Error handling password recovery:', result.error);
-          // Still navigate to reset password screen, it will show appropriate error
-          if (navigationRef.isReady()) {
-            navigationRef.navigate('ResetPassword');
-          } else {
-            setPendingRecoveryNavigation(true);
-          }
+        // Clean URL after processing
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          const cleanUrl = result.handled && !result.error
+            ? window.location.origin + '/reset-password'
+            : window.location.origin + '/';
+          window.history.replaceState({}, document.title, cleanUrl);
         }
       }
     };
 
-    Linking.getInitialURL().then((url) => {
-      handleRecoveryUrl(url);
-    });
+    // For web, check window.location directly
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const currentUrl = window.location.href;
+      handleRecoveryUrl(currentUrl);
+    } else {
+      // For native, use Linking
+      Linking.getInitialURL().then((url) => {
+        handleRecoveryUrl(url);
+      });
+    }
 
     const subscription = Linking.addEventListener('url', ({ url }) => {
       handleRecoveryUrl(url);
@@ -94,7 +108,7 @@ export default function App() {
               </TouchableOpacity>
             </View>
           )}
-          <AppNavigator onReady={handleNavigationReady} />
+          <AppNavigator onReady={handleNavigationReady} initialRecoveryFlow={initialRecoveryFlow} />
         </View>
         <StatusBar style="auto" />
       </ReservationsProvider>

@@ -15,6 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService.supabase';
 import { supabase } from '../services/supabaseConfig';
 import { CustomAlert } from '../components/CustomAlert';
+import { setRecoveryFlow } from '../navigation/AppNavigator';
 
 export default function ResetPasswordScreen({ navigation }) {
   const { isAuthenticated } = useAuth();
@@ -32,26 +33,51 @@ export default function ResetPasswordScreen({ navigation }) {
 
   useEffect(() => {
     let isMounted = true;
+    let authListener = null;
+    let timeoutId = null;
+
+    const finishWithResult = (valid) => {
+      if (!isMounted) return;
+      setSessionValid(valid);
+      setCheckingSession(false);
+    };
 
     const checkSession = async () => {
       try {
+        // First check if session already exists
         const { data: { session }, error } = await supabase.auth.getSession();
 
         if (!isMounted) return;
 
-        if (error || !session) {
-          setSessionValid(false);
-        } else {
-          setSessionValid(true);
+        if (!error && session) {
+          // Session exists, we're good
+          finishWithResult(true);
+          return;
         }
-      } catch (error) {
-        if (isMounted) {
-          setSessionValid(false);
-        }
-      } finally {
-        if (isMounted) {
-          setCheckingSession(false);
-        }
+
+        // No session yet - wait for auth state change (code exchange in progress)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+          if (!isMounted) return;
+
+          if (event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') {
+            finishWithResult(true);
+            if (timeoutId) clearTimeout(timeoutId);
+          } else if (event === 'SIGNED_OUT') {
+            finishWithResult(false);
+          }
+        });
+
+        authListener = subscription;
+
+        // Timeout after 5 seconds - if no session by then, link is invalid
+        timeoutId = setTimeout(() => {
+          if (isMounted && checkingSession) {
+            finishWithResult(false);
+          }
+        }, 5000);
+
+      } catch {
+        finishWithResult(false);
       }
     };
 
@@ -59,6 +85,12 @@ export default function ResetPasswordScreen({ navigation }) {
 
     return () => {
       isMounted = false;
+      if (authListener) {
+        authListener.unsubscribe();
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     };
   }, []);
 
@@ -98,6 +130,9 @@ export default function ResetPasswordScreen({ navigation }) {
     setLoading(false);
 
     if (result.success) {
+      // Clear recovery flow flag
+      setRecoveryFlow(false);
+
       setAlertConfig({
         visible: true,
         title: 'Contrasena actualizada',

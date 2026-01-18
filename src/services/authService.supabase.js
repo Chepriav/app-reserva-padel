@@ -537,11 +537,10 @@ export const authService = {
    */
   async approveUser(userId) {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('users')
         .update({ estado_aprobacion: 'aprobado' })
-        .eq('id', userId)
-        .select();
+        .eq('id', userId);
 
       if (error) {
         return { success: false, error: 'Error al aprobar usuario' };
@@ -558,11 +557,10 @@ export const authService = {
    */
   async rejectUser(userId) {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('users')
         .update({ estado_aprobacion: 'rechazado' })
-        .eq('id', userId)
-        .select();
+        .eq('id', userId);
 
       if (error) {
         return { success: false, error: 'Error al rechazar usuario' };
@@ -663,17 +661,22 @@ export const authService = {
   async handlePasswordRecoveryUrl(url) {
     const { type, accessToken, refreshToken, code } = parseRecoveryParams(url);
 
-    if (type !== 'recovery') {
+    // Recovery flow: type=recovery or code exists (PKCE flow)
+    const isRecoveryFlow = type === 'recovery' || !!code;
+    if (!isRecoveryFlow) {
       return { handled: false };
     }
 
     if (code) {
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
-      if (error) {
-        console.error('Error exchanging recovery code:', error.message);
-        return { handled: true, error: error.message };
+      try {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
+          return { handled: true, error: error.message };
+        }
+        return { handled: true };
+      } catch (err) {
+        return { handled: true, error: err.message || 'Error processing recovery code' };
       }
-      return { handled: true };
     }
 
     if (accessToken && refreshToken) {
@@ -681,12 +684,9 @@ export const authService = {
         access_token: accessToken,
         refresh_token: refreshToken,
       });
-
       if (error) {
-        console.error('Error setting recovery session:', error.message);
         return { handled: true, error: error.message };
       }
-
       return { handled: true };
     }
 
@@ -835,7 +835,7 @@ export const authService = {
    */
   onAuthChange(callback) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (_event, session) => {
         if (!session) {
           callback(null);
           return;
