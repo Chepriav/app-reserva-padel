@@ -2,6 +2,15 @@
 
 Bienvenido a la aplicación de reservas de pádel de tu urbanización. Esta guía te ayudará a utilizar todas las funcionalidades disponibles.
 
+## 📱 Acceso Rápido a la App
+
+Escanea este código QR con la cámara de tu móvil para acceder directamente a la aplicación:
+
+<div align="center">
+  <img src="../public/app-qr.png" alt="QR Code - App Pádel" width="300">
+  <p><strong>https://rio-tamesis-app.vercel.app</strong></p>
+</div>
+
 ---
 
 ## Índice
