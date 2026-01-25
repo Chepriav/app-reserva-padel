@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Guía de usuario completa de la aplicación de reservas de pádel">
+    <title>Guía de Usuario - App Reserva Pádel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%);
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        .qr-section {
+            background: white;
+            padding: 2rem;
+            margin: 2rem auto;
+            max-width: 800px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .qr-section h2 {
+            color: #2e7d32;
+            margin-bottom: 1rem;
+        }
+
+        .qr-section img {
+            max-width: 250px;
+            margin: 1rem auto;
+            border-radius: 8px;
+        }
+
+        .qr-section .url {
+            font-size: 1.1rem;
+            color: #666;
+            margin-top: 1rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .section {
+            background: white;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .section h2 {
+            color: #2e7d32;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid #4caf50;
+        }
+
+        .section h3 {
+            color: #2e7d32;
+            font-size: 1.4rem;
+            margin: 1.5rem 0 1rem;
+        }
+
+        .section h4 {
+            color: #4caf50;
+            font-size: 1.2rem;
+            margin: 1rem 0 0.5rem;
+        }
+
+        .section ul, .section ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .section li {
+            margin-bottom: 0.5rem;
+        }
+
+        .highlight {
+            background: #e8f5e9;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .note {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .important {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .faq {
+            background: #f5f5f5;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+        }
+
+        .faq strong {
+            color: #2e7d32;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #2e7d32;
+            color: white;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            margin-top: 1rem;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #1b5e20;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+            background: white;
+            margin-top: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        table th,
+        table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        table th {
+            background: #e8f5e9;
+            color: #2e7d32;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .section {
+                padding: 1.5rem;
+            }
+
+            .section h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎾 Guía de Usuario</h1>
+        <p>App Reserva Pádel - Urbanización</p>
+    </div>
+
+    <div class="qr-section">
+        <h2>📱 Acceso Rápido a la App</h2>
+        <p>Escanea este código QR con la cámara de tu móvil:</p>
+        <img src="app-qr.png" alt="QR App Pádel">
+        <p class="url"><strong>https://rio-tamesis-app.vercel.app</strong></p>
+        <a href="https://rio-tamesis-app.vercel.app" class="btn">Abrir la App</a>
+    </div>
+
+    <div class="container">
+        <!-- Instalación -->
+        <div class="section">
+            <h2>📱 Instalar la App en tu Móvil</h2>
+            <p>La aplicación es una <span class="highlight">PWA (Progressive Web App)</span>, funciona desde el navegador pero puedes instalarla como una app nativa.</p>
+
+            <h3>En iPhone (iOS - Safari)</h3>
+            <ol>
+                <li><strong>Abre Safari</strong> en tu iPhone (importante: usar Safari, no Chrome)</li>
+                <li><strong>Ve a:</strong> <code>https://rio-tamesis-app.vercel.app</code></li>
+                <li><strong>Toca el botón compartir</strong> (cuadrado con flecha ⬆)</li>
+                <li><strong>Busca "Añadir a pantalla de inicio"</strong></li>
+                <li><strong>Confirma "Añadir"</strong></li>
+                <li>¡Listo! Verás el icono en tu pantalla de inicio</li>
+            </ol>
+
+            <h3>En Android (Chrome)</h3>
+            <ol>
+                <li><strong>Abre Chrome</strong> en tu Android</li>
+                <li><strong>Ve a:</strong> <code>https://rio-tamesis-app.vercel.app</code></li>
+                <li><strong>Aparecerá un banner</strong> "Instalar app"</li>
+                <li><strong>Toca "Instalar"</strong> y confirma</li>
+                <li>La app se instalará en tu cajón de aplicaciones</li>
+            </ol>
+
+            <h4>Ventajas de instalar:</h4>
+            <ul>
+                <li>✅ Acceso rápido desde icono</li>
+                <li>✅ Pantalla completa sin navegador</li>
+                <li>✅ Notificaciones push en tiempo real</li>
+                <li>✅ Funciona parcialmente offline</li>
+                <li>✅ Ocupa muy poco espacio</li>
+            </ul>
+        </div>
+
+        <!-- Primer Acceso -->
+        <div class="section">
+            <h2>🔐 Primer Acceso</h2>
+            <ol>
+                <li><strong>Recibe el email</strong> del administrador con asunto "Restablecer contraseña"</li>
+                <li><strong>Haz click en el enlace</strong> del email</li>
+                <li><strong>Establece tu contraseña</strong> (mínimo 6 caracteres)</li>
+                <li><strong>Confirma</strong> la contraseña</li>
+                <li><strong>Inicia sesión</strong> con tu email y contraseña</li>
+            </ol>
+        </div>
+
+        <!-- Reservas -->
+        <div class="section">
+            <h2>📅 Hacer una Reserva</h2>
+
+            <h3>Horarios y Reglas</h3>
+            <table>
+                <tr>
+                    <th>Concepto</th>
+                    <th>Valor</th>
+                </tr>
+                <tr>
+                    <td>Horario</td>
+                    <td>08:00 - 22:00</td>
+                </tr>
+                <tr>
+                    <td>Bloques</td>
+                    <td>30 minutos</td>
+                </tr>
+                <tr>
+                    <td>Duración máxima</td>
+                    <td>1.5 horas (3 bloques)</td>
+                </tr>
+                <tr>
+                    <td>Límite</td>
+                    <td>1 reserva activa por vivienda</td>
+                </tr>
+                <tr>
+                    <td>Anticipación</td>
+                    <td>Hasta 7 días</td>
+                </tr>
+                <tr>
+                    <td>Cancelación</td>
+                    <td>Sin límite de tiempo</td>
+                </tr>
+            </table>
+
+            <h3>Cómo Reservar</h3>
+            <ol>
+                <li><strong>Pantalla de Inicio</strong> → Ver calendario</li>
+                <li><strong>Selecciona fecha</strong> en el calendario</li>
+                <li><strong>Elige horario:</strong>
+                    <ul>
+                        <li>🟢 Verde claro = Disponible</li>
+                        <li>🟢 Verde oscuro (G) = Tu reserva</li>
+                        <li>🔴 Rojo = Bloqueado</li>
+                        <li>⚪ Gris = No disponible</li>
+                    </ul>
+                </li>
+                <li><strong>Selecciona bloques</strong> consecutivos (máx 3)</li>
+                <li><strong>Toca "Reservar"</strong> y confirma</li>
+            </ol>
+
+            <div class="note">
+                <strong>Nota:</strong> Tu reserva será siempre <strong>Garantizada (G)</strong> - No puede ser desplazada.
+            </div>
+        </div>
+
+        <!-- Cancelar Reservas -->
+        <div class="section">
+            <h2>❌ Cancelar Reservas</h2>
+            <ol>
+                <li><strong>Mis Reservas</strong> → Pestaña calendario</li>
+                <li><strong>Toca la reserva</strong> que quieres cancelar</li>
+                <li><strong>Botón "Cancelar Reserva"</strong> (rojo)</li>
+                <li><strong>Confirma</strong> la cancelación</li>
+            </ol>
+            <p>Puedes cancelar sin penalización en cualquier momento.</p>
+        </div>
+
+        <!-- Buscar Jugadores -->
+        <div class="section">
+            <h2>🎮 Buscar Jugadores para Partidas</h2>
+
+            <h3>Crear una partida abierta</h3>
+            <ol>
+                <li><strong>Pestaña "Partidas"</strong> → Botón "+"</li>
+                <li><strong>Selecciona "Buscar Jugadores"</strong></li>
+                <li><strong>Completa:</strong>
+                    <ul>
+                        <li>Vinculada a reserva (debe existir)</li>
+                        <li>Descripción</li>
+                        <li>Plazas disponibles (1-3)</li>
+                        <li>Nivel recomendado</li>
+                    </ul>
+                </li>
+                <li><strong>Publica</strong> la partida</li>
+            </ol>
+
+            <h3>Unirse a una partida</h3>
+            <ol>
+                <li><strong>Explora partidas</strong> en la pestaña "Partidas"</li>
+                <li><strong>Revisa detalles</strong> (fecha, hora, nivel, plazas)</li>
+                <li><strong>Toca "Unirse"</strong> y confirma</li>
+            </ol>
+        </div>
+
+        <!-- Clases -->
+        <div class="section">
+            <h2>📚 Organizar Clases de Pádel</h2>
+            <ol>
+                <li><strong>Pestaña "Partidas"</strong> → Botón "+"</li>
+                <li><strong>Selecciona "Clase de Pádel"</strong></li>
+                <li><strong>Completa:</strong>
+                    <ul>
+                        <li>Título de la clase</li>
+                        <li>Descripción</li>
+                        <li>Plazas (1-10 alumnos)</li>
+                        <li>Nivel recomendado</li>
+                        <li>Precio (opcional)</li>
+                    </ul>
+                </li>
+                <li><strong>Publica</strong> - Aparecerá como "CLASE"</li>
+            </ol>
+        </div>
+
+        <!-- Perfil -->
+        <div class="section">
+            <h2>👤 Gestionar tu Perfil</h2>
+
+            <h3>Editar datos personales</h3>
+            <ol>
+                <li><strong>Pestaña "Perfil"</strong></li>
+                <li><strong>Botón "Editar"</strong></li>
+                <li><strong>Modifica:</strong> Nombre, Teléfono, Nivel de juego</li>
+                <li><strong>Foto:</strong> Toca imagen → Galería/Cámara</li>
+                <li><strong>Guardar</strong> cambios</li>
+            </ol>
+
+            <div class="note">
+                <strong>Nota:</strong> No puedes cambiar tu email. Contacta al administrador.
+            </div>
+        </div>
+
+        <!-- Cambiar Contraseña -->
+        <div class="section">
+            <h2>🔑 Cambiar Contraseña</h2>
+
+            <h3>Método 1: Desde el perfil (logueado)</h3>
+            <ol>
+                <li><strong>Perfil</strong> → "Cambiar contraseña"</li>
+                <li><strong>Introduce:</strong> Contraseña actual y nueva</li>
+                <li><strong>Guardar</strong> - Sesión se mantiene</li>
+            </ol>
+
+            <h3>Método 2: Olvidé mi contraseña</h3>
+            <ol>
+                <li><strong>Login</strong> → "¿Olvidaste tu contraseña?"</li>
+                <li><strong>Introduce tu email</strong></li>
+                <li><strong>Enviar</strong> → Recibirás email</li>
+                <li><strong>Click en enlace</strong> del email</li>
+                <li><strong>Establece nueva contraseña</strong></li>
+            </ol>
+
+            <div class="important">
+                <strong>Importante:</strong> El enlace del email expira. Si no funciona, solicita uno nuevo.
+            </div>
+        </div>
+
+        <!-- FAQ -->
+        <div class="section">
+            <h2>❓ Preguntas Frecuentes</h2>
+
+            <div class="faq">
+                <strong>P: ¿Puedo tener más de una reserva?</strong>
+                <p>R: No, solo 1 reserva activa por vivienda.</p>
+            </div>
+
+            <div class="faq">
+                <strong>P: ¿Con cuánta anticipación puedo reservar?</strong>
+                <p>R: Hasta 7 días por adelantado.</p>
+            </div>
+
+            <div class="faq">
+                <strong>P: ¿Puedo reservar para otra persona de mi vivienda?</strong>
+                <p>R: Sí, la reserva es por vivienda, no por persona.</p>
+            </div>
+
+            <div class="faq">
+                <strong>P: ¿Qué significa "G" en mi reserva?</strong>
+                <p>R: Garantizada - No puede ser desplazada.</p>
+            </div>
+
+            <div class="faq">
+                <strong>P: ¿Necesito una reserva para crear una partida?</strong>
+                <p>R: Sí, primero reserva la pista, luego vincúlala a la partida.</p>
+            </div>
+
+            <div class="faq">
+                <strong>P: Olvidé mi contraseña, ¿qué hago?</strong>
+                <p>R: Usa "¿Olvidaste tu contraseña?" en el login.</p>
+            </div>
+
+            <div class="faq">
+                <strong>P: El enlace del email no funciona</strong>
+                <p>R: Puede haber expirado. Solicita uno nuevo.</p>
+            </div>
+
+            <div class="faq">
+                <strong>P: La app no carga</strong>
+                <p>R: Verifica conexión a internet, cierra y vuelve a abrir. Si persiste, contacta al administrador.</p>
+            </div>
+        </div>
+
+        <!-- Contacto -->
+        <div class="section">
+            <h2>📞 Contacto y Soporte</h2>
+            <p>Si tienes problemas que no se resuelven con esta guía:</p>
+            <ul>
+                <li>Contacta al <strong>administrador</strong> de la urbanización</li>
+                <li>Reporta <strong>bugs</strong> si encuentras errores</li>
+                <li>Tus <strong>sugerencias</strong> son bienvenidas</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p><strong>Versión de la guía:</strong> 1.0</p>
+        <p><strong>Última actualización:</strong> Enero 2026</p>
+        <p style="margin-top: 1rem;">
+            <a href="https://rio-tamesis-app.vercel.app" class="btn">Abrir la Aplicación</a>
+        </p>
+    </div>
+</body>
+</html>

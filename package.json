@@ -9,6 +9,7 @@
     "web": "expo start --web",
     "build:web": "expo export -p web && node scripts/inject-pwa-meta.js && cp -f public/manifest.json dist/manifest.json && cp -f public/*.svg dist/ && cp -f public/*.png dist/ && cp -f public/service-worker.js dist/service-worker.js",
     "generate:qr": "node scripts/generate-qr.js",
+    "generate:qr-guia": "node scripts/generate-qr-guia.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "jest"
