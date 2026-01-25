@@ -6,16 +6,104 @@ Bienvenido a la aplicación de reservas de pádel de tu urbanización. Esta guí
 
 ## Índice
 
-1. [Primer Acceso](#primer-acceso)
-2. [Hacer una Reserva](#hacer-una-reserva)
-3. [Ver y Cancelar Reservas](#ver-y-cancelar-reservas)
-4. [Buscar Jugadores para Partidas](#buscar-jugadores-para-partidas)
-5. [Organizar Clases de Pádel](#organizar-clases-de-pádel)
-6. [Tablón de Anuncios](#tablón-de-anuncios)
-7. [Gestionar tu Perfil](#gestionar-tu-perfil)
-8. [Cambiar Contraseña](#cambiar-contraseña)
-9. [Solicitar Cambio de Vivienda](#solicitar-cambio-de-vivienda)
-10. [Preguntas Frecuentes](#preguntas-frecuentes)
+1. [Instalar la App en tu Móvil](#instalar-la-app-en-tu-móvil)
+2. [Primer Acceso](#primer-acceso)
+3. [Hacer una Reserva](#hacer-una-reserva)
+4. [Ver y Cancelar Reservas](#ver-y-cancelar-reservas)
+5. [Buscar Jugadores para Partidas](#buscar-jugadores-para-partidas)
+6. [Organizar Clases de Pádel](#organizar-clases-de-pádel)
+7. [Tablón de Anuncios](#tablón-de-anuncios)
+8. [Gestionar tu Perfil](#gestionar-tu-perfil)
+9. [Cambiar Contraseña](#cambiar-contraseña)
+10. [Solicitar Cambio de Vivienda](#solicitar-cambio-de-vivienda)
+11. [Preguntas Frecuentes](#preguntas-frecuentes)
+
+---
+
+## Instalar la App en tu Móvil
+
+La aplicación es una **PWA (Progressive Web App)**, lo que significa que funciona desde el navegador pero puedes instalarla como una app nativa con icono en tu pantalla de inicio.
+
+### En iPhone (iOS - Safari)
+
+1. **Abre Safari** en tu iPhone
+   - Es importante usar Safari, no Chrome u otro navegador
+
+2. **Ve a la web de la app**
+   - Introduce la URL: `https://rio-tamesis-app.vercel.app`
+
+3. **Toca el botón de compartir**
+   - Icono de compartir (cuadrado con flecha hacia arriba) en la parte inferior de Safari
+
+4. **Desplázate y busca "Añadir a pantalla de inicio"**
+   - Toca esta opción
+   - Verás el icono y nombre de la app
+
+5. **Confirma "Añadir"**
+   - Puedes editar el nombre si quieres
+   - Toca "Añadir" en la esquina superior derecha
+
+6. **¡Listo!**
+   - Verás el icono de la app en tu pantalla de inicio
+   - Ábrela como cualquier otra app
+   - Funcionará a pantalla completa, sin barra del navegador
+
+### En Android (Chrome)
+
+#### Método 1: Banner automático
+
+1. **Abre Chrome** en tu Android
+
+2. **Ve a la web de la app**
+   - Introduce la URL: `https://rio-tamesis-app.vercel.app`
+
+3. **Aparecerá un banner** en la parte inferior
+   - "Instalar app" o "Añadir a pantalla de inicio"
+
+4. **Toca "Instalar"**
+   - Confirma la instalación
+
+5. **La app se instalará**
+   - Aparecerá el icono en tu cajón de aplicaciones
+   - Podrás encontrarla como cualquier app nativa
+
+#### Método 2: Desde el menú
+
+1. **Abre Chrome** y ve a la URL de la app
+
+2. **Toca los tres puntos** (⋮) en la esquina superior derecha
+
+3. **Selecciona "Instalar aplicación"** o "Añadir a pantalla de inicio"
+   - Si no aparece, busca "Agregar a Inicio"
+
+4. **Confirma**
+   - Toca "Instalar" o "Añadir"
+
+5. **Accede desde tu pantalla de inicio**
+   - El icono estará disponible como cualquier otra app
+
+### Ventajas de instalar la app
+
+✅ **Acceso rápido**: Icono en tu pantalla de inicio
+✅ **Pantalla completa**: Sin barras del navegador
+✅ **Notificaciones push**: Recibe avisos en tiempo real
+✅ **Funciona offline**: Algunas funciones disponibles sin internet
+✅ **Ocupa poco espacio**: Mucho menos que una app nativa
+✅ **Actualización automática**: Siempre tendrás la última versión
+
+### Problemas comunes
+
+**P: No veo la opción de instalar en Android**
+R: Asegúrate de estar usando Chrome. Algunos navegadores no soportan PWA.
+
+**P: En iPhone no aparece "Añadir a pantalla de inicio"**
+R: Verifica que estás usando Safari, no Chrome. Solo Safari soporta PWA en iOS.
+
+**P: La app no envía notificaciones**
+R: Ve a Configuración del dispositivo → Notificaciones → Busca la app → Activa permisos.
+
+**P: ¿Necesito instalarla o puedo usar el navegador?**
+R: Puedes usar ambos, pero instalada tendrás mejor experiencia (pantalla completa, notificaciones, acceso rápido).
 
 ---
 

@@ -1,5 +1,23 @@
 # Guía Rápida - App Pádel Urbanización
 
+## 📱 Instalar en tu Móvil
+
+### iPhone (Safari)
+```
+Safari → https://rio-tamesis-app.vercel.app →
+Compartir (⬆️) → Añadir a pantalla de inicio → Añadir
+```
+
+### Android (Chrome)
+```
+Chrome → https://rio-tamesis-app.vercel.app →
+⋮ (menú) → Instalar aplicación → Instalar
+```
+
+**Ventajas**: Icono en inicio, pantalla completa, notificaciones push
+
+---
+
 ## 🎾 Inicio Rápido
 
 ### Primera vez
