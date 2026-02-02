@@ -1082,23 +1082,46 @@ export const reservasService = {
    */
   async createBlockout(pistaId, fecha, horaInicio, horaFin, motivo, creadoPor) {
     try {
-      // Verify there's no confirmed reservation at that time
+      // Cancel any confirmed reservations that conflict with the blockout
       const disponibilidad = await this.getAvailability(pistaId, fecha);
       if (disponibilidad.success) {
         const bloqueInicio = timeToMinutes(horaInicio);
         const bloqueFin = timeToMinutes(horaFin);
 
-        const hayReserva = disponibilidad.data.some(h => {
-          if (h.disponible || h.bloqueado) return false;
-          const hInicio = timeToMinutes(h.horaInicio);
-          return hInicio >= bloqueInicio && hInicio < bloqueFin;
-        });
+        const reservasAfectadas = disponibilidad.data
+          .filter(h => {
+            if (h.disponible || h.bloqueado) return false;
+            const hInicio = timeToMinutes(h.horaInicio);
+            return hInicio >= bloqueInicio && hInicio < bloqueFin;
+          })
+          .map(h => h.reservaExistente)
+          .filter(Boolean);
 
-        if (hayReserva) {
-          return {
-            success: false,
-            error: 'No se puede bloquear: hay una reserva confirmada en ese horario',
-          };
+        // Deduplicate by reservation ID (one reservation can span multiple slots)
+        const reservasUnicas = [...new Map(reservasAfectadas.map(r => [r.id, r])).values()];
+
+        for (const reserva of reservasUnicas) {
+          console.log('[crearBloqueo] Cancelling reservation:', reserva.id, 'vivienda:', reserva.vivienda);
+          await supabase.from('reservas').update({ estado: 'cancelada' }).eq('id', reserva.id);
+
+          // Cancel linked match if exists
+          try {
+            await partidasService.cancelarPartidaPorReserva(reserva.id, 'reserva_cancelada');
+          } catch (e) {
+            console.error('[crearBloqueo] Error cancelling linked match:', e);
+          }
+
+          // Notify apartment about cancellation with blockout reason
+          try {
+            await notificationService.notifyViviendaBlockoutCancellation(reserva.vivienda, {
+              fecha: reserva.fecha || fecha,
+              horaInicio: reserva.horaInicio || horaInicio,
+              pistaNombre: reserva.pistaNombre || 'Pista',
+              motivo: motivo || 'Bloqueado por administración',
+            });
+          } catch (e) {
+            console.error('[crearBloqueo] Error notifying apartment:', e);
+          }
         }
       }
 

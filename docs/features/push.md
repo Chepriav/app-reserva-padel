@@ -80,6 +80,7 @@ self.addEventListener('push', (event) => {
 |--------|--------------|
 | Cambio vivienda aprobado/rechazado | Usuario |
 | Reserva desplazada | Vivienda desplazada |
+| Reserva cancelada por bloqueo admin | Vivienda afectada |
 | Solicitud unirse partida | Creador |
 | Solicitud aceptada | Solicitante |
 | Partida completa | Todos los jugadores |

@@ -212,10 +212,8 @@ export default function HomeScreen({ navigation }) {
     if (bloqueosHook.blockoutMode && user?.esAdmin) {
       if (estaBloqueado) {
         bloqueosHook.toggleSlotToUnblock(horario, fecha);
-      } else if (horario.disponible) {
-        bloqueosHook.toggleSlotToBlock(horario, fecha);
       } else {
-        mostrarAlerta('No se puede bloquear', 'Este horario tiene una reserva activa');
+        bloqueosHook.toggleSlotToBlock(horario, fecha);
       }
       return;
     }

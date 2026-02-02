@@ -403,6 +403,44 @@ export const notificationService = {
     });
   },
 
+  /**
+   * Notifies ALL users of an apartment that their reservation was canceled due to admin blockout
+   * @param {string} vivienda - Apartment whose users will be notified
+   * @param {Object} reservaInfo - { fecha, horaInicio, pistaNombre, motivo }
+   */
+  async notifyViviendaBlockoutCancellation(vivienda, reservaInfo) {
+    const title = 'Reserva cancelada por bloqueo';
+    const motivoTexto = reservaInfo.motivo ? `\nMotivo: ${reservaInfo.motivo}` : '';
+    const body = `Tu reserva del ${reservaInfo.fecha} a las ${reservaInfo.horaInicio} en ${reservaInfo.pistaNombre} ha sido cancelada por el administrador.${motivoTexto}`;
+
+    try {
+      const { data: usuarios } = await supabase
+        .from('users')
+        .select('id')
+        .eq('vivienda', vivienda)
+        .eq('estado_aprobacion', 'aprobado');
+
+      if (usuarios?.length) {
+        await Promise.all(
+          usuarios.map((u) =>
+            tablonService.crearNotificacion(u.id, 'bloqueo_cancelacion', title, body, {
+              fecha: reservaInfo.fecha,
+              horaInicio: reservaInfo.horaInicio,
+              pistaNombre: reservaInfo.pistaNombre,
+            })
+          )
+        );
+      }
+    } catch (error) {
+      console.error('[Notificaciones] Error notificación bloqueo:', error);
+    }
+
+    return await this.notifyViviendaMembers(vivienda, title, body, {
+      type: 'blockout_cancellation',
+      ...reservaInfo,
+    });
+  },
+
   // ============ MATCH NOTIFICATIONS ============
 
   /**

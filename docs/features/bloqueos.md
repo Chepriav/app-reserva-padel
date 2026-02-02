@@ -52,8 +52,29 @@ const {
 } = useBloqueos({ pistaSeleccionada, userId, mostrarAlerta, onRecargarHorarios });
 ```
 
+## Cancelación automática de reservas
+
+Cuando un admin bloquea un horario que tiene una reserva activa:
+
+1. La reserva se cancela automáticamente (`estado = 'cancelada'`)
+2. Si la reserva tiene una partida vinculada, también se cancela
+3. Se notifica a todos los usuarios de la vivienda afectada:
+   - Notificación en el tablón (tipo `bloqueo_cancelacion`)
+   - Push notification (web + móvil)
+   - El mensaje incluye el motivo del bloqueo
+
+### Flujo
+
+```
+Admin selecciona bloques (con o sin reserva) → Confirma bloqueo con motivo
+→ createBlockout() detecta reservas en conflicto
+→ Cancela cada reserva afectada
+→ Cancela partidas vinculadas
+→ notifyViviendaBlockoutCancellation(vivienda, reservaInfo)
+→ Inserta el bloqueo
+```
+
 ## Validaciones
 
-1. No se pueden bloquear horas con reserva existente
-2. Solo admins pueden crear/eliminar (RLS en Supabase)
-3. Bloqueos se consultan en paralelo con reservas
+1. Solo admins pueden crear/eliminar (RLS en Supabase)
+2. Bloqueos se consultan en paralelo con reservas
