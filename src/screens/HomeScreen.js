@@ -244,6 +244,15 @@ export default function HomeScreen({ navigation }) {
       return;
     }
 
+    // Block demo users from making reservations
+    if (user?.esDemo) {
+      mostrarAlerta(
+        'Demo Account',
+        'This is a view-only demo account. You cannot make reservations or modifications.'
+      );
+      return;
+    }
+
     const { horaInicio, horaFin, fecha, duracionMinutos, bloquesDesplazables } = datosReserva;
 
     const validacion = puedeReservar(

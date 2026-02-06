@@ -110,6 +110,14 @@ export default function MatchesScreen() {
   };
 
   const handleRequestToJoin = (match) => {
+    // Block demo users
+    if (user?.esDemo) {
+      showAlert(
+        'Demo Account',
+        'This is a view-only demo account. You cannot make reservations or modifications.'
+      );
+      return;
+    }
     showAlert(
       'Solicitar unirse',
       `¿Quieres enviar una solicitud para unirte a la partida de ${match.creadorNombre}?`,
@@ -198,6 +206,14 @@ export default function MatchesScreen() {
 
   // Open modal in create mode
   const handleOpenCreate = async () => {
+    // Block demo users
+    if (user?.esDemo) {
+      showAlert(
+        'Demo Account',
+        'This is a view-only demo account. You cannot make reservations or modifications.'
+      );
+      return;
+    }
     setMatchEditing(null);
     await createModal.open();
   };

@@ -61,6 +61,7 @@ const mapUserToCamelCase = (data) => {
     fotoPerfil: data.foto_perfil,
     esAdmin: data.es_admin,
     esManager: data.es_manager,
+    esDemo: data.es_demo,
     estadoAprobacion: data.estado_aprobacion,
     createdAt: data.created_at,
     updatedAt: data.updated_at,

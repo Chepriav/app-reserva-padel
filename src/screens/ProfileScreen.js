@@ -263,6 +263,17 @@ export default function PerfilScreen() {
 
   // Guardar cambios del perfil
   const handleGuardarPerfil = async () => {
+    // Block demo users
+    if (user?.esDemo) {
+      setAlertConfig({
+        visible: true,
+        title: 'Demo Account',
+        message: 'This is a view-only demo account. You cannot make reservations or modifications.',
+        buttons: [{ text: 'OK', onPress: () => {} }],
+      });
+      return;
+    }
+
     // Solo validar vivienda si es admin (los usuarios normales no pueden cambiarla)
     let vivienda = user?.vivienda;
 

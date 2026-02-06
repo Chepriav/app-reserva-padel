@@ -52,6 +52,17 @@ export default function ReservasScreen() {
   }, [notificationMessage]);
 
   const handleCancelar = (reserva) => {
+    // Block demo users from cancelling
+    if (user?.esDemo) {
+      setAlertConfig({
+        visible: true,
+        title: 'Demo Account',
+        message: 'This is a view-only demo account. You cannot make reservations or modifications.',
+        buttons: [{ text: 'OK', onPress: () => {} }],
+      });
+      return;
+    }
+
     const validacion = puedeCancelar(reserva);
 
     if (!validacion.valido) {
