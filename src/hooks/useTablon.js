@@ -203,29 +203,29 @@ export function useAnnouncementsAdmin(userId, onCountChange) {
     const result = await tablonService.crearAnuncio(
       userId,
       announcementData.userName || 'Admin',
-      announcementData.title,
-      announcementData.message,
-      announcementData.type,
-      announcementData.recipients,
-      announcementData.userIds
+      announcementData.titulo,
+      announcementData.mensaje,
+      announcementData.tipo,
+      announcementData.destinatarios,
+      announcementData.usuariosIds
     );
 
     if (result.success) {
       // Send push notification
       const { notificationService } = require('../services/notificationService');
 
-      if (announcementData.recipients === 'todos') {
+      if (announcementData.destinatarios === 'todos') {
         await notificationService.notifyNuevoAnuncio(
-          announcementData.title,
-          announcementData.message,
+          announcementData.titulo,
+          announcementData.mensaje,
           result.data.id
         );
       } else {
         await notificationService.notifyNuevoAnuncio(
-          announcementData.title,
-          announcementData.message,
+          announcementData.titulo,
+          announcementData.mensaje,
           result.data.id,
-          announcementData.userIds
+          announcementData.usuariosIds
         );
       }
 
