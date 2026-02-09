@@ -212,21 +212,28 @@ export function useAnnouncementsAdmin(userId, onCountChange) {
 
     if (result.success) {
       // Send push notification
-      const { notificationService } = require('../services/notificationService');
+      try {
+        const { notificationService } = require('../services/notificationService');
+        console.log('[useTablon] Sending notification, destinatarios:', announcementData.destinatarios);
 
-      if (announcementData.destinatarios === 'todos') {
-        await notificationService.notifyNuevoAnuncio(
-          announcementData.titulo,
-          announcementData.mensaje,
-          result.data.id
-        );
-      } else {
-        await notificationService.notifyNuevoAnuncio(
-          announcementData.titulo,
-          announcementData.mensaje,
-          result.data.id,
-          announcementData.usuariosIds
-        );
+        let notifResult;
+        if (announcementData.destinatarios === 'todos') {
+          notifResult = await notificationService.notifyNuevoAnuncio(
+            announcementData.titulo,
+            announcementData.mensaje,
+            result.data.id
+          );
+        } else {
+          notifResult = await notificationService.notifyNuevoAnuncio(
+            announcementData.titulo,
+            announcementData.mensaje,
+            result.data.id,
+            announcementData.usuariosIds
+          );
+        }
+        console.log('[useTablon] Notification result:', JSON.stringify(notifResult));
+      } catch (notifError) {
+        console.error('[useTablon] Notification error:', notifError);
       }
 
       await loadAnnouncements();
