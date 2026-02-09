@@ -10,23 +10,37 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 // Web Push con soporte para Deno
 import webpush from 'npm:web-push@3.6.6';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const ALLOWED_ORIGINS = [
+  'https://rio-tamesis-app.vercel.app',
+  'http://localhost:8081',
+  'http://localhost:19006',
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('origin') || '';
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
+}
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    // Verificar que hay apikey (no JWT, pero sí apikey para seguridad básica)
+    // Validate apikey matches the expected anon key
     const apikey = req.headers.get('apikey');
-    if (!apikey) {
+    const expectedKey = Deno.env.get('SUPABASE_ANON_KEY');
+    if (!apikey || apikey !== expectedKey) {
       return new Response(
-        JSON.stringify({ error: 'Missing apikey header' }),
+        JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
