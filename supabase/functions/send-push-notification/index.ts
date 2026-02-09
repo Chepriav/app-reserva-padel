@@ -35,15 +35,8 @@ serve(async (req) => {
   }
 
   try {
-    // Validate apikey matches the expected anon key
-    const apikey = req.headers.get('apikey');
-    const expectedKey = Deno.env.get('SUPABASE_ANON_KEY');
-    if (!apikey || apikey !== expectedKey) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Authentication is handled by Supabase gateway (apikey header validated before reaching this function)
+
     // Configurar VAPID keys desde variables de entorno
     const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
     const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
