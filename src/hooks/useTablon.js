@@ -214,24 +214,21 @@ export function useAnnouncementsAdmin(userId, onCountChange) {
       // Send push notification
       try {
         const { notificationService } = require('../services/notificationService');
-        console.log('[useTablon] Sending notification, destinatarios:', announcementData.destinatarios);
 
-        let notifResult;
         if (announcementData.destinatarios === 'todos') {
-          notifResult = await notificationService.notifyNuevoAnuncio(
+          await notificationService.notifyNuevoAnuncio(
             announcementData.titulo,
             announcementData.mensaje,
             result.data.id
           );
         } else {
-          notifResult = await notificationService.notifyNuevoAnuncio(
+          await notificationService.notifyNuevoAnuncio(
             announcementData.titulo,
             announcementData.mensaje,
             result.data.id,
             announcementData.usuariosIds
           );
         }
-        console.log('[useTablon] Notification result:', JSON.stringify(notifResult));
       } catch (notifError) {
         console.error('[useTablon] Notification error:', notifError);
       }
