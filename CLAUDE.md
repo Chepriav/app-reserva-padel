@@ -24,22 +24,32 @@ npm run lint         # Verificar código
 
 ## Estructura
 
+The codebase is being migrated to **hexagonal architecture**. New code goes in the new layers; legacy code in `services/` stays until its domain is migrated.
+
 ```
 src/
-├── screens/          # Pantallas (orquestadores)
-│   ├── HomeScreen.js           # Reservas + bloqueos
-│   ├── ReservationsScreen.js   # Mis reservas
-│   ├── MatchesScreen.js        # Buscar jugadores
-│   ├── BulletinScreen.js       # Anuncios + notificaciones
-│   ├── ProfileScreen.js        # Perfil usuario
-│   └── AdminScreen.js          # Panel admin
-├── components/
-│   ├── home/         # Componentes HomeScreen
-│   ├── partidas/     # Componentes partidas
-│   ├── tablon/       # Componentes tablón
-│   └── admin/        # Componentes admin
-├── hooks/            # Custom hooks (useSchedules, useBlockouts, etc.)
-├── services/         # Servicios (auth, reservations, matches, etc.)
+├── domain/                          # Pure business logic (NO external deps)
+│   ├── entities/                    # Business objects (TS interfaces)
+│   ├── ports/repositories/          # Outbound contracts (interfaces)
+│   ├── useCases/                    # Single-responsibility application logic
+│   └── errors/                      # Domain error classes
+│
+├── infrastructure/                  # Outbound adapters (Supabase, etc.)
+│   └── supabase/
+│       ├── client.ts                # Supabase singleton re-export
+│       ├── repositories/            # Port implementations
+│       └── mappers/                 # DB ↔ domain transformers
+│
+├── di/                              # Dependency injection (simple factory)
+│   └── container.ts
+│
+├── shared/                          # Cross-cutting concerns
+│   └── types/                       # Result<T>, AppError
+│
+├── screens/          # (legacy) Pantallas — will move to presentation/
+├── components/       # (legacy) UI components
+├── hooks/            # (legacy) Custom hooks
+├── services/         # (legacy) Facades delegating to use cases
 ├── context/          # AuthContext, ReservationsContext
 ├── utils/            # dateHelpers, validators
 └── constants/        # colors, config
@@ -77,12 +87,38 @@ Ver `docs/features/reservas.md` para reglas de conversión.
 
 ## Arquitectura
 
-**Obligatorio:**
-- Archivos < 300 líneas
-- Una responsabilidad por archivo
-- Lógica de estado → hooks en `src/hooks/`
-- Screens = orquestadores (conectan hooks + componentes)
-- `index.js` para exports centralizados
+### Hexagonal Architecture (Ports & Adapters)
+
+**Dependency rules:**
+- `domain/` has ZERO external imports (no Supabase, no React, no Expo)
+- `infrastructure/` depends on `domain/` (implements ports)
+- `presentation/` depends on `domain/` (uses use cases via DI)
+- NEVER `domain/` → `infrastructure/` or `domain/` → `presentation/`
+
+**Patterns:**
+- `Result<T>` over exceptions — all operations return `Result<T>`
+- One use case = one file (Single Responsibility)
+- Repository pattern — domain defines interface, infrastructure implements
+- Mapper pattern — transforms between DB rows, domain entities, and legacy formats
+- Facade pattern during migration — old `services/` delegate to use cases
+
+### File Rules
+
+- Files < 300 lines
+- One responsibility per file
+- State logic → hooks in `src/hooks/`
+- Screens = orchestrators (connect hooks + components)
+- `index.ts` barrel files for centralized exports
+
+### Path Aliases
+
+Use `@domain/*`, `@infrastructure/*`, `@presentation/*`, `@shared/*`, `@di/*` in new TypeScript files.
+
+### Naming
+
+- **Domain layer**: English only (entities, use cases, ports)
+- **Mappers**: Transform between English domain ↔ Spanish legacy ↔ snake_case DB
+- **UI text**: Spanish (user-facing messages, labels, alerts)
 
 Ver `docs/patterns.md` para ejemplos y anti-patrones.
 
