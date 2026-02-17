@@ -30,7 +30,10 @@ import { SupabaseCourtRepository } from '@infrastructure/supabase/repositories/S
 import { SupabaseBlockoutRepository } from '@infrastructure/supabase/repositories/SupabaseBlockoutRepository';
 import { SupabaseDisplacementNotificationRepository } from '@infrastructure/supabase/repositories/SupabaseDisplacementNotificationRepository';
 import { LegacyDisplacementNotifierAdapter } from '@infrastructure/supabase/repositories/LegacyDisplacementNotifierAdapter';
-import { LegacyMatchCancellationAdapter } from '@infrastructure/supabase/repositories/LegacyMatchCancellationAdapter';
+import { DomainMatchCancellationAdapter } from '@infrastructure/supabase/repositories/DomainMatchCancellationAdapter';
+import { SupabaseMatchRepository } from '@infrastructure/supabase/repositories/SupabaseMatchRepository';
+import { SupabasePlayerRepository } from '@infrastructure/supabase/repositories/SupabasePlayerRepository';
+import { LegacyMatchNotifierAdapter } from '@infrastructure/supabase/repositories/LegacyMatchNotifierAdapter';
 import { GetCourts } from '@domain/useCases/GetCourts';
 import { GetReservationsByApartment } from '@domain/useCases/GetReservationsByApartment';
 import { GetReservationsByDate } from '@domain/useCases/GetReservationsByDate';
@@ -49,6 +52,23 @@ import { CreateReservation } from '@domain/useCases/CreateReservation';
 import { DisplaceReservation } from '@domain/useCases/DisplaceReservation';
 import { CancelReservation } from '@domain/useCases/CancelReservation';
 import { CreateBlockout } from '@domain/useCases/CreateBlockout';
+import { GetActiveMatches } from '@domain/useCases/GetActiveMatches';
+import { GetMyMatches } from '@domain/useCases/GetMyMatches';
+import { GetEnrolledMatches } from '@domain/useCases/GetEnrolledMatches';
+import { GetReservationsWithMatch } from '@domain/useCases/GetReservationsWithMatch';
+import { CreateMatch } from '@domain/useCases/CreateMatch';
+import { EditMatch } from '@domain/useCases/EditMatch';
+import { CancelMatch } from '@domain/useCases/CancelMatch';
+import { DeleteMatch } from '@domain/useCases/DeleteMatch';
+import { RequestToJoin } from '@domain/useCases/RequestToJoin';
+import { AcceptRequest } from '@domain/useCases/AcceptRequest';
+import { RejectRequest } from '@domain/useCases/RejectRequest';
+import { CancelRequest } from '@domain/useCases/CancelRequest';
+import { LeaveMatch } from '@domain/useCases/LeaveMatch';
+import { AddPlayerToMatch } from '@domain/useCases/AddPlayerToMatch';
+import { RemovePlayer } from '@domain/useCases/RemovePlayer';
+import { CloseClass } from '@domain/useCases/CloseClass';
+import { CancelMatchByReservation } from '@domain/useCases/CancelMatchByReservation';
 
 // Repository instances
 const scheduleConfigRepository = new SupabaseScheduleConfigRepository();
@@ -93,7 +113,17 @@ const courtRepository = new SupabaseCourtRepository();
 const blockoutRepository = new SupabaseBlockoutRepository();
 const displacementNotificationRepository = new SupabaseDisplacementNotificationRepository();
 const displacementNotifier = new LegacyDisplacementNotifierAdapter();
-const matchCancellation = new LegacyMatchCancellationAdapter();
+
+// ---- Phase 4: Matches ----
+
+// Infrastructure
+const matchRepository = new SupabaseMatchRepository();
+const playerRepository = new SupabasePlayerRepository();
+const matchNotifier = new LegacyMatchNotifierAdapter();
+
+// CancelMatchByReservation must be instantiated before DomainMatchCancellationAdapter
+export const cancelMatchByReservation = new CancelMatchByReservation(matchRepository, matchNotifier);
+const matchCancellation = new DomainMatchCancellationAdapter(cancelMatchByReservation);
 
 // Query use cases
 export const getCourts = new GetCourts(courtRepository);
@@ -136,3 +166,25 @@ export const createBlockout = new CreateBlockout(
   cancelReservation,
   displacementNotifier,
 );
+
+// Match query use cases
+export const getActiveMatches = new GetActiveMatches(matchRepository);
+export const getMyMatches = new GetMyMatches(matchRepository);
+export const getEnrolledMatches = new GetEnrolledMatches(matchRepository);
+export const getReservationsWithMatch = new GetReservationsWithMatch(matchRepository);
+
+// Match command use cases
+export const createMatch = new CreateMatch(matchRepository, matchNotifier);
+export const editMatch = new EditMatch(matchRepository);
+export const cancelMatch = new CancelMatch(matchRepository, matchNotifier);
+export const deleteMatch = new DeleteMatch(matchRepository);
+export const requestToJoin = new RequestToJoin(matchRepository, playerRepository, matchNotifier);
+export const acceptRequest = new AcceptRequest(matchRepository, playerRepository, matchNotifier);
+export const rejectRequest = new RejectRequest(matchRepository, playerRepository);
+export const cancelRequest = new CancelRequest(playerRepository);
+export const leaveMatch = new LeaveMatch(matchRepository, playerRepository);
+// Export repositories for facade's direct player resolution
+export { playerRepository, matchRepository };
+export const addPlayerToMatch = new AddPlayerToMatch(matchRepository, playerRepository, matchNotifier);
+export const removePlayer = new RemovePlayer(matchRepository, playerRepository);
+export const closeClass = new CloseClass(matchRepository, matchNotifier);

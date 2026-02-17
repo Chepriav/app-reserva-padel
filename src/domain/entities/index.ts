@@ -20,3 +20,13 @@ export type { Court } from './Court';
 export type { AvailabilitySlot } from './AvailabilitySlot';
 export type { Blockout, CreateBlockoutData } from './Blockout';
 export type { DisplacementNotification } from './DisplacementNotification';
+export type {
+  Match,
+  Player,
+  CreateMatchData,
+  UpdateMatchData,
+  AddPlayerData,
+  MatchStatus,
+  MatchType,
+  PlayerStatus,
+} from './Match';

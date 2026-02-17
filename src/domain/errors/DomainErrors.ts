@@ -122,3 +122,30 @@ export class RpcNotFoundError implements AppError {
   readonly code = 'RPC_NOT_FOUND';
   readonly message = 'RPC function not available, fallback required';
 }
+
+// --- Match errors ---
+
+export class MatchNotFoundError implements AppError {
+  readonly code = 'MATCH_NOT_FOUND';
+  readonly message = 'Match not found';
+}
+
+export class MatchPermissionError implements AppError {
+  readonly code = 'MATCH_PERMISSION_ERROR';
+  constructor(public readonly message: string) {}
+}
+
+export class MatchAlreadyCancelledError implements AppError {
+  readonly code = 'MATCH_ALREADY_CANCELLED';
+  readonly message = 'Match is already cancelled';
+}
+
+export class PlayerAlreadyJoinedError implements AppError {
+  readonly code = 'PLAYER_ALREADY_JOINED';
+  readonly message = 'Player is already in this match';
+}
+
+export class MatchFullError implements AppError {
+  readonly code = 'MATCH_FULL';
+  readonly message = 'Match is already full';
+}

@@ -8,3 +8,6 @@ export type { BlockoutRepository } from './BlockoutRepository';
 export type { DisplacementNotificationRepository } from './DisplacementNotificationRepository';
 export type { DisplacementNotifier } from './DisplacementNotifier';
 export type { MatchCancellationPort } from './MatchCancellationPort';
+export type { MatchRepository } from './MatchRepository';
+export type { PlayerRepository } from './PlayerRepository';
+export type { MatchNotifier, MatchReminderInfo } from './MatchNotifier';
