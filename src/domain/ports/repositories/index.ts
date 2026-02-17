@@ -11,3 +11,5 @@ export type { MatchCancellationPort } from './MatchCancellationPort';
 export type { MatchRepository } from './MatchRepository';
 export type { PlayerRepository } from './PlayerRepository';
 export type { MatchNotifier, MatchReminderInfo } from './MatchNotifier';
+export type { UserNotificationRepository } from './UserNotificationRepository';
+export type { AnnouncementRepository } from './AnnouncementRepository';

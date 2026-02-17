@@ -149,3 +149,20 @@ export class MatchFullError implements AppError {
   readonly code = 'MATCH_FULL';
   readonly message = 'Match is already full';
 }
+
+// --- Bulletin errors ---
+
+export class NotificationNotFoundError implements AppError {
+  readonly code = 'NOTIFICATION_NOT_FOUND';
+  readonly message = 'Notification not found';
+}
+
+export class AnnouncementNotFoundError implements AppError {
+  readonly code = 'ANNOUNCEMENT_NOT_FOUND';
+  readonly message = 'Announcement not found';
+}
+
+export class AnnouncementPermissionError implements AppError {
+  readonly code = 'ANNOUNCEMENT_PERMISSION';
+  constructor(public readonly message: string) {}
+}

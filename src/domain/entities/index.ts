@@ -30,3 +30,14 @@ export type {
   MatchType,
   PlayerStatus,
 } from './Match';
+export type {
+  UserNotification,
+  CreateUserNotificationData,
+  NotificationType,
+} from './UserNotification';
+export type {
+  Announcement,
+  CreateAnnouncementData,
+  AnnouncementType,
+  AnnouncementRecipients,
+} from './Announcement';

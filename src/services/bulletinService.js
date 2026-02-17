@@ -1,439 +1,168 @@
-import { supabase } from './supabaseConfig';
-
 /**
- * Maps notification from snake_case to camelCase
+ * bulletinService — thin facade delegating to domain use cases.
+ * Maintains the original API shape for backward compatibility.
+ *
+ * NOTE: createNotification() still accepts Spanish tipo strings because
+ * notificationService.js (Phase 6) calls it with DB-format values.
+ * The facade translates them to domain types before calling the use case.
  */
-const mapNotificacionToCamelCase = (data) => {
-  if (!data) return null;
-  return {
-    id: data.id,
-    usuarioId: data.usuario_id,
-    tipo: data.tipo,
-    titulo: data.titulo,
-    mensaje: data.mensaje,
-    datos: data.datos || {},
-    leida: data.leida,
-    expiraEn: data.expira_en,
-    createdAt: data.created_at,
-  };
-};
+import {
+  getUserNotifications as getUserNotificationsUC,
+  createUserNotification as createUserNotificationUC,
+  markNotificationAsRead as markNotificationAsReadUC,
+  markAllNotificationsAsRead as markAllNotificationsAsReadUC,
+  deleteUserNotification as deleteUserNotificationUC,
+  getAnnouncementsForUser as getAnnouncementsForUserUC,
+  markAnnouncementAsRead as markAnnouncementAsReadUC,
+  getAllAnnouncements as getAllAnnouncementsUC,
+  createAnnouncement as createAnnouncementUC,
+  deleteAnnouncement as deleteAnnouncementUC,
+  getAllApprovedUsers,
+} from '@di/container';
+import {
+  toLegacyFormat as notificationToLegacy,
+  notificationTypeToDomain,
+} from '@infrastructure/supabase/mappers/userNotificationMapper';
+import {
+  toLegacyFormat as announcementToLegacy,
+  announcementTypeToDomain,
+  recipientsToDomain,
+} from '@infrastructure/supabase/mappers/announcementMapper';
 
-/**
- * Maps announcement from snake_case to camelCase
- */
-const mapAnuncioToCamelCase = (data, leido = false) => {
-  if (!data) return null;
-  return {
-    id: data.id,
-    creadorId: data.creador_id,
-    creadorNombre: data.creador_nombre,
-    titulo: data.titulo,
-    mensaje: data.mensaje,
-    tipo: data.tipo,
-    destinatarios: data.destinatarios,
-    expiraEn: data.expira_en,
-    createdAt: data.created_at,
-    leido,
-  };
-};
+// ---- Error translation ----
+
+function toFail(appError) {
+  return { success: false, error: appError?.message ?? 'Error inesperado' };
+}
 
 export const tablonService = {
   // ============ USER NOTIFICATIONS ============
 
-  /**
-   * Gets user notifications (non-expired)
-   */
   async getNotifications(usuarioId) {
-    try {
-      const { data, error } = await supabase
-        .from('notificaciones_usuario')
-        .select('*')
-        .eq('usuario_id', usuarioId)
-        .gt('expira_en', new Date().toISOString())
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        if (error.code === 'PGRST116' || error.code === '42P01') {
-          return { success: true, data: [] };
-        }
-        console.error('[tablonService] Error obteniendo notificaciones:', error);
-        return { success: false, error: 'Error al obtener notificaciones' };
-      }
-
-      return {
-        success: true,
-        data: (data || []).map(mapNotificacionToCamelCase),
-      };
-    } catch (error) {
-      console.error('[tablonService] Error:', error);
-      return { success: true, data: [] };
-    }
+    const result = await getUserNotificationsUC.execute(usuarioId);
+    if (!result.success) return { success: true, data: [] }; // non-critical
+    return { success: true, data: result.value.map(notificationToLegacy) };
   },
 
-  /**
-   * Counts unread notifications
-   */
   async countUnreadNotifications(usuarioId) {
-    try {
-      const { count, error } = await supabase
-        .from('notificaciones_usuario')
-        .select('*', { count: 'exact', head: true })
-        .eq('usuario_id', usuarioId)
-        .eq('leida', false)
-        .gt('expira_en', new Date().toISOString());
-
-      if (error) return { success: true, count: 0 };
-      return { success: true, count: count || 0 };
-    } catch (error) {
-      return { success: true, count: 0 };
-    }
+    const result = await getUserNotificationsUC.execute(usuarioId);
+    if (!result.success) return { success: true, count: 0 };
+    const count = result.value.filter((n) => !n.isRead).length;
+    return { success: true, count };
   },
 
-  /**
-   * Marks a notification as read
-   */
   async markNotificationAsRead(notificacionId) {
-    try {
-      const { error } = await supabase
-        .from('notificaciones_usuario')
-        .update({ leida: true })
-        .eq('id', notificacionId);
-
-      if (error) {
-        console.error('[tablonService] Error marcando notificación:', error);
-        return { success: false, error: 'Error al marcar notificación' };
-      }
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: 'Error al marcar notificación' };
-    }
+    const result = await markNotificationAsReadUC.execute(notificacionId);
+    if (!result.success) return toFail(result.error);
+    return { success: true };
   },
 
-  /**
-   * Marks all notifications as read
-   */
   async markAllAsRead(usuarioId) {
-    try {
-      const { error } = await supabase
-        .from('notificaciones_usuario')
-        .update({ leida: true })
-        .eq('usuario_id', usuarioId)
-        .eq('leida', false);
-
-      if (error) return { success: false, error: 'Error al marcar notificaciones' };
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: 'Error al marcar notificaciones' };
-    }
+    const result = await markAllNotificationsAsReadUC.execute(usuarioId);
+    if (!result.success) return toFail(result.error);
+    return { success: true };
   },
 
-  /**
-   * Deletes a notification
-   */
   async deleteNotification(notificacionId) {
-    try {
-      const { error } = await supabase
-        .from('notificaciones_usuario')
-        .delete()
-        .eq('id', notificacionId);
-
-      if (error) {
-        console.error('[tablonService] Error eliminando notificación:', error);
-        return { success: false, error: 'Error al eliminar notificación' };
-      }
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: 'Error al eliminar notificación' };
-    }
+    const result = await deleteUserNotificationUC.execute(notificacionId);
+    if (!result.success) return toFail(result.error);
+    return { success: true };
   },
 
   /**
-   * Creates a user notification
+   * Creates a notification entry in the bulletin.
+   * Accepts Spanish tipo strings (from notificationService.js legacy calls)
+   * or domain English strings.
    */
   async createNotification(usuarioId, tipo, titulo, mensaje, datos = {}) {
-    try {
-      const { data, error } = await supabase
-        .from('notificaciones_usuario')
-        .insert({
-          usuario_id: usuarioId,
-          tipo,
-          titulo,
-          mensaje,
-          datos,
-        })
-        .select()
-        .single();
+    const domainType = notificationTypeToDomain(tipo); // translates Spanish → domain
 
-      if (error) {
-        console.error('[tablonService] Error creando notificación:', error);
-        return { success: false, error: 'Error al crear notificación' };
-      }
-      return { success: true, data: mapNotificacionToCamelCase(data) };
-    } catch (error) {
-      return { success: false, error: 'Error al crear notificación' };
-    }
+    const result = await createUserNotificationUC.execute({
+      userId: usuarioId,
+      type: domainType,
+      title: titulo,
+      message: mensaje,
+      data: datos,
+    });
+    if (!result.success) return toFail(result.error);
+    return { success: true, data: notificationToLegacy(result.value) };
   },
 
-  // ============ ADMIN ANNOUNCEMENTS - READ (users) ============
+  // ============ ANNOUNCEMENTS (user read) ============
 
-  /**
-   * Gets announcements for a specific user
-   * - If announcement is for "todos" (all), includes it
-   * - If announcement is "seleccionados" (selected), only if user is a recipient
-   */
   async getAnnouncementsForUser(usuarioId) {
-    try {
-      // 1. Get non-expired announcements for "todos" (all)
-      const { data: anunciosTodos, error: errorTodos } = await supabase
-        .from('anuncios_admin')
-        .select('*')
-        .eq('destinatarios', 'todos')
-        .gt('expira_en', new Date().toISOString())
-        .order('created_at', { ascending: false });
-
-      if (errorTodos && errorTodos.code !== '42P01') {
-        console.error('[tablonService] Error obteniendo anuncios todos:', errorTodos);
-      }
-
-      // 2. Get announcements specific to this user
-      const { data: destinatarios, error: errorDest } = await supabase
-        .from('anuncios_destinatarios')
-        .select('anuncio_id, leido')
-        .eq('usuario_id', usuarioId);
-
-      if (errorDest && errorDest.code !== '42P01') {
-        console.error('[tablonService] Error obteniendo destinatarios:', errorDest);
-      }
-
-      // 3. If there are recipients, get those announcements
-      let anunciosSeleccionados = [];
-      const destinatariosMap = new Map();
-
-      if (destinatarios && destinatarios.length > 0) {
-        destinatarios.forEach(d => destinatariosMap.set(d.anuncio_id, d.leido));
-
-        const anuncioIds = destinatarios.map(d => d.anuncio_id);
-        const { data: anunciosSel } = await supabase
-          .from('anuncios_admin')
-          .select('*')
-          .in('id', anuncioIds)
-          .gt('expira_en', new Date().toISOString())
-          .order('created_at', { ascending: false });
-
-        anunciosSeleccionados = anunciosSel || [];
-      }
-
-      // 4. Combine and map
-      const todosAnuncios = [...(anunciosTodos || []), ...anunciosSeleccionados];
-
-      // Remove duplicates by ID
-      const anunciosUnicos = Array.from(
-        new Map(todosAnuncios.map(a => [a.id, a])).values()
-      );
-
-      // Sort by date
-      anunciosUnicos.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-      // Map with read status
-      const resultado = anunciosUnicos.map(anuncio => {
-        // For "todos" announcements, we need to check if there's a read record
-        let leido = false;
-        if (anuncio.destinatarios === 'seleccionados') {
-          leido = destinatariosMap.get(anuncio.id) || false;
-        } else {
-          // For "todos", check in the recipients table
-          leido = destinatariosMap.has(anuncio.id) ? destinatariosMap.get(anuncio.id) : false;
-        }
-        return mapAnuncioToCamelCase(anuncio, leido);
-      });
-
-      return { success: true, data: resultado };
-    } catch (error) {
-      console.error('[tablonService] Error:', error);
-      return { success: true, data: [] };
-    }
+    const result = await getAnnouncementsForUserUC.execute(usuarioId);
+    if (!result.success) return { success: true, data: [] }; // non-critical
+    return { success: true, data: result.value.map(announcementToLegacy) };
   },
 
-  /**
-   * Counts unread announcements for a user
-   */
   async countUnreadAnnouncements(usuarioId) {
-    try {
-      const result = await this.getAnnouncementsForUser(usuarioId);
-      if (!result.success) return { success: true, count: 0 };
-
-      const noLeidos = result.data.filter(a => !a.leido).length;
-      return { success: true, count: noLeidos };
-    } catch (error) {
-      return { success: true, count: 0 };
-    }
+    const result = await getAnnouncementsForUserUC.execute(usuarioId);
+    if (!result.success) return { success: true, count: 0 };
+    const count = result.value.filter((a) => !a.isRead).length;
+    return { success: true, count };
   },
 
-  /**
-   * Marks an announcement as read for a user
-   */
   async markAnnouncementAsRead(anuncioId, usuarioId) {
-    try {
-      // Use upsert to create or update the record
-      const { error } = await supabase
-        .from('anuncios_destinatarios')
-        .upsert(
-          {
-            anuncio_id: anuncioId,
-            usuario_id: usuarioId,
-            leido: true,
-            leido_en: new Date().toISOString(),
-          },
-          { onConflict: 'anuncio_id,usuario_id' }
-        );
-
-      if (error) {
-        console.error('[tablonService] Error marcando anuncio:', error);
-        return { success: false, error: 'Error al marcar anuncio' };
-      }
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: 'Error al marcar anuncio' };
-    }
+    const result = await markAnnouncementAsReadUC.execute(anuncioId, usuarioId);
+    if (!result.success) return toFail(result.error);
+    return { success: true };
   },
 
-  // ============ ADMIN ANNOUNCEMENTS - MANAGEMENT (admins) ============
+  // ============ ANNOUNCEMENTS (admin management) ============
 
-  /**
-   * Gets all announcements (for admin)
-   */
   async getAllAnnouncements() {
-    try {
-      const { data, error } = await supabase
-        .from('anuncios_admin')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        if (error.code === '42P01') return { success: true, data: [] };
-        console.error('[tablonService] Error obteniendo anuncios:', error);
-        return { success: false, error: 'Error al obtener anuncios' };
-      }
-
-      return {
-        success: true,
-        data: (data || []).map(a => mapAnuncioToCamelCase(a, true)),
-      };
-    } catch (error) {
-      return { success: true, data: [] };
-    }
+    const result = await getAllAnnouncementsUC.execute();
+    if (!result.success) return { success: true, data: [] };
+    return { success: true, data: result.value.map(announcementToLegacy) };
   },
 
-  /**
-   * Creates an announcement (admin only)
-   * @param {string} creadorId - Admin ID
-   * @param {string} creadorNombre - Admin name
-   * @param {string} titulo - Announcement title
-   * @param {string} mensaje - Announcement content
-   * @param {string} tipo - Type: 'info', 'aviso', 'urgente', 'mantenimiento'
-   * @param {string} destinatarios - 'todos' (all) or 'seleccionados' (selected)
-   * @param {string[]} usuariosIds - User IDs if 'seleccionados'
-   */
-  async createAnnouncement(creadorId, creadorNombre, titulo, mensaje, tipo = 'info', destinatarios = 'todos', usuariosIds = []) {
-    try {
-      // 1. Create the announcement
-      const { data: anuncio, error: anuncioError } = await supabase
-        .from('anuncios_admin')
-        .insert({
-          creador_id: creadorId,
-          creador_nombre: creadorNombre,
-          titulo,
-          mensaje,
-          tipo,
-          destinatarios,
-        })
-        .select()
-        .single();
+  async createAnnouncement(
+    creadorId,
+    creadorNombre,
+    titulo,
+    mensaje,
+    tipo = 'info',
+    destinatarios = 'todos',
+    usuariosIds = [],
+  ) {
+    const result = await createAnnouncementUC.execute({
+      creatorId: creadorId,
+      creatorName: creadorNombre,
+      title: titulo,
+      message: mensaje,
+      type: announcementTypeToDomain(tipo),
+      recipients: recipientsToDomain(destinatarios),
+      userIds: usuariosIds,
+    });
 
-      if (anuncioError) {
-        console.error('[tablonService] Error creando anuncio:', anuncioError);
-        if (anuncioError.code === '42501') {
-          return { success: false, error: 'No tienes permisos para crear anuncios' };
-        }
-        return { success: false, error: 'Error al crear anuncio' };
-      }
-
-      // 2. If for selected users, create recipient records
-      if (destinatarios === 'seleccionados' && usuariosIds.length > 0) {
-        const destinatariosData = usuariosIds.map(userId => ({
-          anuncio_id: anuncio.id,
-          usuario_id: userId,
-          leido: false,
-        }));
-
-        const { error: destError } = await supabase
-          .from('anuncios_destinatarios')
-          .insert(destinatariosData);
-
-        if (destError) {
-          console.error('[tablonService] Error creando destinatarios:', destError);
-        }
-      }
-
-      return {
-        success: true,
-        data: mapAnuncioToCamelCase(anuncio, false),
-        usuariosIds: destinatarios === 'todos' ? [] : usuariosIds,
-      };
-    } catch (error) {
-      console.error('[tablonService] Error:', error);
-      return { success: false, error: 'Error al crear anuncio' };
-    }
+    if (!result.success) return toFail(result.error);
+    return {
+      success: true,
+      data: announcementToLegacy(result.value.announcement),
+      usuariosIds: result.value.recipientIds,
+    };
   },
 
-  /**
-   * Deletes an announcement (admin only)
-   */
   async deleteAnnouncement(anuncioId) {
-    try {
-      const { error } = await supabase
-        .from('anuncios_admin')
-        .delete()
-        .eq('id', anuncioId);
-
-      if (error) {
-        console.error('[tablonService] Error eliminando anuncio:', error);
-        return { success: false, error: 'Error al eliminar anuncio' };
-      }
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: 'Error al eliminar anuncio' };
-    }
+    const result = await deleteAnnouncementUC.execute(anuncioId);
+    if (!result.success) return toFail(result.error);
+    return { success: true };
   },
 
-  /**
-   * Gets list of approved users (for recipient selector)
-   */
   async getApprovedUsers() {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, nombre, vivienda, email')
-        .eq('estado_aprobacion', 'aprobado')
-        .order('nombre');
-
-      if (error) {
-        console.error('[tablonService] Error obteniendo usuarios:', error);
-        return { success: false, error: 'Error al obtener usuarios' };
-      }
-
-      return {
-        success: true,
-        data: (data || []).map(u => ({
-          id: u.id,
-          nombre: u.nombre,
-          vivienda: u.vivienda,
-          email: u.email,
-        })),
-      };
-    } catch (error) {
-      return { success: false, error: 'Error al obtener usuarios' };
-    }
+    // Reuse existing User domain use case — returns domain User[]
+    const result = await getAllApprovedUsers.execute();
+    if (!result.success) return toFail(result.error);
+    return {
+      success: true,
+      data: result.value.map((u) => ({
+        id: u.id,
+        nombre: u.name,
+        vivienda: u.apartment,
+        email: u.email,
+      })),
+    };
   },
 
   // ============================================================================

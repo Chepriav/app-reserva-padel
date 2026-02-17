@@ -32,6 +32,8 @@ import { SupabaseDisplacementNotificationRepository } from '@infrastructure/supa
 import { LegacyDisplacementNotifierAdapter } from '@infrastructure/supabase/repositories/LegacyDisplacementNotifierAdapter';
 import { DomainMatchCancellationAdapter } from '@infrastructure/supabase/repositories/DomainMatchCancellationAdapter';
 import { SupabaseMatchRepository } from '@infrastructure/supabase/repositories/SupabaseMatchRepository';
+import { SupabaseUserNotificationRepository } from '@infrastructure/supabase/repositories/SupabaseUserNotificationRepository';
+import { SupabaseAnnouncementRepository } from '@infrastructure/supabase/repositories/SupabaseAnnouncementRepository';
 import { SupabasePlayerRepository } from '@infrastructure/supabase/repositories/SupabasePlayerRepository';
 import { LegacyMatchNotifierAdapter } from '@infrastructure/supabase/repositories/LegacyMatchNotifierAdapter';
 import { GetCourts } from '@domain/useCases/GetCourts';
@@ -69,6 +71,16 @@ import { AddPlayerToMatch } from '@domain/useCases/AddPlayerToMatch';
 import { RemovePlayer } from '@domain/useCases/RemovePlayer';
 import { CloseClass } from '@domain/useCases/CloseClass';
 import { CancelMatchByReservation } from '@domain/useCases/CancelMatchByReservation';
+import { GetUserNotifications } from '@domain/useCases/GetUserNotifications';
+import { CreateUserNotification } from '@domain/useCases/CreateUserNotification';
+import { MarkNotificationAsRead } from '@domain/useCases/MarkNotificationAsRead';
+import { MarkAllNotificationsAsRead } from '@domain/useCases/MarkAllNotificationsAsRead';
+import { DeleteUserNotification } from '@domain/useCases/DeleteUserNotification';
+import { GetAnnouncementsForUser } from '@domain/useCases/GetAnnouncementsForUser';
+import { MarkAnnouncementAsRead } from '@domain/useCases/MarkAnnouncementAsRead';
+import { GetAllAnnouncements } from '@domain/useCases/GetAllAnnouncements';
+import { CreateAnnouncement } from '@domain/useCases/CreateAnnouncement';
+import { DeleteAnnouncement } from '@domain/useCases/DeleteAnnouncement';
 
 // Repository instances
 const scheduleConfigRepository = new SupabaseScheduleConfigRepository();
@@ -188,3 +200,19 @@ export { playerRepository, matchRepository };
 export const addPlayerToMatch = new AddPlayerToMatch(matchRepository, playerRepository, matchNotifier);
 export const removePlayer = new RemovePlayer(matchRepository, playerRepository);
 export const closeClass = new CloseClass(matchRepository, matchNotifier);
+
+// ---- Phase 5: Bulletin ----
+
+const userNotificationRepository = new SupabaseUserNotificationRepository();
+const announcementRepository = new SupabaseAnnouncementRepository();
+
+export const getUserNotifications = new GetUserNotifications(userNotificationRepository);
+export const createUserNotification = new CreateUserNotification(userNotificationRepository);
+export const markNotificationAsRead = new MarkNotificationAsRead(userNotificationRepository);
+export const markAllNotificationsAsRead = new MarkAllNotificationsAsRead(userNotificationRepository);
+export const deleteUserNotification = new DeleteUserNotification(userNotificationRepository);
+export const getAnnouncementsForUser = new GetAnnouncementsForUser(announcementRepository);
+export const markAnnouncementAsRead = new MarkAnnouncementAsRead(announcementRepository);
+export const getAllAnnouncements = new GetAllAnnouncements(announcementRepository);
+export const createAnnouncement = new CreateAnnouncement(announcementRepository);
+export const deleteAnnouncement = new DeleteAnnouncement(announcementRepository);
