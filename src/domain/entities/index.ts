@@ -41,3 +41,4 @@ export type {
   AnnouncementType,
   AnnouncementRecipients,
 } from './Announcement';
+export type { PushToken, PushPlatform } from './PushToken';

@@ -29,13 +29,16 @@ import { SupabaseReservationRepository } from '@infrastructure/supabase/reposito
 import { SupabaseCourtRepository } from '@infrastructure/supabase/repositories/SupabaseCourtRepository';
 import { SupabaseBlockoutRepository } from '@infrastructure/supabase/repositories/SupabaseBlockoutRepository';
 import { SupabaseDisplacementNotificationRepository } from '@infrastructure/supabase/repositories/SupabaseDisplacementNotificationRepository';
-import { LegacyDisplacementNotifierAdapter } from '@infrastructure/supabase/repositories/LegacyDisplacementNotifierAdapter';
 import { DomainMatchCancellationAdapter } from '@infrastructure/supabase/repositories/DomainMatchCancellationAdapter';
 import { SupabaseMatchRepository } from '@infrastructure/supabase/repositories/SupabaseMatchRepository';
 import { SupabaseUserNotificationRepository } from '@infrastructure/supabase/repositories/SupabaseUserNotificationRepository';
 import { SupabaseAnnouncementRepository } from '@infrastructure/supabase/repositories/SupabaseAnnouncementRepository';
 import { SupabasePlayerRepository } from '@infrastructure/supabase/repositories/SupabasePlayerRepository';
-import { LegacyMatchNotifierAdapter } from '@infrastructure/supabase/repositories/LegacyMatchNotifierAdapter';
+import { SupabasePushTokenRepository } from '@infrastructure/supabase/repositories/SupabasePushTokenRepository';
+import { CombinedPushDelivery } from '@infrastructure/supabase/repositories/CombinedPushDelivery';
+import { ExpoLocalScheduler } from '@infrastructure/supabase/repositories/ExpoLocalScheduler';
+import { SupabaseDisplacementNotifier } from '@infrastructure/supabase/repositories/SupabaseDisplacementNotifier';
+import { SupabaseMatchNotifier } from '@infrastructure/supabase/repositories/SupabaseMatchNotifier';
 import { GetCourts } from '@domain/useCases/GetCourts';
 import { GetReservationsByApartment } from '@domain/useCases/GetReservationsByApartment';
 import { GetReservationsByDate } from '@domain/useCases/GetReservationsByDate';
@@ -81,6 +84,8 @@ import { MarkAnnouncementAsRead } from '@domain/useCases/MarkAnnouncementAsRead'
 import { GetAllAnnouncements } from '@domain/useCases/GetAllAnnouncements';
 import { CreateAnnouncement } from '@domain/useCases/CreateAnnouncement';
 import { DeleteAnnouncement } from '@domain/useCases/DeleteAnnouncement';
+import { SavePushToken } from '@domain/useCases/SavePushToken';
+import { RemovePushToken } from '@domain/useCases/RemovePushToken';
 
 // Repository instances
 const scheduleConfigRepository = new SupabaseScheduleConfigRepository();
@@ -117,6 +122,37 @@ export const deleteUser = new DeleteUser(userAdminRepository);
 // Export repository for facade's direct apartment operations
 export { userAdminRepository };
 
+// ---- Phase 6: Push Notifications (wired early — used by Phases 3 & 4 notifiers) ----
+
+const pushTokenRepository = new SupabasePushTokenRepository();
+const pushDelivery = new CombinedPushDelivery(pushTokenRepository);
+const localScheduler = new ExpoLocalScheduler();
+
+// ---- Phase 5: Bulletin (userNotificationRepository needed by Phase 6 notifiers) ----
+
+const userNotificationRepository = new SupabaseUserNotificationRepository();
+const announcementRepository = new SupabaseAnnouncementRepository();
+
+export const getUserNotifications = new GetUserNotifications(userNotificationRepository);
+export const createUserNotification = new CreateUserNotification(userNotificationRepository);
+export const markNotificationAsRead = new MarkNotificationAsRead(userNotificationRepository);
+export const markAllNotificationsAsRead = new MarkAllNotificationsAsRead(userNotificationRepository);
+export const deleteUserNotification = new DeleteUserNotification(userNotificationRepository);
+export const getAnnouncementsForUser = new GetAnnouncementsForUser(announcementRepository);
+export const markAnnouncementAsRead = new MarkAnnouncementAsRead(announcementRepository);
+export const getAllAnnouncements = new GetAllAnnouncements(announcementRepository);
+export const createAnnouncement = new CreateAnnouncement(announcementRepository);
+export const deleteAnnouncement = new DeleteAnnouncement(announcementRepository);
+
+// Phase 6 notifiers (depend on userRepository from Phase 2 and createUserNotification from Phase 5)
+const displacementNotifier = new SupabaseDisplacementNotifier(userRepository, createUserNotification, pushDelivery);
+const matchNotifier = new SupabaseMatchNotifier(createUserNotification, pushDelivery, localScheduler);
+
+export const savePushToken = new SavePushToken(pushTokenRepository);
+export const removePushToken = new RemovePushToken(pushTokenRepository);
+// Export pushDelivery for facade's direct send (notifyViviendaChange, notifyNuevoAnuncio)
+export { pushDelivery };
+
 // ---- Phase 3: Reservations ----
 
 // Infrastructure
@@ -124,14 +160,12 @@ const reservationRepository = new SupabaseReservationRepository();
 const courtRepository = new SupabaseCourtRepository();
 const blockoutRepository = new SupabaseBlockoutRepository();
 const displacementNotificationRepository = new SupabaseDisplacementNotificationRepository();
-const displacementNotifier = new LegacyDisplacementNotifierAdapter();
 
 // ---- Phase 4: Matches ----
 
 // Infrastructure
 const matchRepository = new SupabaseMatchRepository();
 const playerRepository = new SupabasePlayerRepository();
-const matchNotifier = new LegacyMatchNotifierAdapter();
 
 // CancelMatchByReservation must be instantiated before DomainMatchCancellationAdapter
 export const cancelMatchByReservation = new CancelMatchByReservation(matchRepository, matchNotifier);
@@ -201,18 +235,3 @@ export const addPlayerToMatch = new AddPlayerToMatch(matchRepository, playerRepo
 export const removePlayer = new RemovePlayer(matchRepository, playerRepository);
 export const closeClass = new CloseClass(matchRepository, matchNotifier);
 
-// ---- Phase 5: Bulletin ----
-
-const userNotificationRepository = new SupabaseUserNotificationRepository();
-const announcementRepository = new SupabaseAnnouncementRepository();
-
-export const getUserNotifications = new GetUserNotifications(userNotificationRepository);
-export const createUserNotification = new CreateUserNotification(userNotificationRepository);
-export const markNotificationAsRead = new MarkNotificationAsRead(userNotificationRepository);
-export const markAllNotificationsAsRead = new MarkAllNotificationsAsRead(userNotificationRepository);
-export const deleteUserNotification = new DeleteUserNotification(userNotificationRepository);
-export const getAnnouncementsForUser = new GetAnnouncementsForUser(announcementRepository);
-export const markAnnouncementAsRead = new MarkAnnouncementAsRead(announcementRepository);
-export const getAllAnnouncements = new GetAllAnnouncements(announcementRepository);
-export const createAnnouncement = new CreateAnnouncement(announcementRepository);
-export const deleteAnnouncement = new DeleteAnnouncement(announcementRepository);

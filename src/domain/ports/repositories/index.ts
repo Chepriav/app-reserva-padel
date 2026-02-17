@@ -13,3 +13,6 @@ export type { PlayerRepository } from './PlayerRepository';
 export type { MatchNotifier, MatchReminderInfo } from './MatchNotifier';
 export type { UserNotificationRepository } from './UserNotificationRepository';
 export type { AnnouncementRepository } from './AnnouncementRepository';
+export type { PushTokenRepository } from './PushTokenRepository';
+export type { PushDeliveryPort } from './PushDeliveryPort';
+export type { LocalSchedulerPort, MatchReminderIds } from './LocalSchedulerPort';
