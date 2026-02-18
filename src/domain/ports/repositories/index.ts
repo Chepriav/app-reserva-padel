@@ -16,3 +16,4 @@ export type { AnnouncementRepository } from './AnnouncementRepository';
 export type { PushTokenRepository } from './PushTokenRepository';
 export type { PushDeliveryPort } from './PushDeliveryPort';
 export type { LocalSchedulerPort, MatchReminderIds } from './LocalSchedulerPort';
+export type { AvatarStoragePort } from './AvatarStoragePort';

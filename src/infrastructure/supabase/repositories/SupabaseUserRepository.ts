@@ -1,14 +1,15 @@
 import type { UserRepository } from '@domain/ports/repositories/UserRepository';
 import type { User, ApartmentUser, RegisterData, ProfileUpdate } from '@domain/entities/User';
+import type { AvatarStoragePort } from '@domain/ports/repositories/AvatarStoragePort';
 import { InfrastructureError, ProfileUpdateError } from '@domain/errors/DomainErrors';
 import type { Result } from '@shared/types/Result';
 import { ok, fail } from '@shared/types/Result';
 import { supabase } from '../client';
 import { toDomain, toApartmentUserDomain, toDbProfileUpdate, toDbCreateRow } from '../mappers/userMapper';
 import { cleanupUserRelations } from '../helpers/userCleanupHelper';
-import { storageService } from '../../../services/storageService.supabase';
 
 export class SupabaseUserRepository implements UserRepository {
+  constructor(private readonly avatarStorage: AvatarStoragePort) {}
   async findById(userId: string): Promise<Result<User | null>> {
     try {
       // Use direct fetch for non-blocking performance on web
@@ -103,20 +104,12 @@ export class SupabaseUserRepository implements UserRepository {
   async updateProfile(userId: string, updates: ProfileUpdate): Promise<Result<User>> {
     try {
       // Upload photo if it's a local URI
-      if (updates.profilePhoto && storageService.isLocalImageUri(updates.profilePhoto)) {
-        try {
-          updates = {
-            ...updates,
-            profilePhoto: await storageService.uploadAvatar(userId, updates.profilePhoto),
-          };
-        } catch (uploadError) {
-          return fail(
-            new ProfileUpdateError(
-              (uploadError as Error).message || 'Error uploading profile photo',
-              uploadError,
-            ),
-          );
+      if (updates.profilePhoto && this.avatarStorage.isLocalUri(updates.profilePhoto)) {
+        const uploadResult = await this.avatarStorage.upload(userId, updates.profilePhoto);
+        if (!uploadResult.success) {
+          return fail(new ProfileUpdateError(uploadResult.error.message, uploadResult.error));
         }
+        updates = { ...updates, profilePhoto: uploadResult.value };
       }
 
       const mappedUpdates = toDbProfileUpdate(updates);

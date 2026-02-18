@@ -4,6 +4,7 @@
  * Simple factory — no DI framework needed.
  */
 import { SupabaseScheduleConfigRepository } from '@infrastructure/supabase/repositories/ScheduleConfigRepository';
+import { SupabaseAvatarStorage } from '@infrastructure/supabase/repositories/SupabaseAvatarStorage';
 import { SupabaseUserRepository } from '@infrastructure/supabase/repositories/SupabaseUserRepository';
 import { SupabaseUserAdminRepository } from '@infrastructure/supabase/repositories/SupabaseUserAdminRepository';
 import { SupabaseAuthProvider } from '@infrastructure/supabase/repositories/SupabaseAuthProvider';
@@ -89,7 +90,8 @@ import { RemovePushToken } from '@domain/useCases/RemovePushToken';
 
 // Repository instances
 const scheduleConfigRepository = new SupabaseScheduleConfigRepository();
-const userRepository = new SupabaseUserRepository();
+const avatarStorage = new SupabaseAvatarStorage();
+const userRepository = new SupabaseUserRepository(avatarStorage);
 const userAdminRepository = new SupabaseUserAdminRepository();
 const authProvider = new SupabaseAuthProvider();
 
