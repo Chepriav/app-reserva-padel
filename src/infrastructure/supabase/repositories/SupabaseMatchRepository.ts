@@ -60,6 +60,7 @@ export class SupabaseMatchRepository implements MatchRepository {
         .from('partidas')
         .select('*')
         .eq('creador_id', creatorId)
+        .neq('estado', 'cancelada')
         .order('created_at', { ascending: false });
 
       if (error) return fail(new InfrastructureError('Error fetching creator matches', error));
@@ -86,7 +87,8 @@ export class SupabaseMatchRepository implements MatchRepository {
       const { data, error } = await supabase
         .from('partidas')
         .select('*')
-        .in('id', matchIds);
+        .in('id', matchIds)
+        .neq('estado', 'cancelada');
 
       if (error) return fail(new InfrastructureError('Error fetching enrolled matches', error));
       return ok(await this._fetchManyWithPlayers((data ?? []) as Record<string, unknown>[]));

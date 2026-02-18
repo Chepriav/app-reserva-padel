@@ -145,9 +145,9 @@ export const ReservationsProvider = ({ children }) => {
       // Pass apartment to validate user can cancel reservations from their apartment
       const response = await reservasService.cancelarReserva(reservationId, user.id, user.vivienda);
       if (response.success) {
-        // Update reservation list
+        // Mark reservation as cancelled locally (CancelReservation use case returns void)
         setReservations(
-          reservations.map((r) => (r.id === reservationId ? response.data : r))
+          reservations.map((r) => (r.id === reservationId ? { ...r, estado: 'cancelada' } : r))
         );
         // Increment version so HomeScreen reloads
         setReservationsVersion((v) => v + 1);
