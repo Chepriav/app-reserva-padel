@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Linking, Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { AuthProvider } from './src/context/AuthContext';
-import { ReservationsProvider } from './src/context/ReservationsContext';
-import AppNavigator, { navigationRef, setRecoveryFlow } from './src/navigation/AppNavigator';
+import { AuthProvider } from './src/presentation/context/AuthContext';
+import { ReservationsProvider } from './src/presentation/context/ReservationsContext';
+import AppNavigator, { navigationRef, setRecoveryFlow } from './src/presentation/navigation/AppNavigator';
 import { registerServiceWorker, setUpdateCallback, applyUpdate } from './src/services/registerServiceWorker';
 import { colors } from './src/constants/colors';
 import { authService } from './src/services/authService.supabase';
