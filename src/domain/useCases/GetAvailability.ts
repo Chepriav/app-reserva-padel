@@ -4,7 +4,6 @@ import type { ReservationRepository } from '@domain/ports/repositories/Reservati
 import type { BlockoutRepository } from '@domain/ports/repositories/BlockoutRepository';
 import type { ScheduleConfigRepository } from '@domain/ports/repositories/ScheduleConfigRepository';
 import type { AvailabilitySlot } from '@domain/entities/AvailabilitySlot';
-import type { Reservation } from '@domain/entities/Reservation';
 import type { ScheduleConfig } from '@domain/entities/ScheduleConfig';
 import { DEFAULT_SCHEDULE_CONFIG } from '@domain/entities/ScheduleConfig';
 import { CheckSlotInBreakTime } from './CheckSlotInBreakTime';
@@ -84,7 +83,6 @@ export class GetAvailability {
       const slots = this._generateSlots(date, config);
 
       // Build availability grid
-      const slotDate = new Date(`${date}T00:00`);
       const availabilitySlots: AvailabilitySlot[] = slots.map(({ startTime, endTime }) => {
         const slotStartMin = timeToMinutes(startTime);
         const slotEndMin = timeToMinutes(endTime);
@@ -160,9 +158,37 @@ export class GetAvailability {
 
   private _generateSlots(date: string, config: ScheduleConfig): Array<{ startTime: string; endTime: string }> {
     const slotDate = new Date(`${date}T00:00`);
-    const opening = timeToMinutes(config.openingTime);
-    const closing = timeToMinutes(config.closingTime);
-    const duration = 30; // 30-minute slots
+    const duration = config.slotDuration;
+
+    let openingTimeStr: string;
+    let closingTimeStr: string;
+
+    const useDifferentiatedSchedules =
+      config.useDifferentiatedSchedules === undefined ||
+      config.useDifferentiatedSchedules === null
+        ? config.weekdayOpeningTime != null &&
+          config.weekdayClosingTime != null &&
+          config.weekendOpeningTime != null &&
+          config.weekendClosingTime != null
+        : config.useDifferentiatedSchedules;
+
+    if (useDifferentiatedSchedules) {
+      const dayOfWeek = slotDate.getDay(); // 0=Sunday, 6=Saturday
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      if (isWeekend) {
+        openingTimeStr = config.weekendOpeningTime ?? config.openingTime;
+        closingTimeStr = config.weekendClosingTime ?? config.closingTime;
+      } else {
+        openingTimeStr = config.weekdayOpeningTime ?? config.openingTime;
+        closingTimeStr = config.weekdayClosingTime ?? config.closingTime;
+      }
+    } else {
+      openingTimeStr = config.openingTime;
+      closingTimeStr = config.closingTime;
+    }
+
+    const opening = timeToMinutes(openingTimeStr);
+    const closing = timeToMinutes(closingTimeStr);
 
     const slots: Array<{ startTime: string; endTime: string }> = [];
     let current = opening;

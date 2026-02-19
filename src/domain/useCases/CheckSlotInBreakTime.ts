@@ -27,7 +27,17 @@ export class CheckSlotInBreakTime {
     let breakEnd: string | null;
     let breakDays: number[] | null;
 
-    if (config.useDifferentiatedSchedules) {
+    const useDifferentiatedSchedules =
+      config.useDifferentiatedSchedules === undefined ||
+      config.useDifferentiatedSchedules === null
+        ? config.weekendBreakStart != null ||
+          config.weekendBreakEnd != null ||
+          config.weekendBreakDaysOfWeek != null ||
+          config.weekendOpeningTime != null ||
+          config.weekendClosingTime != null
+        : config.useDifferentiatedSchedules;
+
+    if (useDifferentiatedSchedules) {
       if (isWeekend) {
         breakStart = config.weekendBreakStart;
         breakEnd = config.weekendBreakEnd;
