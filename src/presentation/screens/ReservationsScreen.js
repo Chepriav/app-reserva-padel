@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useReservations } from '../context/ReservationsContext';
 import { useAuth } from '../context/AuthContext';
 import { formatearFechaLegible, formatearHora, horasHasta } from '../../utils/dateHelpers';
@@ -16,7 +17,8 @@ export default function ReservasScreen() {
   const {
     getUpcomingReservations: getReservasProximas,
     getPastReservations: getReservasPasadas,
-    cancelReservation: cancelarReserva
+    cancelReservation: cancelarReserva,
+    reloadReservations
   } = useReservations();
   const { user, notificationMessage, clearNotificationMessage } = useAuth();
   const [tabActiva, setTabActiva] = useState('proximas');
@@ -43,11 +45,18 @@ export default function ReservasScreen() {
           text: 'OK',
           onPress: () => {
             clearNotificationMessage();
+            reloadReservations?.();
           }
         }],
       });
     }
-  }, [notificationMessage]);
+  }, [notificationMessage, clearNotificationMessage, reloadReservations]);
+
+  useFocusEffect(
+    useCallback(() => {
+      reloadReservations?.();
+    }, [reloadReservations])
+  );
 
   const handleCancelar = (reserva) => {
     // Block demo users from cancelling

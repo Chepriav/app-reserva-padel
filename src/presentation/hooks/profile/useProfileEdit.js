@@ -66,15 +66,22 @@ export function useProfileEdit(user, updateProfile, showAlert) {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.7,
+      base64: Platform.OS === 'web',
     });
 
     if (!result.canceled) {
       let imageUri = result.assets[0].uri;
-      if (Platform.OS !== 'web' && ImageManipulator) {
+      if (Platform.OS === 'web') {
+        const base64 = result.assets[0].base64;
+        const mimeType = result.assets[0].mimeType || 'image/jpeg';
+        if (base64) {
+          imageUri = `data:${mimeType};base64,${base64}`;
+        }
+      } else if (ImageManipulator) {
         const manipResult = await ImageManipulator.manipulateAsync(
           imageUri,
           [{ resize: { width: 800, height: 800 } }],

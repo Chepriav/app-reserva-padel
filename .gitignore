@@ -37,6 +37,7 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 .vercel
+.claude/
 
 # Supabase local
 supabase/.temp/
