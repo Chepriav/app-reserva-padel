@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
-import { colors } from '../../constants/colors';
+import { colors } from '../../../constants/colors';
 
 /**
  * Tarjeta de usuario en la lista de usuarios

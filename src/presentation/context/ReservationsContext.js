@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { reservasService } from '../services/reservationsService.supabase';
-import { notificationService } from '../services/notificationService';
+import { reservasService } from '../../services/reservationsService.supabase';
+import { notificationService } from '../../services/notificationService';
 import { useAuth } from './AuthContext';
 
 const ReservationsContext = createContext(null);

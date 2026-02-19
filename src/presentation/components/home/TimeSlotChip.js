@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors } from '../../constants/colors';
-import { hasSlotEnded } from '../../utils/dateHelpers';
+import { colors } from '../../../constants/colors';
+import { hasSlotEnded } from '../../../utils/dateHelpers';
 
 /**
  * Individual time slot chip with all visual states

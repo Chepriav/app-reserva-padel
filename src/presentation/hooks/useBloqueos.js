@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { reservasService } from '../services/reservationsService.supabase';
+import { reservasService } from '../../services/reservationsService.supabase';
 
 /**
  * Hook to manage schedule blockouts (admin only)

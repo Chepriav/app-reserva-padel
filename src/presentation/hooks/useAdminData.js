@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { authService } from '../services/authService.supabase';
+import { authService } from '../../services/authService.supabase';
 
 /**
  * Hook to load and manage admin panel data

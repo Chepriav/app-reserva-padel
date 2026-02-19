@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { colors } from '../../constants/colors';
-import { formatReadableDate, hasSlotEnded } from '../../utils/dateHelpers';
+import { colors } from '../../../constants/colors';
+import { formatReadableDate, hasSlotEnded } from '../../../utils/dateHelpers';
 import { TimeSlotChip } from './TimeSlotChip';
 
 /**

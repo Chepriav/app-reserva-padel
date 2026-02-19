@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { authService } from '../services/authService.supabase';
+import { authService } from '../../services/authService.supabase';
 
 /**
  * Hook to load community users

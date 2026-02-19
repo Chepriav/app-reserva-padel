@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { colors } from '../../../constants/colors';
-import { CLASE_CONFIG } from '../../../constants/config';
+import { colors } from '../../../../constants/colors';
+import { CLASE_CONFIG } from '../../../../constants/config';
 
 /**
  * Selector for min/max participants for classes

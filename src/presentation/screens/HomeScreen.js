@@ -1,16 +1,12 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator, findNodeHandle } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, ScrollView, ActivityIndicator, findNodeHandle } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useReservations } from '../context/ReservationsContext';
-import { colors } from '../constants/colors';
-import {
-  obtenerFechaHoy,
-  formatearFechaLegible,
-  esFechaValida,
-  bloqueTerminado,
-} from '../utils/dateHelpers';
-import { puedeReservar } from '../utils/validators';
+import { colors } from '../../constants/colors';
+import { obtenerFechaHoy, formatearFechaLegible } from '../../utils/dateHelpers';
 import { CustomAlert } from '../components/CustomAlert';
+import { useHomeActions } from '../hooks/useHomeActions';
+import { styles } from './HomeScreenStyles';
 
 // Hooks
 import {
@@ -45,19 +41,15 @@ export default function HomeScreen({ navigation }) {
     reservationsVersion: reservasVersion
   } = useReservations();
 
-  // Estado de navegación
   const [fechaSeleccionada, setFechaSeleccionada] = useState(obtenerFechaHoy());
   const [pistaSeleccionada, setPistaSeleccionada] = useState(null);
   const [vistaActual, setVistaActual] = useState('dia');
-  const [reservando, setReservando] = useState(false);
   const [notificacionMostrada, setNotificacionMostrada] = useState(false);
 
-  // Ref para scroll automático
   const scrollViewRef = useRef(null);
   const scheduleContainerRef = useRef(null);
   const prevSelectionCount = useRef(0);
 
-  // Hook de alertas
   const {
     alertConfig,
     mostrarAlerta,
@@ -65,7 +57,6 @@ export default function HomeScreen({ navigation }) {
     cerrarAlerta,
   } = useAlert();
 
-  // Hook de horarios
   const {
     schedules: horarios,
     weeklySchedules: horariosSemanales,
@@ -80,7 +71,6 @@ export default function HomeScreen({ navigation }) {
     mostrarAlerta,
   });
 
-  // Hook de selección de horarios
   const {
     selectedSlots: bloquesSeleccionados,
     toggleSlotSelected: toggleBloqueSeleccionado,
@@ -88,7 +78,6 @@ export default function HomeScreen({ navigation }) {
     getReservationData: getDatosReserva,
   } = useSlotSelection({ mostrarAlerta });
 
-  // Hook de bloqueos (admin)
   const bloqueosHook = useBlockouts({
     selectedCourt: pistaSeleccionada,
     userId: user?.id,
@@ -96,37 +85,32 @@ export default function HomeScreen({ navigation }) {
     onReloadSchedules: recargarHorarios,
   });
 
-  // Seleccionar primera pista automáticamente
   useEffect(() => {
     if (pistas.length > 0 && !pistaSeleccionada) {
       setPistaSeleccionada(pistas[0]);
     }
   }, [pistas, pistaSeleccionada]);
 
-  // Limpiar selección cuando cambia fecha o vista
   useEffect(() => {
     limpiarSeleccion();
   }, [fechaSeleccionada, vistaActual]);
 
-  // Auto-scroll cuando se selecciona el primer bloque (solo al aumentar, no al deseleccionar)
   useEffect(() => {
     const currentCount = bloquesSeleccionados.length;
     const wasEmpty = prevSelectionCount.current === 0;
     prevSelectionCount.current = currentCount;
 
-    // Solo hacer scroll cuando pasamos de 0 a 1 (primera selección)
     if (currentCount === 1 && wasEmpty && scheduleContainerRef.current && scrollViewRef.current) {
       scheduleContainerRef.current.measureLayout(
         findNodeHandle(scrollViewRef.current),
         (_x, y) => {
           scrollViewRef.current.scrollTo({ y: Math.max(0, y - 50), animated: true });
         },
-        () => {} // Error callback
+        () => {}
       );
     }
   }, [bloquesSeleccionados.length]);
 
-  // Mostrar notificación de desplazamiento
   useEffect(() => {
     if (notificacionesPendientes.length > 0 && !notificacionMostrada) {
       const notif = notificacionesPendientes[0];
@@ -142,191 +126,13 @@ export default function HomeScreen({ navigation }) {
     }
   }, [notificacionesPendientes, notificacionMostrada]);
 
-  // Cambiar fecha (día o semana)
-  const cambiarFecha = useCallback((dias) => {
-    const [año, mes, dia] = fechaSeleccionada.split('-').map(Number);
-    const fecha = new Date(Date.UTC(año, mes - 1, dia));
-
-    if (vistaActual === 'semana') {
-      const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0);
-
-      const diaSemana = fecha.getUTCDay();
-      const diasHastaLunes = diaSemana === 0 ? 6 : diaSemana - 1;
-      const lunesSeleccionado = new Date(fecha);
-      lunesSeleccionado.setUTCDate(fecha.getUTCDate() - diasHastaLunes);
-
-      const diaSemanaHoy = hoy.getDay();
-      const diasHastaLunesHoy = diaSemanaHoy === 0 ? 6 : diaSemanaHoy - 1;
-      const lunesDeEstaSemanaMundial = new Date(hoy);
-      lunesDeEstaSemanaMundial.setDate(hoy.getDate() - diasHastaLunesHoy);
-      lunesDeEstaSemanaMundial.setHours(0, 0, 0, 0);
-
-      const nuevaSemana = new Date(lunesSeleccionado);
-      nuevaSemana.setUTCDate(lunesSeleccionado.getUTCDate() + (dias * 7));
-
-      const lunesSiguienteSemana = new Date(lunesDeEstaSemanaMundial);
-      lunesSiguienteSemana.setDate(lunesDeEstaSemanaMundial.getDate() + 7);
-
-      const nuevaFechaStr = nuevaSemana.toISOString().split('T')[0];
-      const nuevaFechaObj = new Date(nuevaFechaStr + 'T00:00:00');
-
-      if (nuevaFechaObj < lunesDeEstaSemanaMundial) {
-        mostrarAlerta('Semana no disponible', 'No puedes ver semanas anteriores a la actual');
-        return;
-      }
-
-      const maxFecha = new Date(lunesSiguienteSemana);
-      maxFecha.setDate(maxFecha.getDate() + 6);
-
-      if (nuevaFechaObj > maxFecha) {
-        mostrarAlerta('Límite alcanzado', 'Solo puedes ver la semana actual y la siguiente');
-        return;
-      }
-
-      setFechaSeleccionada(nuevaFechaStr);
-    } else {
-      fecha.setUTCDate(fecha.getUTCDate() + dias);
-      const nuevaFecha = fecha.toISOString().split('T')[0];
-
-      if (esFechaValida(nuevaFecha)) {
-        setFechaSeleccionada(nuevaFecha);
-      } else {
-        mostrarAlerta('Fecha no válida', 'Solo puedes reservar hasta 7 días de anticipación');
-      }
-    }
-  }, [fechaSeleccionada, vistaActual, mostrarAlerta]);
-
-  // Manejar tap en horario
-  const handleHorarioPress = useCallback((horario, fecha) => {
-    const esPasado = bloqueTerminado(fecha, horario.horaFin);
-    if (esPasado) return;
-
-    const estaBloqueado = horario.bloqueado;
-    const esMiVivienda = horario.reservaExistente?.vivienda === user?.vivienda;
-    const esPrimeraOProtegida = horario.prioridad === 'primera' || horario.estaProtegida;
-    const esSegundaDesplazable = horario.prioridad === 'segunda' && !horario.estaProtegida;
-    const esOtraProvisional = !horario.disponible && !estaBloqueado && !esMiVivienda && esSegundaDesplazable;
-
-    // Modo bloqueo (admin)
-    if (bloqueosHook.blockoutMode && user?.esAdmin) {
-      if (estaBloqueado) {
-        bloqueosHook.toggleSlotToUnblock(horario, fecha);
-      } else {
-        bloqueosHook.toggleSlotToBlock(horario, fecha);
-      }
-      return;
-    }
-
-    // Modo normal
-    if (estaBloqueado) {
-      bloqueosHook.handleTapBlocked(horario);
-    } else if (horario.disponible || esOtraProvisional) {
-      toggleBloqueSeleccionado(horario, fecha);
-    }
-  }, [user, bloqueosHook, toggleBloqueSeleccionado, mostrarAlerta]);
-
-  // Confirmar reserva
-  const confirmarReserva = useCallback(async () => {
-    const datosReserva = getDatosReserva();
-    if (!datosReserva) {
-      mostrarAlerta('Selecciona horarios', 'Debes seleccionar al menos un bloque de 30 minutos');
-      return;
-    }
-
-    if (!user) {
-      mostrarAlerta('Error', 'Debes iniciar sesión para hacer una reserva');
-      return;
-    }
-
-    if (!pistaSeleccionada) {
-      mostrarAlerta('Error', 'Selecciona una pista primero');
-      return;
-    }
-
-    // Block demo users from making reservations
-    if (user?.esDemo) {
-      mostrarAlerta(
-        'Demo Account',
-        'This is a view-only demo account. You cannot make reservations or modifications.'
-      );
-      return;
-    }
-
-    const { horaInicio, horaFin, fecha, duracionMinutos, bloquesDesplazables } = datosReserva;
-
-    const validacion = puedeReservar(
-      user,
-      { fecha, horaInicio, pistaId: pistaSeleccionada.id },
-      reservas
-    );
-
-    if (!validacion.valido) {
-      mostrarAlerta('No se puede reservar', validacion.error);
-      return;
-    }
-
-    const hayDesplazamientos = bloquesDesplazables.length > 0;
-    const duracionTexto = duracionMinutos === 30 ? '30 minutos' :
-                          duracionMinutos === 60 ? '1 hora' : '1.5 horas';
-
-    let titulo = 'Confirmar Reserva';
-    let mensaje = `¿Reservar ${pistaSeleccionada.nombre} el ${formatearFechaLegible(fecha)} de ${horaInicio} a ${horaFin}?\n\nDuración: ${duracionTexto} (${bloquesSeleccionados.length} bloques)`;
-
-    if (hayDesplazamientos) {
-      const viviendasDesplazadas = [...new Set(bloquesDesplazables.map(b => b.viviendaDesplazada).filter(Boolean))];
-      const horasDesplazadas = bloquesDesplazables.map(b => b.horaInicio).join(', ');
-
-      titulo = 'Desplazar y Reservar';
-      mensaje = `¿Reservar ${pistaSeleccionada.nombre} el ${formatearFechaLegible(fecha)} de ${horaInicio} a ${horaFin}?\n\n`;
-      mensaje += `⚠️ ATENCIÓN: Se cancelarán las reservas provisionales de:\n`;
-      mensaje += `• Vivienda(s): ${viviendasDesplazadas.join(', ')}\n`;
-      mensaje += `• Horario(s): ${horasDesplazadas}\n\n`;
-      mensaje += `Tu reserva será GARANTIZADA.`;
-    }
-
-    mostrarAlertaPersonalizada({
-      title: titulo,
-      message: mensaje,
-      buttons: [
-        { text: 'Cancelar', style: 'cancel', onPress: () => {} },
-        {
-          text: hayDesplazamientos ? 'Desplazar y Reservar' : 'Confirmar',
-          style: hayDesplazamientos ? 'destructive' : 'default',
-          onPress: async () => {
-            setReservando(true);
-            const result = await crearReserva({
-              pistaId: pistaSeleccionada.id,
-              fecha,
-              horaInicio,
-              horaFin,
-              jugadores: [],
-              forzarDesplazamiento: hayDesplazamientos,
-            });
-            setReservando(false);
-
-            if (result.success) {
-              const mensajeExito = hayDesplazamientos
-                ? 'Tu reserva GARANTIZADA se ha creado correctamente.\nLas reservas provisionales anteriores han sido desplazadas.'
-                : 'Tu reserva se ha creado correctamente';
-              mostrarAlerta('¡Reserva confirmada!', mensajeExito);
-              limpiarSeleccion();
-              if (fecha !== fechaSeleccionada) {
-                setFechaSeleccionada(fecha);
-              }
-              recargarHorarios();
-            } else {
-              mostrarAlerta('Error', result.error);
-            }
-          },
-        },
-      ],
-    });
-  }, [
-    getDatosReserva, user, pistaSeleccionada, reservas, bloquesSeleccionados,
-    fechaSeleccionada, crearReserva, limpiarSeleccion, recargarHorarios,
-    mostrarAlerta, mostrarAlertaPersonalizada
-  ]);
+  const { reservando, cambiarFecha, handleHorarioPress, confirmarReserva } = useHomeActions({
+    fechaSeleccionada, setFechaSeleccionada, vistaActual,
+    pistaSeleccionada, reservas, bloquesSeleccionados,
+    user, crearReserva, limpiarSeleccion, recargarHorarios,
+    toggleBloqueSeleccionado, bloqueosHook, getDatosReserva,
+    mostrarAlerta, mostrarAlertaPersonalizada,
+  });
 
   return (
     <View style={styles.container}>
@@ -386,7 +192,6 @@ export default function HomeScreen({ navigation }) {
         )}
       </ScrollView>
 
-      {/* Botón Reservar (modo normal) */}
       {!bloqueosHook.blockoutMode && (
         <BotonReservar
           cantidadBloques={bloquesSeleccionados.length}
@@ -395,7 +200,6 @@ export default function HomeScreen({ navigation }) {
         />
       )}
 
-      {/* Botones Bloquear/Desbloquear (modo admin) */}
       {bloqueosHook.blockoutMode && (
         <BotonesBloqueo
           cantidadBloquear={bloqueosHook.slotsToBlock.length}
@@ -407,7 +211,6 @@ export default function HomeScreen({ navigation }) {
         />
       )}
 
-      {/* Modal de bloqueo */}
       <ModalBloqueo
         visible={bloqueosHook.blockoutModal.visible}
         motivo={bloqueosHook.blockoutModal.motivo}
@@ -418,14 +221,12 @@ export default function HomeScreen({ navigation }) {
         disabled={bloqueosHook.processing}
       />
 
-      {/* Loading overlay */}
       {(reservando || bloqueosHook.processing) && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       )}
 
-      {/* Alert */}
       <CustomAlert
         visible={alertConfig.visible}
         title={alertConfig.title}
@@ -436,29 +237,3 @@ export default function HomeScreen({ navigation }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 140,
-  },
-  section: {
-    margin: 16,
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

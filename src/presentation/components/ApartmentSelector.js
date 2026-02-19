@@ -7,8 +7,8 @@ import {
   ScrollView,
   StyleSheet,
 } from 'react-native';
-import { colors } from '../constants/colors';
-import { VIVIENDA_CONFIG } from '../constants/config';
+import { colors } from '../../constants/colors';
+import { VIVIENDA_CONFIG } from '../../constants/config';
 
 /**
  * Componente selector de vivienda estructurada

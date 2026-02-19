@@ -1,10 +1,9 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
-import { Platform, AppState } from 'react-native';
-import { authService } from '../services/authService.supabase';
-import { reservasService } from '../services/reservationsService.supabase';
-import { notificationService } from '../services/notificationService';
-import { navigateFromNotification } from '../navigation/AppNavigator';
-import { supabase, refreshSession } from '../services/supabaseConfig';
+import { AppState } from 'react-native';
+import { authService } from '../../services/authService.supabase';
+import { notificationService } from '../../services/notificationService';
+import { supabase, refreshSession } from '../../services/supabaseConfig';
+import { useAuthNotifications } from './useAuthNotifications';
 
 const AuthContext = createContext(null);
 
@@ -12,10 +11,13 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [notificacionesPendientes, setNotificacionesPendientes] = useState([]);
   // Notification message to show on destination screen
   const [notificationMessage, setNotificationMessage] = useState(null);
   const appState = useRef(AppState.currentState);
+
+  const { notificacionesPendientes, marcarNotificacionesLeidas } = useAuthNotifications({
+    isAuthenticated, user, setNotificationMessage,
+  });
 
   // Check existing session and listen for auth state changes
   useEffect(() => {
@@ -127,197 +129,6 @@ export const AuthProvider = ({ children }) => {
     };
   }, [isAuthenticated]);
 
-  // Load notifications and register push token when user authenticates
-  useEffect(() => {
-    let notificationCleanup = null;
-
-    if (isAuthenticated && user) {
-      cargarNotificaciones();
-
-      // Register for push notifications
-      notificationService.registerForPushNotifications(user.id);
-
-      // Configure notification listeners (mobile)
-      notificationCleanup = notificationService.addNotificationListeners(
-        (notification) => {
-          // Notification received in foreground
-          console.log('Notificación recibida:', notification);
-        },
-        (response) => {
-          // User tapped the notification (mobile)
-          const data = response.notification.request.content.data;
-          console.log('Notificación tocada:', data);
-          handleNotificationNavigation(data.type, data);
-        }
-      );
-    } else {
-      setNotificacionesPendientes([]);
-    }
-
-    return () => {
-      if (notificationCleanup) {
-        notificationCleanup();
-      }
-    };
-  }, [isAuthenticated, user]);
-
-  // Listener for Service Worker messages (Web Push)
-  useEffect(() => {
-    if (Platform.OS !== 'web') return;
-    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
-
-    const handleServiceWorkerMessage = (event) => {
-      console.log('[AuthContext] Mensaje del Service Worker:', event.data);
-
-      if (event.data?.type === 'NOTIFICATION_CLICK') {
-        const { notificationType, data } = event.data.payload;
-        handleNotificationNavigation(notificationType, data || {});
-      }
-    };
-
-    navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
-
-    return () => {
-      navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
-    };
-  }, []);
-
-  /**
-   * Navigates to the corresponding screen based on notification type
-   * and sets a message to show to the user
-   */
-  const handleNotificationNavigation = (notificationType, notificationData = {}) => {
-    console.log('[AuthContext] Navegando por notificación:', notificationType, notificationData);
-
-    // Create contextual message based on type
-    let message = null;
-
-    switch (notificationType) {
-      case 'vivienda_change':
-        if (notificationData.aprobado) {
-          message = {
-            type: 'success',
-            title: 'Cambio de vivienda aprobado',
-            text: 'Tu solicitud de cambio de vivienda ha sido aprobada.',
-          };
-        } else {
-          message = {
-            type: 'error',
-            title: 'Cambio de vivienda rechazado',
-            text: 'Tu solicitud de cambio de vivienda ha sido rechazada.',
-          };
-        }
-        setNotificationMessage(message);
-        navigateFromNotification('Perfil');
-        break;
-
-      case 'reservation_reminder':
-        message = {
-          type: 'info',
-          title: 'Recordatorio',
-          text: 'Tienes una reserva próximamente.',
-        };
-        setNotificationMessage(message);
-        navigateFromNotification('Mis Reservas');
-        break;
-
-      case 'reservation_displacement':
-        message = {
-          type: 'warning',
-          title: 'Reserva desplazada',
-          text: 'Una de tus reservas ha sido desplazada por otra vivienda.',
-        };
-        setNotificationMessage(message);
-        navigateFromNotification('Mis Reservas');
-        break;
-
-      case 'reservation_converted':
-        message = {
-          type: 'success',
-          title: 'Reserva confirmada',
-          text: 'Tu reserva provisional ha pasado a ser garantizada.',
-        };
-        setNotificationMessage(message);
-        navigateFromNotification('Mis Reservas');
-        break;
-
-      // Match notifications
-      case 'partida_solicitud':
-        message = {
-          type: 'info',
-          title: 'Nueva solicitud',
-          text: 'Alguien quiere unirse a tu partida.',
-        };
-        setNotificationMessage(message);
-        navigateFromNotification('Partidas');
-        break;
-
-      case 'partida_aceptada':
-        message = {
-          type: 'success',
-          title: 'Solicitud aceptada',
-          text: 'Te han aceptado en una partida.',
-        };
-        setNotificationMessage(message);
-        navigateFromNotification('Partidas');
-        break;
-
-      case 'partida_completa':
-        message = {
-          type: 'success',
-          title: 'Partida completa',
-          text: 'Tu partida ya tiene 4 jugadores.',
-        };
-        setNotificationMessage(message);
-        navigateFromNotification('Partidas');
-        break;
-
-      case 'partida_cancelada':
-        message = {
-          type: 'warning',
-          title: 'Partida cancelada',
-          text: 'Una partida en la que estabas apuntado ha sido cancelada.',
-        };
-        setNotificationMessage(message);
-        navigateFromNotification('Partidas');
-        break;
-
-      default:
-        console.log('[AuthContext] Tipo de notificación no reconocido:', notificationType);
-    }
-  };
-
-  /**
-   * Clears the notification message (call after showing it)
-   */
-  const clearNotificationMessage = () => {
-    setNotificationMessage(null);
-  };
-
-  const cargarNotificaciones = async () => {
-    if (!user) return;
-
-    try {
-      const result = await reservasService.obtenerNotificacionesPendientes(user.id);
-      if (result.success) {
-        setNotificacionesPendientes(result.data);
-      }
-    } catch (error) {
-      console.error('Error cargando notificaciones:', error);
-    }
-  };
-
-  const marcarNotificacionesLeidas = async () => {
-    if (!user) return;
-
-    try {
-      await reservasService.marcarNotificacionesLeidas(user.id);
-      setNotificacionesPendientes([]);
-    } catch (error) {
-      console.error('Error marcando notificaciones:', error);
-    }
-  };
-
   const login = async (email, password) => {
     try {
       const response = await authService.login(email, password);
@@ -427,7 +238,7 @@ export const AuthProvider = ({ children }) => {
     notificacionesPendientes,
     marcarNotificacionesLeidas,
     notificationMessage,
-    clearNotificationMessage,
+    clearNotificationMessage: () => setNotificationMessage(null),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

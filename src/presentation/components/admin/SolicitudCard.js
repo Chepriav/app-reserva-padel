@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors } from '../../constants/colors';
-import { formatearFechaLegible } from '../../utils/dateHelpers';
+import { colors } from '../../../constants/colors';
+import { formatearFechaLegible } from '../../../utils/dateHelpers';
 
 /**
  * Tarjeta de solicitud de registro pendiente

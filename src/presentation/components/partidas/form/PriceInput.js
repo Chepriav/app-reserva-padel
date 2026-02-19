@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { colors } from '../../../constants/colors';
+import { colors } from '../../../../constants/colors';
 
 /**
  * Price input for classes (per student and per group)

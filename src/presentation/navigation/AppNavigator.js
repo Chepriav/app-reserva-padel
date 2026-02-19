@@ -7,7 +7,7 @@ import RegisterScreen from '../screens/RegisterScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import TabNavigator from './TabNavigator';
 import { ActivityIndicator, View } from 'react-native';
-import { colors } from '../constants/colors';
+import { colors } from '../../constants/colors';
 
 const Stack = createStackNavigator();
 

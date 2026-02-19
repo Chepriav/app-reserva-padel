@@ -1,0 +1,32 @@
+import { StyleSheet } from 'react-native';
+import { colors } from '../../../constants/colors';
+
+export const styles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center' },
+  container: { backgroundColor: '#fff', borderRadius: 12, width: '90%', maxWidth: 600, maxHeight: '80%', overflow: 'hidden' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
+  headerTitle: { fontSize: 18, fontWeight: '600', color: colors.text },
+  body: { flex: 1 },
+  bodyContent: { padding: 20 },
+  summaryContainer: { flexDirection: 'row', gap: 16, marginBottom: 20 },
+  summaryBox: { flex: 1, backgroundColor: colors.successLight || '#e8f5e9', padding: 20, borderRadius: 12, alignItems: 'center', gap: 8 },
+  summaryBoxError: { backgroundColor: colors.errorLight || '#ffebee' },
+  summaryNumber: { fontSize: 32, fontWeight: 'bold', color: colors.text },
+  summaryLabel: { fontSize: 14, color: colors.textSecondary, textAlign: 'center' },
+  infoBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: colors.surface, padding: 16, borderRadius: 8, borderLeftWidth: 4, borderLeftColor: colors.primary, marginBottom: 20 },
+  infoText: { flex: 1, fontSize: 14, color: colors.text, lineHeight: 20 },
+  errorSection: { marginBottom: 16 },
+  errorSectionTitle: { fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: 12 },
+  errorList: { gap: 12, marginBottom: 16 },
+  errorItem: { backgroundColor: colors.surface, padding: 12, borderRadius: 8, borderLeftWidth: 3, borderLeftColor: colors.error },
+  errorItemHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  errorItemEmail: { fontSize: 14, fontWeight: '600', color: colors.text },
+  errorItemMessage: { fontSize: 13, color: colors.textSecondary, marginLeft: 22 },
+  exportButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.surface, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, borderColor: colors.primary },
+  exportButtonText: { fontSize: 14, fontWeight: '600', color: colors.primary },
+  emptyState: { alignItems: 'center', paddingVertical: 40, gap: 12 },
+  emptyText: { fontSize: 16, color: colors.textSecondary },
+  footer: { paddingHorizontal: 20, paddingVertical: 16, borderTopWidth: 1, borderTopColor: colors.border },
+  closeButton: { backgroundColor: colors.primary, paddingVertical: 14, paddingHorizontal: 24, borderRadius: 8, alignItems: 'center' },
+  closeButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+});

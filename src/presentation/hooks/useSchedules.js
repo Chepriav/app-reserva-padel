@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { esFechaValida } from '../utils/dateHelpers';
+import { esFechaValida } from '../../utils/dateHelpers';
 
 /**
  * Hook to manage schedule loading (day and week views)

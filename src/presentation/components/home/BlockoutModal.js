@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity } from 'react-native';
-import { colors } from '../../constants/colors';
+import { colors } from '../../../constants/colors';
 
 /**
  * Modal to confirm time slot blockout

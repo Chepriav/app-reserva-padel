@@ -8,7 +8,7 @@ import {
   useAlert,
 } from '../hooks';
 import { useUserImport } from '../hooks/useUserImport';
-import { colors } from '../constants/colors';
+import { colors } from '../../constants/colors';
 import { CustomAlert } from '../components/CustomAlert';
 import {
   EditApartmentModal,

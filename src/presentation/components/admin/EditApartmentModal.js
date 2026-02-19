@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { colors } from '../../constants/colors';
+import { colors } from '../../../constants/colors';
 import { ApartmentSelector } from '../ApartmentSelector';
 
 /**

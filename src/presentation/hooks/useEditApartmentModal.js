@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { parseVivienda } from '../constants/config';
+import { parseVivienda } from '../../constants/config';
 
 /**
  * Hook to manage the edit apartment modal

@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../constants/colors';
+import { colors } from '../../../constants/colors';
 import { SolicitudCard } from './SolicitudCard';
 import { UsuarioCard } from './UsuarioCard';
 import { ApartmentChangeCard } from './ApartmentChangeCard';

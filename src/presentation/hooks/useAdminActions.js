@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
-import { authService } from '../services/authService.supabase';
-import { notificationService } from '../services/notificationService';
-import { formatearVivienda, combinarVivienda } from '../constants/config';
-import { validarViviendaComponentes } from '../utils/validators';
+import { authService } from '../../services/authService.supabase';
+import { notificationService } from '../../services/notificationService';
+import { formatearVivienda, combinarVivienda } from '../../constants/config';
+import { validarViviendaComponentes } from '../../utils/validators';
 
 /**
  * Hook for admin actions (approve, reject, toggle admin, etc.)

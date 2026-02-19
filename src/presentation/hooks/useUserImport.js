@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { importUsersFromData } from '../services/userImportService';
+import { importUsersFromData } from '../../services/userImportService';
 
 /**
  * Custom hook for managing user import state and operations

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { colors } from '../../../constants/colors';
-import { formatReadableDate } from '../../../utils/dateHelpers';
+import { colors } from '../../../../constants/colors';
+import { formatReadableDate } from '../../../../utils/dateHelpers';
 
 /**
  * Reservation selector to link match/class

@@ -1,19 +1,16 @@
-export {
-  useMatches,
-  useMatchesActions,
-  useCreateMatchModal,
-  useAddPlayerModal,
-} from './usePartidas';
+// Matches
+export { useMatches } from './useMatches';
+export { useMatchesActions } from './useMatchesActions';
+export { useCreateMatchModal } from './useCreateMatchModal';
+export { useAddPlayerModal } from './useAddPlayerModal';
 
+// Community users
 export { useCommunityUsers } from './useUsuarios';
 
-export {
-  useNotifications,
-  useAnnouncements,
-  useAnnouncementsAdmin,
-  useBulletinCounter,
-  refreshBulletinBadge,
-} from './useTablon';
+// Bulletin
+export { useNotifications } from './useNotifications';
+export { useAnnouncements, useAnnouncementsAdmin } from './useAnnouncements';
+export { useBulletinCounter, refreshBulletinBadge } from './useBulletinCounter';
 
 // HomeScreen hooks
 export { useAlert } from './useAlert';

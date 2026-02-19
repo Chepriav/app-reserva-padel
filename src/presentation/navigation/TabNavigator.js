@@ -7,7 +7,7 @@ import MatchesScreen from '../screens/MatchesScreen';
 import BulletinScreen from '../screens/BulletinScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import AdminScreen from '../screens/AdminScreen';
-import { colors } from '../constants/colors';
+import { colors } from '../../constants/colors';
 import { useAuth } from '../context/AuthContext';
 import { useBulletinCounter } from '../hooks';
 

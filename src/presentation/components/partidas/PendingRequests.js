@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { colors } from '../../constants/colors';
-import { NIVELES_JUEGO } from '../../constants/config';
+import { colors } from '../../../constants/colors';
+import { NIVELES_JUEGO } from '../../../constants/config';
 
 /**
  * List of pending requests for the match creator

@@ -1,137 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
-import { colors } from '../../constants/colors';
-import { scheduleConfigService } from '../../services/scheduleConfigService';
+import { colors } from '../../../constants/colors';
 import { useAlert } from '../../hooks/useAlert';
 import { CustomAlert } from '../CustomAlert';
+import { useScheduleConfig } from '../../hooks/useScheduleConfig';
+import { styles } from './ScheduleConfigSectionStyles';
 
 /**
  * Section for configuring schedule settings (opening/closing times, lunch break)
  */
 export function ScheduleConfigSection({ userId }) {
   const { alertConfig, showAlert, closeAlert } = useAlert();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [config, setConfig] = useState({
-    horaApertura: '08:00',
-    horaCierre: '22:00',
-    duracionBloque: 30,
-    pausaInicio: '',
-    pausaFin: '',
-    motivoPausa: 'Hora de comida',
-    pausaDiasSemana: null, // null = todos los días
-    usarHorariosDiferenciados: false,
-    semanaHoraApertura: '08:00',
-    semanaHoraCierre: '22:00',
-    findeHoraApertura: '09:00',
-    findeHoraCierre: '23:00',
-    findePausaInicio: '',
-    findePausaFin: '',
-    findeMotivoPausa: 'Hora de comida',
-    findePausaDiasSemana: null,
-  });
-
-  const [breakEnabled, setBreakEnabled] = useState(false);
-  const [weekendBreakEnabled, setWeekendBreakEnabled] = useState(false);
-
-  useEffect(() => {
-    loadConfig();
-  }, []);
-
-  const loadConfig = async () => {
-    setLoading(true);
-    const result = await scheduleConfigService.getConfig();
-    if (result.success) {
-      // Strip seconds from times (HH:MM:SS -> HH:MM)
-      const cleanConfig = {
-        ...result.data,
-        horaApertura: result.data.horaApertura?.slice(0, 5) || '08:00',
-        horaCierre: result.data.horaCierre?.slice(0, 5) || '22:00',
-        pausaInicio: result.data.pausaInicio?.slice(0, 5) || '',
-        pausaFin: result.data.pausaFin?.slice(0, 5) || '',
-        usarHorariosDiferenciados: result.data.usarHorariosDiferenciados || false,
-        semanaHoraApertura: result.data.semanaHoraApertura?.slice(0, 5) || '08:00',
-        semanaHoraCierre: result.data.semanaHoraCierre?.slice(0, 5) || '22:00',
-        findeHoraApertura: result.data.findeHoraApertura?.slice(0, 5) || '09:00',
-        findeHoraCierre: result.data.findeHoraCierre?.slice(0, 5) || '23:00',
-        findePausaInicio: result.data.findePausaInicio?.slice(0, 5) || '',
-        findePausaFin: result.data.findePausaFin?.slice(0, 5) || '',
-        findeMotivoPausa: result.data.findeMotivoPausa || 'Hora de comida',
-        findePausaDiasSemana: result.data.findePausaDiasSemana || null,
-      };
-      setConfig(cleanConfig);
-      setBreakEnabled(!!result.data.pausaInicio && !!result.data.pausaFin);
-      setWeekendBreakEnabled(!!result.data.findePausaInicio && !!result.data.findePausaFin);
-    }
-    setLoading(false);
-  };
-
-  const handleSave = async () => {
-    // Validations
-    if (config.usarHorariosDiferenciados) {
-      if (!config.semanaHoraApertura || !config.semanaHoraCierre) {
-        showAlert('Error', 'Debes especificar horarios de lunes a viernes');
-        return;
-      }
-      if (!config.findeHoraApertura || !config.findeHoraCierre) {
-        showAlert('Error', 'Debes especificar horarios de fin de semana');
-        return;
-      }
-    } else {
-      if (!config.horaApertura || !config.horaCierre) {
-        showAlert('Error', 'Debes especificar hora de apertura y cierre');
-        return;
-      }
-    }
-
-    if (breakEnabled && (!config.pausaInicio || !config.pausaFin)) {
-      showAlert('Error', 'Debes especificar hora de inicio y fin de la pausa');
-      return;
-    }
-
-    if (weekendBreakEnabled && config.usarHorariosDiferenciados && (!config.findePausaInicio || !config.findePausaFin)) {
-      showAlert('Error', 'Debes especificar hora de inicio y fin de la pausa de fin de semana');
-      return;
-    }
-
-    // If break is disabled, clear values
-    const configToSave = {
-      ...config,
-      pausaInicio: breakEnabled ? config.pausaInicio : null,
-      pausaFin: breakEnabled ? config.pausaFin : null,
-      motivoPausa: breakEnabled ? config.motivoPausa : null,
-      pausaDiasSemana: breakEnabled ? config.pausaDiasSemana : null,
-      findePausaInicio: (weekendBreakEnabled && config.usarHorariosDiferenciados) ? config.findePausaInicio : null,
-      findePausaFin: (weekendBreakEnabled && config.usarHorariosDiferenciados) ? config.findePausaFin : null,
-      findeMotivoPausa: (weekendBreakEnabled && config.usarHorariosDiferenciados) ? config.findeMotivoPausa : null,
-      findePausaDiasSemana: (weekendBreakEnabled && config.usarHorariosDiferenciados) ? config.findePausaDiasSemana : null,
-    };
-
-    setSaving(true);
-
-    try {
-      const result = await scheduleConfigService.updateConfig(userId, configToSave);
-      setSaving(false);
-
-      if (result.success) {
-        showAlert('Éxito', 'Configuración guardada correctamente');
-        await loadConfig(); // Reload to see changes
-      } else {
-        showAlert('Error', result.error || 'Error al guardar configuración');
-      }
-    } catch (error) {
-      setSaving(false);
-      showAlert('Error', 'Error inesperado al guardar: ' + error.message);
-    }
-  };
+  const {
+    loading,
+    saving,
+    config,
+    setConfig,
+    breakEnabled,
+    setBreakEnabled,
+    weekendBreakEnabled,
+    setWeekendBreakEnabled,
+    handleSave,
+  } = useScheduleConfig(userId, showAlert);
 
   if (loading) {
     return (
@@ -393,138 +289,3 @@ export function ScheduleConfigSection({ userId }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    padding: 16,
-    paddingTop: 12,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginTop: 0,
-    marginBottom: 6,
-  },
-  sectionDescription: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 12,
-    lineHeight: 20,
-  },
-  subsectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  row: {
-    flexDirection: Platform.OS === 'web' ? 'row' : 'column',
-    gap: 12,
-    marginBottom: 12,
-  },
-  inputGroup: {
-    flex: 1,
-    marginBottom: 8,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: colors.text,
-    backgroundColor: colors.surface,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: 16,
-  },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderRadius: 4,
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  checkboxIcon: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  checkboxLabel: {
-    fontSize: 16,
-    color: colors.text,
-    fontWeight: '500',
-  },
-  helperText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
-  saveButton: {
-    backgroundColor: colors.primary,
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 24,
-    marginBottom: 16,
-  },
-  saveButtonDisabled: {
-    opacity: 0.6,
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  infoBox: {
-    backgroundColor: colors.surface,
-    padding: 16,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.accent,
-    marginBottom: 32,
-  },
-  infoTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  infoText: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginBottom: 4,
-    lineHeight: 18,
-  },
-});
