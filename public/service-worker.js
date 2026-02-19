@@ -1,5 +1,5 @@
 // Service Worker para PWA con soporte de Push Notifications
-const CACHE_NAME = 'reserva-padel-v20';
+const CACHE_NAME = 'reserva-padel-v21';
 const STATIC_ASSETS = [
   '/manifest.json',
   '/icon-192.png',
@@ -50,6 +50,11 @@ self.addEventListener('activate', (event) => {
 // Interceptar peticiones de red - Estrategia Network-First para HTML/JS
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+
+  // No interceptar blob: URLs (creados en el contexto de la página, inaccesibles desde el SW)
+  if (event.request.url.startsWith('blob:')) {
+    return;
+  }
 
   // No interceptar peticiones a APIs externas (Supabase, etc.)
   if (url.hostname.includes('supabase.co') ||
