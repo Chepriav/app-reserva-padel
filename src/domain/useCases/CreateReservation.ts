@@ -176,8 +176,6 @@ export class CreateReservation {
   private determinePolicy(
     reservations: Reservation[],
   ): 'guaranteed' | 'provisional' | null {
-    return this.determineP.execute(reservations);
+    return this.determinePriority.execute(reservations);
   }
-
-  private readonly determineP = new DetermineReservationPriority();
 }

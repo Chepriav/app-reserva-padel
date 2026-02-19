@@ -1,3 +1,5 @@
+import { ok } from '@shared/types/Result';
+import type { Result } from '@shared/types/Result';
 import type { MatchCancellationPort } from '@domain/ports/repositories/MatchCancellationPort';
 import type { CancelMatchByReservation } from '@domain/useCases/CancelMatchByReservation';
 
@@ -6,17 +8,15 @@ import type { CancelMatchByReservation } from '@domain/useCases/CancelMatchByRes
  * Replaces LegacyMatchCancellationAdapter after Phase 4 match domain migration.
  */
 export class DomainMatchCancellationAdapter implements MatchCancellationPort {
-  constructor(private readonly cancelMatchByReservation: CancelMatchByReservation) {}
+  constructor(private readonly cancelMatchByReservationUseCase: CancelMatchByReservation) {}
 
-  async cancelMatchForReservation(
-    reservationId: string,
-    reason: 'reserva_cancelada' | 'reserva_desplazada',
-  ): Promise<void> {
-    // Fire-and-forget: errors are logged but do not propagate
+  async cancelMatchByReservation(reservationId: string): Promise<Result<void>> {
+    // Fire-and-forget: errors are ignored so reservation cancellation proceeds
     try {
-      await this.cancelMatchByReservation.execute(reservationId, reason);
+      await this.cancelMatchByReservationUseCase.execute(reservationId, 'reserva_cancelada');
     } catch {
-      // Non-critical: reservation cancellation should proceed even if match cancel fails
+      // Non-critical: ignore errors
     }
+    return ok(undefined);
   }
 }

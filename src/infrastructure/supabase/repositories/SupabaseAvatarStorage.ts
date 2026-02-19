@@ -12,7 +12,9 @@ export class SupabaseAvatarStorage implements AvatarStoragePort {
   async upload(userId: string, imageUri: string): Promise<Result<string>> {
     try {
       const fileName = `${userId}/avatar-${Date.now()}.jpg`;
-      const fileData = await this.toArrayBuffer(imageUri);
+      const fileDataResult = await this.toArrayBuffer(imageUri);
+      if (!fileDataResult.success) return fileDataResult;
+      const fileData = fileDataResult.value;
 
       await this.deleteOldAvatars(userId);
 
@@ -43,18 +45,18 @@ export class SupabaseAvatarStorage implements AvatarStoragePort {
     );
   }
 
-  private async toArrayBuffer(imageUri: string): Promise<ArrayBuffer> {
+  private async toArrayBuffer(imageUri: string): Promise<Result<ArrayBuffer>> {
     if (Platform.OS === 'web') {
       if (imageUri.startsWith('data:')) {
-        return decode(imageUri.split(',')[1]);
+        return ok(decode(imageUri.split(',')[1]));
       }
       if (imageUri.startsWith('blob:')) {
         const response = await fetch(imageUri);
         const blob = await response.blob();
         const base64 = await this.blobToBase64(blob);
-        return decode(base64.split(',')[1]);
+        return ok(decode(base64.split(',')[1]));
       }
-      throw new Error('Unsupported image format on web');
+      return fail(new InfrastructureError('Unsupported image format on web'));
     }
 
     // React Native: read file as base64
@@ -62,7 +64,7 @@ export class SupabaseAvatarStorage implements AvatarStoragePort {
     const base64: string = await FileSystem.readAsStringAsync(imageUri, {
       encoding: FileSystem.EncodingType.Base64,
     });
-    return decode(base64);
+    return ok(decode(base64));
   }
 
   private blobToBase64(blob: Blob): Promise<string> {
