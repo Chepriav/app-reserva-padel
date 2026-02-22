@@ -49,6 +49,10 @@ export default function App() {
 
       const hasCode = url.includes('?code=') || url.includes('&code=');
       const isResetPath = url.includes('reset-password');
+      // Supabase can redirect email confirmation either as:
+      //   PKCE flow:    ?code=XXXX  (query param)
+      //   Implicit flow: #access_token=...&type=signup  (hash fragment)
+      const isSignupHash = url.includes('type=signup');
 
       if (hasCode && isResetPath) {
         // Password reset / recovery flow → show ResetPasswordScreen
@@ -64,7 +68,7 @@ export default function App() {
             : window.location.origin + '/';
           window.history.replaceState({}, document.title, cleanUrl);
         }
-      } else if (hasCode) {
+      } else if (hasCode || isSignupHash) {
         // Email confirmation link (registration) — NOT a password reset.
         // Supabase confirms the email server-side before redirecting here,
         // so we always show success. We only sign out any stale session.
