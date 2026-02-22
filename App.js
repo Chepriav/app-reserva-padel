@@ -66,19 +66,17 @@ export default function App() {
         }
       } else if (hasCode) {
         // Email confirmation link (registration) — NOT a password reset.
-        // Exchange the code to confirm the email, then sign out immediately
-        // (user must wait for admin approval and already has a password).
-        const result = await authService.handleEmailConfirmation(url);
+        // Supabase confirms the email server-side before redirecting here,
+        // so we always show success. We only sign out any stale session.
+        await authService.handleEmailConfirmation();
 
         if (Platform.OS === 'web' && typeof window !== 'undefined') {
           window.history.replaceState({}, document.title, window.location.origin + '/');
         }
 
-        if (result.handled && !result.error) {
-          setEmailConfirmed(true);
-          // Auto-hide the confirmation banner after 8 seconds
-          setTimeout(() => setEmailConfirmed(false), 8000);
-        }
+        setEmailConfirmed(true);
+        // Auto-hide the confirmation banner after 8 seconds
+        setTimeout(() => setEmailConfirmed(false), 8000);
       }
     };
 

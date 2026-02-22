@@ -238,21 +238,18 @@ export const authService = {
     return { handled: true, error: 'Missing recovery tokens' };
   },
 
-  async handleEmailConfirmation(url) {
-    const { code } = parseRecoveryParams(url);
-    if (!code) return { handled: false };
-
+  async handleEmailConfirmation() {
+    // Supabase already confirmed the email server-side before redirecting here,
+    // so we just need to ensure no active session lingers (the user must wait
+    // for admin approval). exchangeCodeForSession is NOT called here because it
+    // requires the PKCE verifier in sessionStorage, which is absent when the
+    // email link is opened in a new browser tab — a very common scenario.
     try {
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
-      if (error) return { handled: true, error: error.message };
-
-      // Sign out immediately — the user must wait for admin approval.
-      // They already set their password during registration.
       await supabase.auth.signOut();
-      return { handled: true };
-    } catch (err) {
-      return { handled: true, error: err.message || 'Error al confirmar email' };
+    } catch {
+      // Ignore — there may be no session to clear
     }
+    return { handled: true };
   },
 
   async updatePassword(newPassword) {
