@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [notificationMessage, setNotificationMessage] = useState(null);
   const appState = useRef(AppState.currentState);
 
-  const { notificacionesPendientes, marcarNotificacionesLeidas } = useAuthNotifications({
+  const { notificationsPending, markNotificationsRead } = useAuthNotifications({
     isAuthenticated, user, setNotificationMessage,
   });
 
@@ -214,7 +214,7 @@ export const AuthProvider = ({ children }) => {
       const result = await authService.getCurrentUser();
       console.log('[AuthContext] Resultado refreshUser:', result);
       if (result.success && result.data) {
-        console.log('[AuthContext] Nueva vivienda:', result.data.vivienda);
+        console.log('[AuthContext] Nueva vivienda:', result.data.apartment);
         setUser(result.data);
         return { success: true };
       }
@@ -235,8 +235,8 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
     resetPassword,
     refreshUser,
-    notificacionesPendientes,
-    marcarNotificacionesLeidas,
+    notificationsPending,
+    markNotificationsRead,
     notificationMessage,
     clearNotificationMessage: () => setNotificationMessage(null),
   };

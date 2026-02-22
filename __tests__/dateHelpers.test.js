@@ -1,12 +1,14 @@
 import {
   stringToDate,
-  formatearFecha,
-  formatearFechaLegible,
-  generarHorariosDisponibles,
-  esFuturo,
-  horasHasta,
-  obtenerFechaHoy,
-  esFechaValida,
+  formatDate,
+  formatReadableDate,
+  generateAvailableSlots,
+  isFuture,
+  hasSlotEnded,
+  hoursUntil,
+  getTodayDate,
+  formatTime,
+  isDateValid,
 } from '../src/utils/dateHelpers';
 
 describe('stringToDate', () => {
@@ -32,41 +34,41 @@ describe('stringToDate', () => {
   });
 });
 
-describe('formatearFecha', () => {
+describe('formatDate', () => {
   test('formatea fecha a YYYY-MM-DD', () => {
     const date = new Date(2024, 5, 15); // 15 de Junio 2024
-    expect(formatearFecha(date)).toBe('2024-06-15');
+    expect(formatDate(date)).toBe('2024-06-15');
   });
 
   test('añade padding a mes y día', () => {
     const date = new Date(2024, 0, 5); // 5 de Enero 2024
-    expect(formatearFecha(date)).toBe('2024-01-05');
+    expect(formatDate(date)).toBe('2024-01-05');
   });
 
   test('maneja fin de año', () => {
     const date = new Date(2024, 11, 31); // 31 de Diciembre 2024
-    expect(formatearFecha(date)).toBe('2024-12-31');
+    expect(formatDate(date)).toBe('2024-12-31');
   });
 });
 
-describe('formatearFechaLegible', () => {
+describe('formatReadableDate', () => {
   test('formatea string de fecha correctamente', () => {
-    const result = formatearFechaLegible('2024-06-15');
+    const result = formatReadableDate('2024-06-15');
     expect(result).toContain('2024');
     expect(result.toLowerCase()).toContain('junio');
   });
 
   test('maneja fecha null', () => {
-    expect(formatearFechaLegible(null)).toBe('Fecha no disponible');
+    expect(formatReadableDate(null)).toBe('Fecha no disponible');
   });
 
   test('maneja fecha undefined', () => {
-    expect(formatearFechaLegible(undefined)).toBe('Fecha no disponible');
+    expect(formatReadableDate(undefined)).toBe('Fecha no disponible');
   });
 
   test('maneja objeto Date', () => {
     const date = new Date(2024, 5, 15);
-    const result = formatearFechaLegible(date);
+    const result = formatReadableDate(date);
     expect(result).toContain('2024');
   });
 
@@ -74,124 +76,258 @@ describe('formatearFechaLegible', () => {
     const mockTimestamp = {
       toDate: () => new Date(2024, 5, 15),
     };
-    const result = formatearFechaLegible(mockTimestamp);
+    const result = formatReadableDate(mockTimestamp);
     expect(result).toContain('2024');
   });
 
   test('retorna mensaje para tipo inválido', () => {
-    expect(formatearFechaLegible(12345)).toBe('Fecha inválida');
-    expect(formatearFechaLegible({})).toBe('Fecha inválida');
+    expect(formatReadableDate(12345)).toBe('Fecha inválida');
+    expect(formatReadableDate({})).toBe('Fecha inválida');
   });
 });
 
-describe('generarHorariosDisponibles', () => {
-  test('genera array de horarios', () => {
-    const horarios = generarHorariosDisponibles();
-    expect(Array.isArray(horarios)).toBe(true);
-    expect(horarios.length).toBeGreaterThan(0);
+describe('generateAvailableSlots', () => {
+  test('genera array de slots', () => {
+    const slots = generateAvailableSlots();
+    expect(Array.isArray(slots)).toBe(true);
+    expect(slots.length).toBeGreaterThan(0);
   });
 
-  test('cada horario tiene horaInicio y horaFin', () => {
-    const horarios = generarHorariosDisponibles();
-    horarios.forEach((horario) => {
-      expect(horario).toHaveProperty('horaInicio');
-      expect(horario).toHaveProperty('horaFin');
-      expect(horario.horaInicio).toMatch(/^\d{2}:\d{2}$/);
-      expect(horario.horaFin).toMatch(/^\d{2}:\d{2}$/);
+  test('cada slot tiene startTime y endTime', () => {
+    const slots = generateAvailableSlots();
+    slots.forEach((slot) => {
+      expect(slot).toHaveProperty('startTime');
+      expect(slot).toHaveProperty('endTime');
+      expect(slot.startTime).toMatch(/^\d{2}:\d{2}$/);
+      expect(slot.endTime).toMatch(/^\d{2}:\d{2}$/);
     });
   });
 
-  test('primer horario comienza a las 08:00', () => {
-    const horarios = generarHorariosDisponibles();
-    expect(horarios[0].horaInicio).toBe('08:00');
+  test('primer slot comienza a las 08:00', () => {
+    const slots = generateAvailableSlots();
+    expect(slots[0].startTime).toBe('08:00');
   });
 
-  test('último horario no excede hora de cierre', () => {
-    const horarios = generarHorariosDisponibles();
-    const ultimoHorario = horarios[horarios.length - 1];
-    const [horaFin] = ultimoHorario.horaFin.split(':').map(Number);
-    expect(horaFin).toBeLessThanOrEqual(22);
+  test('último slot no excede hora de cierre', () => {
+    const slots = generateAvailableSlots();
+    const lastSlot = slots[slots.length - 1];
+    const [endHour] = lastSlot.endTime.split(':').map(Number);
+    expect(endHour).toBeLessThanOrEqual(22);
   });
 });
 
-describe('esFuturo', () => {
+describe('isFuture', () => {
   test('retorna true para fecha futura', () => {
-    const fechaFutura = getFutureDate(1);
-    expect(esFuturo(fechaFutura, '12:00')).toBe(true);
+    const futureDate = getFutureDate(1);
+    expect(isFuture(futureDate, '12:00')).toBe(true);
   });
 
   test('retorna false para fecha pasada', () => {
-    expect(esFuturo('2020-01-01', '10:00')).toBe(false);
+    expect(isFuture('2020-01-01', '10:00')).toBe(false);
   });
 
   test('retorna false para hora pasada del día actual', () => {
-    const hoy = formatearFecha(new Date());
-    expect(esFuturo(hoy, '00:01')).toBe(false);
+    const today = formatDate(new Date());
+    expect(isFuture(today, '00:01')).toBe(false);
   });
 });
 
-describe('horasHasta', () => {
+describe('hoursUntil', () => {
   test('retorna número negativo para fecha pasada', () => {
-    const result = horasHasta('2020-01-01', '10:00');
+    const result = hoursUntil('2020-01-01', '10:00');
     expect(result).toBeLessThan(0);
   });
 
   test('retorna número positivo para fecha futura', () => {
-    const fechaFutura = getFutureDate(1);
-    const result = horasHasta(fechaFutura, '12:00');
+    const futureDate = getFutureDate(1);
+    const result = hoursUntil(futureDate, '12:00');
     expect(result).toBeGreaterThan(0);
   });
 
   test('fecha mañana a misma hora es aproximadamente 24 horas', () => {
-    const ahora = new Date();
-    const manana = new Date(ahora);
-    manana.setDate(manana.getDate() + 1);
-    const fechaManana = formatearFecha(manana);
-    const horaActual = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowDate = formatDate(tomorrow);
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-    const result = horasHasta(fechaManana, horaActual);
+    const result = hoursUntil(tomorrowDate, currentTime);
     expect(result).toBeGreaterThan(23);
     expect(result).toBeLessThan(25);
   });
 });
 
-describe('obtenerFechaHoy', () => {
+describe('getTodayDate', () => {
   test('retorna fecha en formato YYYY-MM-DD', () => {
-    const result = obtenerFechaHoy();
+    const result = getTodayDate();
     expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
   test('retorna fecha de hoy', () => {
-    const result = obtenerFechaHoy();
-    const hoy = new Date();
-    const expected = formatearFecha(hoy);
+    const result = getTodayDate();
+    const today = new Date();
+    const expected = formatDate(today);
     expect(result).toBe(expected);
   });
 });
 
-describe('esFechaValida', () => {
+describe('isDateValid', () => {
   test('acepta fecha de hoy', () => {
-    const hoy = formatearFecha(new Date());
-    expect(esFechaValida(hoy)).toBe(true);
+    const today = formatDate(new Date());
+    expect(isDateValid(today)).toBe(true);
   });
 
   test('acepta fecha dentro de 7 días', () => {
-    const fecha = getFutureDate(5);
-    expect(esFechaValida(fecha)).toBe(true);
+    const date = getFutureDate(5);
+    expect(isDateValid(date)).toBe(true);
   });
 
   test('acepta fecha exactamente en 7 días', () => {
-    const fecha = getFutureDate(7);
-    expect(esFechaValida(fecha)).toBe(true);
+    const date = getFutureDate(7);
+    expect(isDateValid(date)).toBe(true);
   });
 
   test('rechaza fecha pasada', () => {
-    expect(esFechaValida('2020-01-01')).toBe(false);
+    expect(isDateValid('2020-01-01')).toBe(false);
   });
 
   test('rechaza fecha más de 7 días en el futuro', () => {
-    const fecha = getFutureDate(10);
-    expect(esFechaValida(fecha)).toBe(false);
+    const date = getFutureDate(10);
+    expect(isDateValid(date)).toBe(false);
+  });
+});
+
+describe('formatReadableDate — ISO timestamp', () => {
+  test('parsea string con T (ISO timestamp)', () => {
+    const result = formatReadableDate('2024-06-15T10:30:00Z');
+    expect(result).toContain('2024');
+  });
+
+  test('retorna "Fecha inválida" para fecha inválida parseable', () => {
+    // NaN date from invalid ISO
+    const result = formatReadableDate('invalid-date-T');
+    expect(result).toBe('Fecha inválida');
+  });
+});
+
+describe('generateAvailableSlots — differentiated schedules', () => {
+  test('genera slots de semana con horario diferenciado', () => {
+    // A Monday date
+    const monday = '2026-02-23';
+    const config = {
+      useDifferentiatedSchedules: true,
+      weekdayOpeningTime: '09:00',
+      weekdayClosingTime: '21:00',
+      weekendOpeningTime: '08:00',
+      weekendClosingTime: '22:00',
+      slotDuration: 30,
+    };
+    const slots = generateAvailableSlots(config, monday);
+    expect(slots[0].startTime).toBe('09:00');
+  });
+
+  test('genera slots de fin de semana con horario diferenciado', () => {
+    // A Saturday date
+    const saturday = '2026-02-28';
+    const config = {
+      useDifferentiatedSchedules: true,
+      weekdayOpeningTime: '09:00',
+      weekdayClosingTime: '21:00',
+      weekendOpeningTime: '08:00',
+      weekendClosingTime: '22:00',
+      slotDuration: 30,
+    };
+    const slots = generateAvailableSlots(config, saturday);
+    expect(slots[0].startTime).toBe('08:00');
+  });
+
+  test('omite slots dentro del horario de descanso', () => {
+    const config = {
+      useDifferentiatedSchedules: false,
+      openingTime: '08:00',
+      closingTime: '22:00',
+      slotDuration: 30,
+      breakStart: '13:00',
+      breakEnd: '14:00',
+    };
+    const slots = generateAvailableSlots(config, '2026-02-23');
+    const hasBreakSlot = slots.some(
+      (s) => s.startTime >= '13:00' && s.startTime < '14:00',
+    );
+    expect(hasBreakSlot).toBe(false);
+  });
+
+  test('omite slots de descanso solo en días indicados por breakWeekdays', () => {
+    // Only skip break on Monday (dayOfWeek=1)
+    const monday = '2026-02-23';
+    const saturday = '2026-02-28';
+    const config = {
+      useDifferentiatedSchedules: false,
+      openingTime: '08:00',
+      closingTime: '22:00',
+      slotDuration: 30,
+      breakStart: '13:00',
+      breakEnd: '14:00',
+      breakWeekdays: [1], // only Monday
+    };
+    const mondaySlots = generateAvailableSlots(config, monday);
+    const saturdaySlots = generateAvailableSlots(config, saturday);
+
+    const mondayHasBreak = mondaySlots.some(
+      (s) => s.startTime >= '13:00' && s.startTime < '14:00',
+    );
+    const saturdayHasBreak = saturdaySlots.some(
+      (s) => s.startTime >= '13:00' && s.startTime < '14:00',
+    );
+    expect(mondayHasBreak).toBe(false);
+    expect(saturdayHasBreak).toBe(true);
+  });
+
+  test('descanso en fin de semana con horario diferenciado', () => {
+    const saturday = '2026-02-28';
+    const config = {
+      useDifferentiatedSchedules: true,
+      weekdayOpeningTime: '09:00',
+      weekdayClosingTime: '21:00',
+      weekendOpeningTime: '08:00',
+      weekendClosingTime: '22:00',
+      slotDuration: 30,
+      weekendBreakStart: '14:00',
+      weekendBreakEnd: '15:00',
+    };
+    const slots = generateAvailableSlots(config, saturday);
+    const hasBreak = slots.some(
+      (s) => s.startTime >= '14:00' && s.startTime < '15:00',
+    );
+    expect(hasBreak).toBe(false);
+  });
+});
+
+describe('hasSlotEnded', () => {
+  test('retorna true cuando el slot ya terminó (endTime en el pasado)', () => {
+    expect(hasSlotEnded('2020-01-01', '10:00')).toBe(true);
+  });
+
+  test('retorna false cuando el slot aún no termina (endTime en el futuro)', () => {
+    const futureDate = getFutureDate(1);
+    expect(hasSlotEnded(futureDate, '23:59')).toBe(false);
+  });
+});
+
+describe('formatTime', () => {
+  test('devuelve vacío para valor falsy', () => {
+    expect(formatTime(null)).toBe('');
+    expect(formatTime(undefined)).toBe('');
+    expect(formatTime('')).toBe('');
+  });
+
+  test('mantiene formato HH:MM sin cambios', () => {
+    expect(formatTime('10:30')).toBe('10:30');
+  });
+
+  test('elimina los segundos de formato HH:MM:SS', () => {
+    expect(formatTime('10:30:00')).toBe('10:30');
+    expect(formatTime('08:00:45')).toBe('08:00');
   });
 });
 
@@ -199,5 +335,5 @@ describe('esFechaValida', () => {
 function getFutureDate(daysAhead) {
   const date = new Date();
   date.setDate(date.getDate() + daysAhead);
-  return formatearFecha(date);
+  return date.toISOString().split('T')[0];
 }

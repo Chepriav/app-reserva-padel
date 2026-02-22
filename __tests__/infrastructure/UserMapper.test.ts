@@ -65,17 +65,17 @@ describe('userMapper', () => {
   });
 
   describe('toLegacyFormat', () => {
-    it('maps domain entity to legacy Spanish camelCase', () => {
+    it('maps domain entity to legacy format', () => {
       const user = toDomain(dbRow);
       const legacy = toLegacyFormat(user);
-      expect(legacy.nombre).toBe('Test User');
+      expect(legacy.name).toBe('Test User');
       expect(legacy.telefono).toBe('123456789');
-      expect(legacy.vivienda).toBe('1-3-B');
-      expect(legacy.viviendaSolicitada).toBe('2-1-A');
-      expect(legacy.nivelJuego).toBe('intermedio');
-      expect(legacy.fotoPerfil).toBe('https://example.com/photo.jpg');
-      expect(legacy.esAdmin).toBe(true);
-      expect(legacy.estadoAprobacion).toBe('aprobado');
+      expect(legacy.apartment).toBe('1-3-B');
+      expect(legacy.requestedApartment).toBe('2-1-A');
+      expect(legacy.skillLevel).toBe('intermediate');
+      expect(legacy.profilePhoto).toBe('https://example.com/photo.jpg');
+      expect(legacy.isAdmin).toBe(true);
+      expect(legacy.approvalStatus).toBe('approved');
     });
   });
 
@@ -85,34 +85,34 @@ describe('userMapper', () => {
       const legacy = toLegacyFormat(user);
 
       expect(legacy.id).toBe(dbRow.id);
-      expect(legacy.nombre).toBe(dbRow.nombre);
+      expect(legacy.name).toBe(dbRow.nombre);
       expect(legacy.email).toBe(dbRow.email);
       expect(legacy.telefono).toBe(dbRow.telefono);
-      expect(legacy.vivienda).toBe(dbRow.vivienda);
-      expect(legacy.viviendaSolicitada).toBe(dbRow.vivienda_solicitada);
-      expect(legacy.nivelJuego).toBe(dbRow.nivel_juego);
-      expect(legacy.fotoPerfil).toBe(dbRow.foto_perfil);
-      expect(legacy.esAdmin).toBe(dbRow.es_admin);
-      expect(legacy.esManager).toBe(dbRow.es_manager);
-      expect(legacy.esDemo).toBe(dbRow.es_demo);
-      expect(legacy.estadoAprobacion).toBe(dbRow.estado_aprobacion);
+      expect(legacy.apartment).toBe(dbRow.vivienda);
+      expect(legacy.requestedApartment).toBe(dbRow.vivienda_solicitada);
+      expect(legacy.skillLevel).toBe('intermediate');
+      expect(legacy.profilePhoto).toBe(dbRow.foto_perfil);
+      expect(legacy.isAdmin).toBe(dbRow.es_admin);
+      expect(legacy.isManager).toBe(dbRow.es_manager);
+      expect(legacy.isDemo).toBe(dbRow.es_demo);
+      expect(legacy.approvalStatus).toBe('approved');
     });
   });
 
   describe('fromLegacyFormat', () => {
-    it('maps legacy fields to domain ProfileUpdate', () => {
-      const legacy = { nombre: 'Updated', telefono: '999', nivelJuego: 'avanzado' };
+    it('maps English fields to domain ProfileUpdate', () => {
+      const legacy = { name: 'Updated', phone: '999', skillLevel: 'avanzado' };
       const updates = fromLegacyFormat(legacy);
       expect(updates.name).toBe('Updated');
       expect(updates.phone).toBe('999');
       expect(updates.skillLevel).toBe('advanced');
     });
 
-    it('strips protected fields (esAdmin, estadoAprobacion)', () => {
+    it('strips protected fields (isAdmin, approvalStatus)', () => {
       const legacy = {
-        nombre: 'Test',
-        esAdmin: true,
-        estadoAprobacion: 'aprobado',
+        name: 'Test',
+        isAdmin: true,
+        approvalStatus: 'approved',
       };
       const updates = fromLegacyFormat(legacy);
       expect(updates.name).toBe('Test');
@@ -121,20 +121,20 @@ describe('userMapper', () => {
     });
 
     it('handles null skillLevel', () => {
-      const legacy = { nivelJuego: null };
+      const legacy = { skillLevel: null };
       const updates = fromLegacyFormat(legacy);
       expect(updates.skillLevel).toBeNull();
     });
   });
 
   describe('fromLegacyRegisterData', () => {
-    it('maps legacy register form to domain RegisterData', () => {
+    it('maps register form to domain RegisterData', () => {
       const form = {
-        nombre: 'New User',
+        name: 'New User',
         email: 'new@test.com',
         password: 'pass123',
-        telefono: '111',
-        vivienda: '1-1-A',
+        phone: '111',
+        apartment: '1-1-A',
       };
       const data = fromLegacyRegisterData(form);
       expect(data.name).toBe('New User');

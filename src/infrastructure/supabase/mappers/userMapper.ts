@@ -28,17 +28,17 @@ interface UserRow {
 /** Legacy format used by existing consumers (Spanish camelCase) */
 export interface LegacyUser {
   id: string;
-  nombre: string;
+  name: string;
   email: string;
   telefono: string;
-  vivienda: string;
-  viviendaSolicitada: string | null;
-  nivelJuego: string | null;
-  fotoPerfil: string | null;
-  esAdmin: boolean;
-  esManager: boolean;
-  esDemo: boolean;
-  estadoAprobacion: string;
+  apartment: string;
+  requestedApartment: string | null;
+  skillLevel: string | null;
+  profilePhoto: string | null;
+  isAdmin: boolean;
+  isManager: boolean;
+  isDemo: boolean;
+  approvalStatus: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -156,17 +156,17 @@ export function toDbCreateRow(userId: string, data: RegisterData) {
 export function toLegacyFormat(user: User): LegacyUser {
   return {
     id: user.id,
-    nombre: user.name,
+    name: user.name,
     email: user.email,
     telefono: user.phone,
-    vivienda: user.apartment,
-    viviendaSolicitada: user.requestedApartment,
-    nivelJuego: skillLevelToDb(user.skillLevel),
-    fotoPerfil: user.profilePhoto,
-    esAdmin: user.isAdmin,
-    esManager: user.isManager,
-    esDemo: user.isDemo,
-    estadoAprobacion: approvalStatusToDb(user.approvalStatus),
+    apartment: user.apartment,
+    requestedApartment: user.requestedApartment,
+    skillLevel: user.skillLevel,
+    profilePhoto: user.profilePhoto,
+    isAdmin: user.isAdmin,
+    isManager: user.isManager,
+    isDemo: user.isDemo,
+    approvalStatus: user.approvalStatus,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
@@ -175,25 +175,25 @@ export function toLegacyFormat(user: User): LegacyUser {
 /** Legacy Spanish camelCase → domain ProfileUpdate (strips protected fields) */
 export function fromLegacyFormat(data: Record<string, unknown>): ProfileUpdate {
   const updates: ProfileUpdate = {};
-  if (data.nombre !== undefined) updates.name = data.nombre as string;
-  if (data.telefono !== undefined) updates.phone = data.telefono as string;
-  if (data.vivienda !== undefined) updates.apartment = data.vivienda as string;
-  if (data.nivelJuego !== undefined) {
-    updates.skillLevel = data.nivelJuego
-      ? skillLevelToDomain(data.nivelJuego as string)
+  if (data.name !== undefined) updates.name = data.name as string;
+  if (data.phone !== undefined) updates.phone = data.phone as string;
+  if (data.apartment !== undefined) updates.apartment = data.apartment as string;
+  if (data.skillLevel !== undefined) {
+    updates.skillLevel = data.skillLevel
+      ? skillLevelToDomain(data.skillLevel as string)
       : null;
   }
-  if (data.fotoPerfil !== undefined) updates.profilePhoto = (data.fotoPerfil as string) ?? null;
+  if (data.profilePhoto !== undefined) updates.profilePhoto = (data.profilePhoto as string) ?? null;
   return updates;
 }
 
 /** Legacy Spanish camelCase → domain RegisterData */
 export function fromLegacyRegisterData(data: Record<string, unknown>): RegisterData {
   return {
-    name: data.nombre as string,
+    name: data.name as string,
     email: data.email as string,
     password: data.password as string,
-    phone: data.telefono as string,
-    apartment: data.vivienda as string,
+    phone: data.phone as string,
+    apartment: data.apartment as string,
   };
 }

@@ -71,14 +71,14 @@ describe('scheduleConfigMapper', () => {
       expect(roundtripped).toEqual(entity);
     });
 
-    it('maps to correct Spanish field names', () => {
+    it('maps to correct English field names', () => {
       const entity = toDomain(dbRow);
       const legacy = toLegacyFormat(entity);
-      expect(legacy.horaApertura).toBe('09:00');
-      expect(legacy.horaCierre).toBe('21:00');
-      expect(legacy.pausaInicio).toBe('14:00');
-      expect(legacy.usarHorariosDiferenciados).toBe(true);
-      expect(legacy.findeHoraApertura).toBe('10:00');
+      expect(legacy.openingTime).toBe('09:00');
+      expect(legacy.closingTime).toBe('21:00');
+      expect(legacy.breakStart).toBe('14:00');
+      expect(legacy.useDifferentiatedSchedules).toBe(true);
+      expect(legacy.weekendOpeningTime).toBe('10:00');
     });
   });
 });

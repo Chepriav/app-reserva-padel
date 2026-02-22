@@ -16,7 +16,7 @@ export function ImportUsersButton({ onPress, disabled = false }) {
       activeOpacity={0.7}
     >
       <Ionicons name="cloud-upload-outline" size={18} color="#fff" />
-      <Text style={styles.buttonText}>Importar Usuarios</Text>
+      <Text style={styles.buttonText}>Importar Users</Text>
     </TouchableOpacity>
   );
 }

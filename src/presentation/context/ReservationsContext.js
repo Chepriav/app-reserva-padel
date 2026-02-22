@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { reservasService } from '../../services/reservationsService.supabase';
+import { reservationsService } from '../../services/reservationsService.supabase';
 import { notificationService } from '../../services/notificationService';
 import { useAuth } from './AuthContext';
 
@@ -27,16 +27,16 @@ export const ReservationsProvider = ({ children }) => {
   }, []);
 
   const loadReservations = async () => {
-    if (!user?.vivienda) return;
+    if (!user?.apartment) return;
 
     setLoading(true);
     try {
       // Load all reservations from the apartment (not just the user)
-      const response = await reservasService.obtenerReservasPorVivienda(user.vivienda);
+      const response = await reservationsService.getReservationsByApartment(user.apartment);
       if (response.success) {
         // Apply automatic P→G conversion if applicable
-        const reservasConversion = applyAutomaticConversion(response.data);
-        setReservations(reservasConversion);
+        const reservationsConversion = applyAutomaticConversion(response.data);
+        setReservations(reservationsConversion);
       }
     } catch (error) {
       console.error('Error al cargar reservas:', error);
@@ -55,21 +55,21 @@ export const ReservationsProvider = ({ children }) => {
 
     // Separate future confirmed reservations
     const futureReservations = originalReservations.filter(r => {
-      const reservationDate = new Date(r.fecha + 'T' + r.horaInicio);
-      return r.estado === 'confirmada' && reservationDate > now;
+      const reservationDate = new Date(r.date + 'T' + r.startTime);
+      return r.status === 'confirmed' && reservationDate > now;
     });
 
     // Count future guaranteed reservations
-    const futureGuaranteed = futureReservations.filter(r => r.prioridad === 'primera');
-    const futureProvisional = futureReservations.filter(r => r.prioridad === 'segunda');
+    const futureGuaranteed = futureReservations.filter(r => r.priority === 'guaranteed');
+    const futureProvisional = futureReservations.filter(r => r.priority === 'provisional');
 
     // If there's no future guaranteed but there are provisionals,
     // the oldest provisional is converted to guaranteed
     if (futureGuaranteed.length === 0 && futureProvisional.length > 0) {
       // Sort provisionals by date/time (earliest first)
       const sortedProvisionals = [...futureProvisional].sort((a, b) => {
-        const dateA = new Date(a.fecha + 'T' + a.horaInicio);
-        const dateB = new Date(b.fecha + 'T' + b.horaInicio);
+        const dateA = new Date(a.date + 'T' + a.startTime);
+        const dateB = new Date(b.date + 'T' + b.startTime);
         return dateA - dateB;
       });
 
@@ -79,7 +79,7 @@ export const ReservationsProvider = ({ children }) => {
       // Return reservations with conversion applied
       return originalReservations.map(r => {
         if (r.id === toConvert.id) {
-          return { ...r, prioridad: 'primera' };
+          return { ...r, priority: 'guaranteed' };
         }
         return r;
       });
@@ -90,7 +90,7 @@ export const ReservationsProvider = ({ children }) => {
 
   const loadCourts = async () => {
     try {
-      const response = await reservasService.obtenerPistas();
+      const response = await reservationsService.getCourts();
       if (response.success) {
         setCourts(response.data);
       }
@@ -101,7 +101,7 @@ export const ReservationsProvider = ({ children }) => {
 
   const getAvailability = async (courtId, date) => {
     try {
-      const response = await reservasService.obtenerDisponibilidad(
+      const response = await reservationsService.getAvailability(
         courtId,
         date
       );
@@ -116,11 +116,11 @@ export const ReservationsProvider = ({ children }) => {
 
   const createReservation = async (reservationData) => {
     try {
-      const response = await reservasService.crearReserva({
+      const response = await reservationsService.createReservation({
         ...reservationData,
-        usuarioId: user.id,
-        usuarioNombre: user.nombre,
-        vivienda: user.vivienda,
+        userId: user.id,
+        userName: user.name,
+        apartment: user.apartment,
       });
 
       if (response.success) {
@@ -143,11 +143,11 @@ export const ReservationsProvider = ({ children }) => {
   const cancelReservation = async (reservationId) => {
     try {
       // Pass apartment to validate user can cancel reservations from their apartment
-      const response = await reservasService.cancelarReserva(reservationId, user.id, user.vivienda);
+      const response = await reservationsService.cancelReservation(reservationId, user.id, user.apartment);
       if (response.success) {
         // Mark reservation as cancelled locally (CancelReservation use case returns void)
         setReservations(
-          reservations.map((r) => (r.id === reservationId ? { ...r, estado: 'cancelada' } : r))
+          reservations.map((r) => (r.id === reservationId ? { ...r, status: 'cancelled' } : r))
         );
         // Increment version so HomeScreen reloads
         setReservationsVersion((v) => v + 1);
@@ -161,7 +161,7 @@ export const ReservationsProvider = ({ children }) => {
 
   const getReservationsByDate = async (date) => {
     try {
-      const response = await reservasService.obtenerReservasPorFecha(date);
+      const response = await reservationsService.getReservationsByDate(date);
       if (response.success) {
         return { success: true, data: response.data };
       }
@@ -178,25 +178,25 @@ export const ReservationsProvider = ({ children }) => {
     // Filter only future confirmed ones
     const upcoming = reservations.filter(
       (r) =>
-        r.estado === 'confirmada' &&
-        new Date(r.fecha + 'T' + r.horaInicio) > now
+        r.status === 'confirmed' &&
+        new Date(r.date + 'T' + r.startTime) > now
     );
 
     // If there's only 1 future reservation, it's always guaranteed
     if (upcoming.length === 1) {
-      return upcoming.map(r => ({ ...r, prioridad: 'primera' }));
+      return upcoming.map(r => ({ ...r, priority: 'guaranteed' }));
     }
 
     // If there's more than 1, apply P→G conversion if there are no guaranteed
-    // Consider 'primera' as guaranteed, anything else (null, undefined, 'segunda') as provisional
-    const guaranteed = upcoming.filter(r => r.prioridad === 'primera');
-    const provisional = upcoming.filter(r => r.prioridad !== 'primera');
+    // Consider 'guaranteed' as guaranteed, anything else (null, undefined, 'provisional') as provisional
+    const guaranteed = upcoming.filter(r => r.priority === 'guaranteed');
+    const provisional = upcoming.filter(r => r.priority !== 'guaranteed');
 
     if (guaranteed.length === 0 && provisional.length > 0) {
       // Sort by date/time (earliest first)
       const sortedProvisional = [...provisional].sort((a, b) => {
-        const dateA = new Date(a.fecha + 'T' + a.horaInicio);
-        const dateB = new Date(b.fecha + 'T' + b.horaInicio);
+        const dateA = new Date(a.date + 'T' + a.startTime);
+        const dateB = new Date(b.date + 'T' + b.startTime);
         return dateA - dateB;
       });
 
@@ -205,7 +205,7 @@ export const ReservationsProvider = ({ children }) => {
 
       return upcoming.map(r => {
         if (r.id === toConvert.id) {
-          return { ...r, prioridad: 'primera' };
+          return { ...r, priority: 'guaranteed' };
         }
         return r;
       });
@@ -218,10 +218,10 @@ export const ReservationsProvider = ({ children }) => {
     const now = new Date();
     return reservations.filter(
       (r) =>
-        r.estado === 'completada' ||
-        r.estado === 'cancelada' ||
-        (r.estado === 'confirmada' &&
-          new Date(r.fecha + 'T' + r.horaInicio) <= now)
+        r.status === 'completed' ||
+        r.status === 'cancelled' ||
+        (r.status === 'confirmed' &&
+          new Date(r.date + 'T' + r.startTime) <= now)
     );
   };
 

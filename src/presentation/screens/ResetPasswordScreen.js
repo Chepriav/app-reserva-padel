@@ -179,7 +179,7 @@ export default function ResetPasswordScreen({ navigation }) {
       <View style={styles.invalidContainer}>
         <Text style={styles.invalidTitle}>Enlace no valido</Text>
         <Text style={styles.invalidText}>
-          El enlace de recuperacion ha expirado o no es valido. Solicita uno nuevo desde la pantalla de inicio.
+          El enlace de recuperación ha expirado o no es válido. Solicita uno nuevo desde la pantalla de inicio.
         </Text>
         <TouchableOpacity
           style={styles.invalidButton}

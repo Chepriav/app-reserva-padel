@@ -54,7 +54,7 @@ export const generateAvailableSlots = (config = null, date = null) => {
   let openingTime, closingTime;
 
   // Check if using differentiated schedules (weekday vs weekend)
-  if (config?.usarHorariosDiferenciados) {
+  if (config?.useDifferentiatedSchedules) {
     // Determine day of week
     const dateObj = date ? (typeof date === 'string' ? new Date(date + 'T00:00:00') : date) : new Date();
     const dayOfWeek = dateObj.getDay(); // 0=Sunday, 1-5=Monday-Friday, 6=Saturday
@@ -63,20 +63,20 @@ export const generateAvailableSlots = (config = null, date = null) => {
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
     if (isWeekend) {
-      openingTime = config.findeHoraApertura || SCHEDULE_CONFIG.openingTime;
-      closingTime = config.findeHoraCierre || SCHEDULE_CONFIG.closingTime;
+      openingTime = config.weekendOpeningTime || SCHEDULE_CONFIG.openingTime;
+      closingTime = config.weekendClosingTime || SCHEDULE_CONFIG.closingTime;
     } else {
       // Monday-Friday
-      openingTime = config.semanaHoraApertura || SCHEDULE_CONFIG.openingTime;
-      closingTime = config.semanaHoraCierre || SCHEDULE_CONFIG.closingTime;
+      openingTime = config.weekdayOpeningTime || SCHEDULE_CONFIG.openingTime;
+      closingTime = config.weekdayClosingTime || SCHEDULE_CONFIG.closingTime;
     }
   } else {
     // Unified mode (current behavior)
-    openingTime = config?.horaApertura || SCHEDULE_CONFIG.openingTime;
-    closingTime = config?.horaCierre || SCHEDULE_CONFIG.closingTime;
+    openingTime = config?.openingTime || SCHEDULE_CONFIG.openingTime;
+    closingTime = config?.closingTime || SCHEDULE_CONFIG.closingTime;
   }
 
-  const duration = config?.duracionBloque || SCHEDULE_CONFIG.slotDuration;
+  const duration = config?.slotDuration || SCHEDULE_CONFIG.slotDuration;
 
   const [openingHour] = openingTime.split(':').map(Number);
   const [closingHour] = closingTime.split(':').map(Number);
@@ -99,8 +99,8 @@ export const generateAvailableSlots = (config = null, date = null) => {
 
     if (!isInBreakTime) {
       slots.push({
-        horaInicio: startTime,
-        horaFin: endTime,
+        startTime: startTime,
+        endTime: endTime,
       });
     }
 
@@ -117,36 +117,36 @@ const shouldSkipSlot = (slotStart, slotEnd, config, date) => {
   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
   // Determine which break configuration to use
-  let pausaInicio, pausaFin, pausaDiasSemana;
+  let breakStart, breakEnd, breakWeekdays;
 
-  if (config?.usarHorariosDiferenciados) {
+  if (config?.useDifferentiatedSchedules) {
     // When using differentiated schedules, use specific breaks for each day type
     if (isWeekend) {
       // Weekend: only use weekend break if configured
-      pausaInicio = config.findePausaInicio;
-      pausaFin = config.findePausaFin;
-      pausaDiasSemana = config.findePausaDiasSemana;
+      breakStart = config.weekendBreakStart;
+      breakEnd = config.weekendBreakEnd;
+      breakWeekdays = config.weekendBreakWeekdays;
     } else {
       // Weekday: use weekday break
-      pausaInicio = config.pausaInicio;
-      pausaFin = config.pausaFin;
-      pausaDiasSemana = config.pausaDiasSemana;
+      breakStart = config.breakStart;
+      breakEnd = config.breakEnd;
+      breakWeekdays = config.breakWeekdays;
     }
   } else {
     // Not using differentiated schedules: use general break for all days
-    pausaInicio = config?.pausaInicio;
-    pausaFin = config?.pausaFin;
-    pausaDiasSemana = config?.pausaDiasSemana;
+    breakStart = config?.breakStart;
+    breakEnd = config?.breakEnd;
+    breakWeekdays = config?.breakWeekdays;
   }
 
   // No break configured for this day type
-  if (!pausaInicio || !pausaFin) {
+  if (!breakStart || !breakEnd) {
     return false;
   }
 
   // Check if break applies to this specific day of week
-  if (pausaDiasSemana && Array.isArray(pausaDiasSemana)) {
-    if (!pausaDiasSemana.includes(dayOfWeek)) {
+  if (breakWeekdays && Array.isArray(breakWeekdays)) {
+    if (!breakWeekdays.includes(dayOfWeek)) {
       return false; // Break doesn't apply to this day
     }
   }
@@ -159,8 +159,8 @@ const shouldSkipSlot = (slotStart, slotEnd, config, date) => {
 
   const slotStartMin = timeToMinutes(slotStart);
   const slotEndMin = timeToMinutes(slotEnd);
-  const breakStartMin = timeToMinutes(pausaInicio);
-  const breakEndMin = timeToMinutes(pausaFin);
+  const breakStartMin = timeToMinutes(breakStart);
+  const breakEndMin = timeToMinutes(breakEnd);
 
   // Slot overlaps with break if it starts, ends, or contains the break period
   return (
@@ -218,12 +218,9 @@ export const isDateValid = (date) => {
 
 // Legacy exports for backwards compatibility
 // TODO: Remove these aliases once all consumers are updated
-export const formatearFecha = formatDate;
-export const formatearFechaLegible = formatReadableDate;
-export const generarHorariosDisponibles = generateAvailableSlots;
-export const esFuturo = isFuture;
-export const bloqueTerminado = hasSlotEnded;
-export const horasHasta = hoursUntil;
-export const obtenerFechaHoy = getTodayDate;
-export const formatearHora = formatTime;
-export const esFechaValida = isDateValid;
+export const formatDateReadable = formatReadableDate;
+export const generarTimeSlotsDisponibles = generateAvailableSlots;
+export const isFuturo = isFuture;
+export const slotFinished = hasSlotEnded;
+export const getDateToday = getTodayDate;
+export const isDateValida = isDateValid;

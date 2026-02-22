@@ -39,13 +39,13 @@ export class SupabaseAnnouncementRepository implements AnnouncementRepository {
       // Fetch "selected" announcements this user is explicitly included in
       let selectedAnnouncements: Record<string, unknown>[] = [];
       if (recipientsResult.data && recipientsResult.data.length > 0) {
-        const anuncioIds = (recipientsResult.data as Record<string, unknown>[]).map(
+        const announcementIds = (recipientsResult.data as Record<string, unknown>[]).map(
           (r) => r.anuncio_id as string,
         );
         const { data: selData } = await supabase
           .from('anuncios_admin')
           .select('*')
-          .in('id', anuncioIds)
+          .in('id', announcementIds)
           .gt('expira_en', now)
           .order('created_at', { ascending: false });
         selectedAnnouncements = (selData ?? []) as Record<string, unknown>[];

@@ -89,21 +89,21 @@ describe('UserNotificationMapper — toDomain', () => {
 });
 
 describe('UserNotificationMapper — toLegacyFormat', () => {
-  it('converts domain notification to legacy camelCase Spanish', () => {
+  it('converts domain notification to legacy English camelCase', () => {
     const n = notificationToDomain(makeNotificationRow());
     const legacy = notificationToLegacy(n) as Record<string, unknown>;
 
     expect(legacy.id).toBe('notif-1');
-    expect(legacy.usuarioId).toBe('user-1');
-    expect(legacy.tipo).toBe('desplazamiento'); // back to Spanish
-    expect(legacy.titulo).toBe('Reserva desplazada');
-    expect(legacy.leida).toBe(false);
+    expect(legacy.userId).toBe('user-1');
+    expect(legacy.type).toBe('displacement');
+    expect(legacy.title).toBe('Reserva desplazada');
+    expect(legacy.isRead).toBe(false);
   });
 
-  it('roundtrip: DB → domain → legacy preserves tipo in Spanish', () => {
+  it('roundtrip: DB → domain → legacy preserves type in English', () => {
     const row = makeNotificationRow({ tipo: 'partida_completa' });
     const legacy = notificationToLegacy(notificationToDomain(row)) as Record<string, unknown>;
-    expect(legacy.tipo).toBe('partida_completa');
+    expect(legacy.type).toBe('match_full');
   });
 });
 
@@ -155,21 +155,21 @@ describe('AnnouncementMapper — toDomain', () => {
 });
 
 describe('AnnouncementMapper — toLegacyFormat', () => {
-  it('converts domain announcement to legacy camelCase Spanish', () => {
+  it('converts domain announcement to legacy English camelCase', () => {
     const a = announcementToDomain(makeAnnouncementRow(), false);
     const legacy = announcementToLegacy(a) as Record<string, unknown>;
 
     expect(legacy.id).toBe('anuncio-1');
-    expect(legacy.creadorId).toBe('admin-1');
-    expect(legacy.tipo).toBe('aviso'); // back to Spanish
-    expect(legacy.destinatarios).toBe('todos'); // back to Spanish
-    expect(legacy.leido).toBe(false);
+    expect(legacy.creatorId).toBe('admin-1');
+    expect(legacy.type).toBe('warning');
+    expect(legacy.recipients).toBe('all');
+    expect(legacy.isRead).toBe(false);
   });
 
-  it('roundtrip: DB → domain → legacy preserves tipo and destinatarios', () => {
+  it('roundtrip: DB → domain → legacy preserves type and recipients', () => {
     const row = makeAnnouncementRow({ tipo: 'urgente', destinatarios: 'seleccionados' });
     const legacy = announcementToLegacy(announcementToDomain(row)) as Record<string, unknown>;
-    expect(legacy.tipo).toBe('urgente');
-    expect(legacy.destinatarios).toBe('seleccionados');
+    expect(legacy.type).toBe('urgent');
+    expect(legacy.recipients).toBe('selected');
   });
 });

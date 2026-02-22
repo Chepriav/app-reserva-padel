@@ -2,20 +2,20 @@ import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { colors } from '../../../constants/colors';
 import { ApartmentSelector } from '../ApartmentSelector';
-import { NIVELES_JUEGO, esViviendaValida, formatearVivienda } from '../../../constants/config';
+import { SKILL_LEVELS, isApartmentValid, formatApartment } from '../../../constants/config';
 
 export function ProfilePersonalInfo({
   user, editMode,
-  nombre, setNombre,
-  telefono, setTelefono,
-  escalera, setEscalera,
-  piso, setPiso,
-  puerta, setPuerta,
-  nivelJuego, setNivelJuego,
-  showNivelPicker, setShowNivelPicker,
-  cancelingSolicitud,
-  onCancelarSolicitud,
-  onSolicitarCambio,
+  name, setName,
+  phone, setPhone,
+  staircase, setStaircase,
+  floor, setFloor,
+  door, setDoor,
+  skillLevel, setSkillLevel,
+  showLevelPicker, setShowLevelPicker,
+  cancelingRequest,
+  onCancelRequest,
+  onRequestChange,
 }) {
   return (
     <View style={styles.section}>
@@ -25,9 +25,9 @@ export function ProfilePersonalInfo({
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Nombre</Text>
           {editMode ? (
-            <TextInput style={styles.infoInput} value={nombre} onChangeText={setNombre} autoCapitalize="words" />
+            <TextInput style={styles.infoInput} value={name} onChangeText={setName} autoCapitalize="words" />
           ) : (
-            <Text style={styles.infoValue}>{user?.nombre}</Text>
+            <Text style={styles.infoValue}>{user?.name}</Text>
           )}
         </View>
 
@@ -37,9 +37,9 @@ export function ProfilePersonalInfo({
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Teléfono</Text>
           {editMode ? (
-            <TextInput style={styles.infoInput} value={telefono} onChangeText={setTelefono} keyboardType="phone-pad" />
+            <TextInput style={styles.infoInput} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
           ) : (
-            <Text style={styles.infoValue}>{user?.telefono}</Text>
+            <Text style={styles.infoValue}>{user?.phone}</Text>
           )}
         </View>
 
@@ -47,52 +47,52 @@ export function ProfilePersonalInfo({
 
         {/* Vivienda */}
         <View style={styles.infoRowVertical}>
-          <View style={styles.viviendaLabelRow}>
+          <View style={styles.apartmentLabelRow}>
             <Text style={styles.infoLabel}>Vivienda</Text>
-            {!user?.esAdmin && <Text style={styles.viviendaLocked}>🔒</Text>}
+            {!user?.isAdmin && <Text style={styles.apartmentLocked}>🔒</Text>}
           </View>
-          {editMode && user?.esAdmin ? (
-            <View style={styles.viviendaSelectorContainer}>
+          {editMode && user?.isAdmin ? (
+            <View style={styles.apartmentSelectorContainer}>
               <ApartmentSelector
-                escalera={escalera} piso={piso} puerta={puerta}
-                onChangeEscalera={setEscalera} onChangePiso={setPiso} onChangePuerta={setPuerta}
+                staircase={staircase} floor={floor} door={door}
+                onChangeStaircase={setStaircase} onChangeFloor={setFloor} onChangeDoor={setDoor}
               />
             </View>
           ) : (
             <Text style={styles.infoValue}>
-              {esViviendaValida(user?.vivienda) ? formatearVivienda(user?.vivienda) : user?.vivienda}
+              {isApartmentValid(user?.apartment) ? formatApartment(user?.apartment) : user?.apartment}
             </Text>
           )}
 
           {/* Solicitud pendiente */}
-          {!user?.esAdmin && user?.viviendaSolicitada && (
-            <View style={styles.solicitudPendiente}>
-              <View style={styles.solicitudInfo}>
-                <Text style={styles.solicitudBadge}>Cambio pendiente</Text>
-                <Text style={styles.solicitudText}>
-                  Solicitud: {esViviendaValida(user.viviendaSolicitada)
-                    ? formatearVivienda(user.viviendaSolicitada)
-                    : user.viviendaSolicitada}
+          {!user?.isAdmin && user?.requestedApartment && (
+            <View style={styles.requestPending}>
+              <View style={styles.requestInfo}>
+                <Text style={styles.requestBadge}>Cambio pendiente</Text>
+                <Text style={styles.requestText}>
+                  Solicitud: {isApartmentValid(user.requestedApartment)
+                    ? formatApartment(user.requestedApartment)
+                    : user.requestedApartment}
                 </Text>
               </View>
               <TouchableOpacity
-                style={[styles.cancelarSolicitudButton, cancelingSolicitud && styles.buttonDisabled]}
-                onPress={onCancelarSolicitud}
-                disabled={cancelingSolicitud}
+                style={[styles.cancelRequestButton, cancelingRequest && styles.buttonDisabled]}
+                onPress={onCancelRequest}
+                disabled={cancelingRequest}
               >
-                {cancelingSolicitud ? (
+                {cancelingRequest ? (
                   <ActivityIndicator size="small" color={colors.error} />
                 ) : (
-                  <Text style={styles.cancelarSolicitudText}>Cancelar</Text>
+                  <Text style={styles.cancelRequestText}>Cancelar</Text>
                 )}
               </TouchableOpacity>
             </View>
           )}
 
           {/* Botón solicitar cambio */}
-          {!user?.esAdmin && !user?.viviendaSolicitada && !editMode && (
-            <TouchableOpacity style={styles.solicitarCambioButton} onPress={onSolicitarCambio}>
-              <Text style={styles.solicitarCambioText}>Solicitar cambio de vivienda</Text>
+          {!user?.isAdmin && !user?.requestedApartment && !editMode && (
+            <TouchableOpacity style={styles.requestChangeButton} onPress={onRequestChange}>
+              <Text style={styles.requestChangeText}>Solicitar cambio de vivienda</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -101,38 +101,38 @@ export function ProfilePersonalInfo({
 
         {/* Nivel de Juego */}
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Nivel de Juego</Text>
+          <Text style={styles.infoLabel}>Nivel de juego</Text>
           {editMode ? (
-            <TouchableOpacity style={styles.nivelSelector} onPress={() => setShowNivelPicker(!showNivelPicker)}>
-              <Text style={styles.nivelSelectorText}>
-                {nivelJuego ? NIVELES_JUEGO.find((n) => n.value === nivelJuego)?.label : 'Seleccionar'}
+            <TouchableOpacity style={styles.levelSelector} onPress={() => setShowLevelPicker(!showLevelPicker)}>
+              <Text style={styles.levelSelectorText}>
+                {skillLevel ? SKILL_LEVELS.find((n) => n.value === skillLevel)?.label : 'Seleccionar'}
               </Text>
-              <Text style={styles.nivelSelectorArrow}>▼</Text>
+              <Text style={styles.levelSelectorArrow}>▼</Text>
             </TouchableOpacity>
           ) : (
             <Text style={styles.infoValue}>
-              {nivelJuego ? NIVELES_JUEGO.find((n) => n.value === nivelJuego)?.label : 'No especificado'}
+              {skillLevel ? SKILL_LEVELS.find((n) => n.value === skillLevel)?.label : 'No especificado'}
             </Text>
           )}
         </View>
 
-        {editMode && showNivelPicker && (
-          <View style={styles.nivelPickerContainer}>
-            {NIVELES_JUEGO.map((nivel) => (
+        {editMode && showLevelPicker && (
+          <View style={styles.levelPickerContainer}>
+            {SKILL_LEVELS.map((level) => (
               <TouchableOpacity
-                key={nivel.value}
-                style={[styles.nivelOption, nivelJuego === nivel.value && styles.nivelOptionSelected]}
-                onPress={() => { setNivelJuego(nivel.value); setShowNivelPicker(false); }}
+                key={level.value}
+                style={[styles.levelOption, skillLevel === level.value && styles.levelOptionSelected]}
+                onPress={() => { setSkillLevel(level.value); setShowLevelPicker(false); }}
               >
-                <Text style={[styles.nivelOptionText, nivelJuego === nivel.value && styles.nivelOptionTextSelected]}>
-                  {nivel.label}
+                <Text style={[styles.levelOptionText, skillLevel === level.value && styles.levelOptionTextSelected]}>
+                  {level.label}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
         )}
 
-        {user?.esAdmin && (
+        {user?.isAdmin && (
           <>
             <View style={styles.separator} />
             <View style={styles.infoRow}>
@@ -165,43 +165,43 @@ const styles = StyleSheet.create({
     flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: 6,
     padding: 8, fontSize: 16, color: colors.text, backgroundColor: colors.background, textAlign: 'right',
   },
-  viviendaLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  viviendaLocked: { fontSize: 14 },
-  viviendaSelectorContainer: { marginTop: 8 },
-  solicitudPendiente: {
+  apartmentLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  apartmentLocked: { fontSize: 14 },
+  apartmentSelectorContainer: { marginTop: 8 },
+  requestPending: {
     marginTop: 12, backgroundColor: colors.accent + '15', borderRadius: 8,
     padding: 12, borderWidth: 1, borderColor: colors.accent + '40',
   },
-  solicitudInfo: { marginBottom: 8 },
-  solicitudBadge: { fontSize: 12, fontWeight: '600', color: colors.accent, marginBottom: 4 },
-  solicitudText: { fontSize: 14, color: colors.text },
-  cancelarSolicitudButton: {
+  requestInfo: { marginBottom: 8 },
+  requestBadge: { fontSize: 12, fontWeight: '600', color: colors.accent, marginBottom: 4 },
+  requestText: { fontSize: 14, color: colors.text },
+  cancelRequestButton: {
     backgroundColor: colors.surface, borderRadius: 6,
     paddingVertical: 8, paddingHorizontal: 12, alignSelf: 'flex-start',
     borderWidth: 1, borderColor: colors.error, minHeight: 36, justifyContent: 'center',
   },
-  cancelarSolicitudText: { color: colors.error, fontSize: 13, fontWeight: '500' },
+  cancelRequestText: { color: colors.error, fontSize: 13, fontWeight: '500' },
   buttonDisabled: { backgroundColor: colors.disabled },
-  solicitarCambioButton: {
+  requestChangeButton: {
     marginTop: 12, backgroundColor: colors.primary + '10', borderRadius: 8,
     paddingVertical: 10, paddingHorizontal: 14, alignSelf: 'flex-start',
     borderWidth: 1, borderColor: colors.primary,
   },
-  solicitarCambioText: { color: colors.primary, fontSize: 14, fontWeight: '500' },
-  nivelSelector: {
+  requestChangeText: { color: colors.primary, fontSize: 14, fontWeight: '500' },
+  levelSelector: {
     flexDirection: 'row', alignItems: 'center', borderWidth: 1,
     borderColor: colors.border, borderRadius: 6, padding: 8, backgroundColor: colors.background,
   },
-  nivelSelectorText: { flex: 1, fontSize: 16, color: colors.text, textAlign: 'right', marginRight: 8 },
-  nivelSelectorArrow: { fontSize: 12, color: colors.textSecondary },
-  nivelPickerContainer: {
+  levelSelectorText: { flex: 1, fontSize: 16, color: colors.text, textAlign: 'right', marginRight: 8 },
+  levelSelectorArrow: { fontSize: 12, color: colors.textSecondary },
+  levelPickerContainer: {
     marginTop: 8, backgroundColor: colors.surface, borderWidth: 1,
     borderColor: colors.border, borderRadius: 8, overflow: 'hidden',
   },
-  nivelOption: { padding: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
-  nivelOptionSelected: { backgroundColor: colors.primary },
-  nivelOptionText: { fontSize: 16, color: colors.text },
-  nivelOptionTextSelected: { color: '#fff', fontWeight: '600' },
+  levelOption: { padding: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
+  levelOptionSelected: { backgroundColor: colors.primary },
+  levelOptionText: { fontSize: 16, color: colors.text },
+  levelOptionTextSelected: { color: '#fff', fontWeight: '600' },
   adminBadge: { backgroundColor: colors.accent, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
   adminText: { fontSize: 14, color: '#fff', fontWeight: '500' },
 });

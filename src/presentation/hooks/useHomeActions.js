@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 import {
-  formatearFechaLegible,
-  esFechaValida,
-  bloqueTerminado,
+  formatDateReadable,
+  isDateValida,
+  slotFinished,
 } from '../../utils/dateHelpers';
 import { puedeReservar } from '../../utils/validators';
 
@@ -11,202 +11,208 @@ import { puedeReservar } from '../../utils/validators';
  * date navigation, slot press, and reservation confirmation.
  */
 export function useHomeActions({
-  fechaSeleccionada,
-  setFechaSeleccionada,
-  vistaActual,
-  pistaSeleccionada,
-  reservas,
-  bloquesSeleccionados,
+  dateSelected,
+  setDateSelected,
+  viewActual,
+  courtSelected,
+  reservations,
+  selectedSlots,
   user,
-  crearReserva,
-  limpiarSeleccion,
-  recargarHorarios,
-  toggleBloqueSeleccionado,
-  bloqueosHook,
-  getDatosReserva,
-  mostrarAlerta,
-  mostrarAlertaPersonalizada,
+  createReservation,
+  limpiarSelection,
+  recargarTimeSlots,
+  toggleSlotSelected,
+  blockoutsHook,
+  getDataReservation,
+  showAlerta,
+  showAlertaPersonalizada,
 }) {
   const [reservando, setReservando] = useState(false);
 
-  const cambiarFecha = useCallback((dias) => {
-    const [año, mes, dia] = fechaSeleccionada.split('-').map(Number);
-    const fecha = new Date(Date.UTC(año, mes - 1, dia));
+  const cambiarDate = useCallback((days) => {
+    const [año, mes, day] = dateSelected.split('-').map(Number);
+    const date = new Date(Date.UTC(año, mes - 1, day));
 
-    if (vistaActual === 'semana') {
-      const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0);
+    if (viewActual === 'semana') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-      const diaSemana = fecha.getUTCDay();
-      const diasHastaLunes = diaSemana === 0 ? 6 : diaSemana - 1;
-      const lunesSeleccionado = new Date(fecha);
-      lunesSeleccionado.setUTCDate(fecha.getUTCDate() - diasHastaLunes);
+      const dayWeek = date.getUTCDay();
+      const daysUntilMonday = dayWeek === 0 ? 6 : dayWeek - 1;
+      const mondaySelected = new Date(date);
+      mondaySelected.setUTCDate(date.getUTCDate() - daysUntilMonday);
 
-      const diaSemanaHoy = hoy.getDay();
-      const diasHastaLunesHoy = diaSemanaHoy === 0 ? 6 : diaSemanaHoy - 1;
-      const lunesDeEstaSemanaMundial = new Date(hoy);
-      lunesDeEstaSemanaMundial.setDate(hoy.getDate() - diasHastaLunesHoy);
-      lunesDeEstaSemanaMundial.setHours(0, 0, 0, 0);
+      const dayWeekToday = today.getDay();
+      const daysUntilMondayToday = dayWeekToday === 0 ? 6 : dayWeekToday - 1;
+      const mondayOfEstaWeekMundial = new Date(today);
+      mondayOfEstaWeekMundial.setDate(today.getDate() - daysUntilMondayToday);
+      mondayOfEstaWeekMundial.setHours(0, 0, 0, 0);
 
-      const nuevaSemana = new Date(lunesSeleccionado);
-      nuevaSemana.setUTCDate(lunesSeleccionado.getUTCDate() + (dias * 7));
+      const nuevaWeek = new Date(mondaySelected);
+      nuevaWeek.setUTCDate(mondaySelected.getUTCDate() + (days * 7));
 
-      const lunesSiguienteSemana = new Date(lunesDeEstaSemanaMundial);
-      lunesSiguienteSemana.setDate(lunesDeEstaSemanaMundial.getDate() + 7);
+      const mondayNextWeek = new Date(mondayOfEstaWeekMundial);
+      mondayNextWeek.setDate(mondayOfEstaWeekMundial.getDate() + 7);
 
-      const nuevaFechaStr = nuevaSemana.toISOString().split('T')[0];
-      const nuevaFechaObj = new Date(nuevaFechaStr + 'T00:00:00');
+      const nuevaDateStr = nuevaWeek.toISOString().split('T')[0];
+      const nuevaDateObj = new Date(nuevaDateStr + 'T00:00:00');
 
-      if (nuevaFechaObj < lunesDeEstaSemanaMundial) {
-        mostrarAlerta('Semana no disponible', 'No puedes ver semanas anteriores a la actual');
+      if (nuevaDateObj < mondayOfEstaWeekMundial) {
+        showAlerta('Semana no disponible', 'No puedes ver semanas anteriores a la actual');
         return;
       }
 
-      const maxFecha = new Date(lunesSiguienteSemana);
-      maxFecha.setDate(maxFecha.getDate() + 6);
+      const maxDate = new Date(mondayNextWeek);
+      maxDate.setDate(maxDate.getDate() + 6);
 
-      if (nuevaFechaObj > maxFecha) {
-        mostrarAlerta('Límite alcanzado', 'Solo puedes ver la semana actual y la siguiente');
+      if (nuevaDateObj > maxDate) {
+        showAlerta('Límite alcanzado', 'Solo puedes ver la semana actual y la siguiente');
         return;
       }
 
-      setFechaSeleccionada(nuevaFechaStr);
+      setDateSelected(nuevaDateStr);
     } else {
-      fecha.setUTCDate(fecha.getUTCDate() + dias);
-      const nuevaFecha = fecha.toISOString().split('T')[0];
+      date.setUTCDate(date.getUTCDate() + days);
+      const nuevaDate = date.toISOString().split('T')[0];
 
-      if (esFechaValida(nuevaFecha)) {
-        setFechaSeleccionada(nuevaFecha);
+      if (isDateValida(nuevaDate)) {
+        setDateSelected(nuevaDate);
       } else {
-        mostrarAlerta('Fecha no válida', 'Solo puedes reservar hasta 7 días de anticipación');
+        showAlerta('Fecha no válida', 'Solo puedes reservar hasta 7 días de anticipación');
       }
     }
-  }, [fechaSeleccionada, vistaActual, mostrarAlerta, setFechaSeleccionada]);
+  }, [dateSelected, viewActual, showAlerta, setDateSelected]);
 
-  const handleHorarioPress = useCallback((horario, fecha) => {
-    const esPasado = bloqueTerminado(fecha, horario.horaFin);
-    if (esPasado) return;
+  const handleTimeSlotPress = useCallback((timeSlot, date) => {
+    const isPast = slotFinished(date, timeSlot.endTime);
+    if (isPast) return;
 
-    const estaBloqueado = horario.bloqueado;
-    const esMiVivienda = horario.reservaExistente?.vivienda === user?.vivienda;
-    const esSegundaDesplazable = horario.prioridad === 'segunda' && !horario.estaProtegida;
-    const esOtraProvisional = !horario.disponible && !estaBloqueado && !esMiVivienda && esSegundaDesplazable;
+    const isBlocked = timeSlot.blocked;
+    const isMyApartment = timeSlot.existingReservation?.apartment === user?.apartment;
+    const isProvisionalDisplaceable = timeSlot.priority === 'provisional' && !timeSlot.isProtected;
+    const isOtherProvisional = !timeSlot.available && !isBlocked && !isMyApartment && isProvisionalDisplaceable;
 
-    if (bloqueosHook.blockoutMode && user?.esAdmin) {
-      if (estaBloqueado) {
-        bloqueosHook.toggleSlotToUnblock(horario, fecha);
+    if (blockoutsHook.blockoutMode && user?.isAdmin) {
+      if (isBlocked) {
+        blockoutsHook.toggleSlotToUnblock(timeSlot, date);
       } else {
-        bloqueosHook.toggleSlotToBlock(horario, fecha);
+        blockoutsHook.toggleSlotToBlock(timeSlot, date);
       }
       return;
     }
 
-    if (estaBloqueado) {
-      bloqueosHook.handleTapBlocked(horario);
-    } else if (horario.disponible || esOtraProvisional) {
-      toggleBloqueSeleccionado(horario, fecha);
+    if (isBlocked) {
+      blockoutsHook.handleTapBlocked(timeSlot);
+    } else if (timeSlot.available || isOtherProvisional) {
+      toggleSlotSelected(timeSlot, date);
     }
-  }, [user, bloqueosHook, toggleBloqueSeleccionado]);
+  }, [user, blockoutsHook, toggleSlotSelected]);
 
-  const confirmarReserva = useCallback(async () => {
-    const datosReserva = getDatosReserva();
-    if (!datosReserva) {
-      mostrarAlerta('Selecciona horarios', 'Debes seleccionar al menos un bloque de 30 minutos');
+  const confirmarReservation = useCallback(async () => {
+    const dataReservation = getDataReservation();
+    if (!dataReservation) {
+      showAlerta('Selecciona horarios', 'Debes seleccionar al menos un bloque de 30 minutos');
       return;
     }
 
     if (!user) {
-      mostrarAlerta('Error', 'Debes iniciar sesión para hacer una reserva');
+      showAlerta('Error', 'Debes iniciar sesión para hacer una reserva');
       return;
     }
 
-    if (!pistaSeleccionada) {
-      mostrarAlerta('Error', 'Selecciona una pista primero');
+    if (!courtSelected) {
+      showAlerta('Error', 'Selecciona una pista primero');
       return;
     }
 
-    if (user?.esDemo) {
-      mostrarAlerta(
-        'Demo Account',
-        'This is a view-only demo account. You cannot make reservations or modifications.'
+    if (user?.isDemo) {
+      showAlerta(
+        'Cuenta demo',
+        'Esta es una cuenta demo de solo lectura. No puedes hacer reservas ni modificaciones.'
       );
       return;
     }
 
-    const { horaInicio, horaFin, fecha, duracionMinutos, bloquesDesplazables } = datosReserva;
+    const {
+      startTime,
+      endTime,
+      date,
+      durationMinutos: durationMinutes,
+      slotsDesplazables: displaceableSlots,
+    } = dataReservation;
 
     const validacion = puedeReservar(
       user,
-      { fecha, horaInicio, pistaId: pistaSeleccionada.id },
-      reservas
+      { date, startTime, courtId: courtSelected.id },
+      reservations
     );
 
     if (!validacion.valido) {
-      mostrarAlerta('No se puede reservar', validacion.error);
+      showAlerta('No se puede reservar', validacion.error);
       return;
     }
 
-    const hayDesplazamientos = bloquesDesplazables.length > 0;
-    const duracionTexto = duracionMinutos === 30 ? '30 minutos' :
-                          duracionMinutos === 60 ? '1 hora' : '1.5 horas';
+    const hasDisplacements = displaceableSlots.length > 0;
+    const durationText = durationMinutes === 30 ? '30 minutos' :
+                          durationMinutes === 60 ? '1 hora' : '1.5 horas';
 
-    let titulo = 'Confirmar Reserva';
-    let mensaje = `¿Reservar ${pistaSeleccionada.nombre} el ${formatearFechaLegible(fecha)} de ${horaInicio} a ${horaFin}?\n\nDuración: ${duracionTexto} (${bloquesSeleccionados.length} bloques)`;
+    let title = 'Confirmar Reserva';
+    let message = `¿Reservar ${courtSelected.name} el ${formatDateReadable(date)} de ${startTime} a ${endTime}?\n\nDuración: ${durationText} (${selectedSlots.length} bloques)`;
 
-    if (hayDesplazamientos) {
-      const viviendasDesplazadas = [...new Set(bloquesDesplazables.map(b => b.viviendaDesplazada).filter(Boolean))];
-      const horasDesplazadas = bloquesDesplazables.map(b => b.horaInicio).join(', ');
+    if (hasDisplacements) {
+      const apartmentsDisplaced = [...new Set(displaceableSlots.map(b => b.apartmentDisplaced).filter(Boolean))];
+      const hoursDisplaced = displaceableSlots.map(b => b.startTime).join(', ');
 
-      titulo = 'Desplazar y Reservar';
-      mensaje = `¿Reservar ${pistaSeleccionada.nombre} el ${formatearFechaLegible(fecha)} de ${horaInicio} a ${horaFin}?\n\n`;
-      mensaje += `⚠️ ATENCIÓN: Se cancelarán las reservas provisionales de:\n`;
-      mensaje += `• Vivienda(s): ${viviendasDesplazadas.join(', ')}\n`;
-      mensaje += `• Horario(s): ${horasDesplazadas}\n\n`;
-      mensaje += `Tu reserva será GARANTIZADA.`;
+      title = 'Desplazar y Reservar';
+      message = `¿Reservar ${courtSelected.name} el ${formatDateReadable(date)} de ${startTime} a ${endTime}?\n\n`;
+      message += `⚠️ ATENCIÓN: Se cancelarán las reservas provisionales de:\n`;
+      message += `• Vivienda(s): ${apartmentsDisplaced.join(', ')}\n`;
+      message += `• Horario(s): ${hoursDisplaced}\n\n`;
+      message += `Tu reserva será GARANTIZADA.`;
     }
 
-    mostrarAlertaPersonalizada({
-      title: titulo,
-      message: mensaje,
+    showAlertaPersonalizada({
+      title: title,
+      message: message,
       buttons: [
         { text: 'Cancelar', style: 'cancel', onPress: () => {} },
         {
-          text: hayDesplazamientos ? 'Desplazar y Reservar' : 'Confirmar',
-          style: hayDesplazamientos ? 'destructive' : 'default',
+          text: hasDisplacements ? 'Desplazar y Reservar' : 'Confirmar',
+          style: hasDisplacements ? 'destructive' : 'default',
           onPress: async () => {
             setReservando(true);
-            const result = await crearReserva({
-              pistaId: pistaSeleccionada.id,
-              fecha,
-              horaInicio,
-              horaFin,
-              jugadores: [],
-              forzarDesplazamiento: hayDesplazamientos,
+            const result = await createReservation({
+              courtId: courtSelected.id,
+              date,
+              startTime,
+              endTime,
+              players: [],
+              forceDisplacement: hasDisplacements,
             });
             setReservando(false);
 
             if (result.success) {
-              const mensajeExito = hayDesplazamientos
+              const successMessage = hasDisplacements
                 ? 'Tu reserva GARANTIZADA se ha creado correctamente.\nLas reservas provisionales anteriores han sido desplazadas.'
                 : 'Tu reserva se ha creado correctamente';
-              mostrarAlerta('¡Reserva confirmada!', mensajeExito);
-              limpiarSeleccion();
-              if (fecha !== fechaSeleccionada) {
-                setFechaSeleccionada(fecha);
+              showAlerta('¡Reserva confirmada!', successMessage);
+              limpiarSelection();
+              if (date !== dateSelected) {
+                setDateSelected(date);
               }
-              recargarHorarios();
+              recargarTimeSlots();
             } else {
-              mostrarAlerta('Error', result.error);
+              showAlerta('Error', result.error);
             }
           },
         },
       ],
     });
   }, [
-    getDatosReserva, user, pistaSeleccionada, reservas, bloquesSeleccionados,
-    fechaSeleccionada, setFechaSeleccionada, crearReserva, limpiarSeleccion,
-    recargarHorarios, mostrarAlerta, mostrarAlertaPersonalizada,
+    getDataReservation, user, courtSelected, reservations, selectedSlots,
+    dateSelected, setDateSelected, createReservation, limpiarSelection,
+    recargarTimeSlots, showAlerta, showAlertaPersonalizada,
   ]);
 
-  return { reservando, cambiarFecha, handleHorarioPress, confirmarReserva };
+  return { reservando, cambiarDate, handleTimeSlotPress, confirmarReservation };
 }

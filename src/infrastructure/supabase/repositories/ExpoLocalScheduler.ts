@@ -24,7 +24,7 @@ export class ExpoLocalScheduler implements LocalSchedulerPort {
     // 1. "Match Day" notification at 09:00 on match day
     const matchDayDate = new Date(`${date}T09:00:00`);
     if (matchDayDate > now) {
-      const horaFormateada = startTime.substring(0, 5);
+      const timeFormateada = startTime.substring(0, 5);
       const courtText = courtName ? ` en ${courtName}` : '';
 
       if (Platform.OS === 'web') {
@@ -33,9 +33,9 @@ export class ExpoLocalScheduler implements LocalSchedulerPort {
           const delayMs = matchDayDate.getTime() - now.getTime();
           results.matchDayId = webPushService.scheduleNotification(
             '🎾 ¡Hoy es Match Day!',
-            `Tienes partida a las ${horaFormateada}${courtText}`,
+            `Tienes partida a las ${timeFormateada}${courtText}`,
             delayMs,
-            { type: 'partida_match_day', partidaId: matchId },
+            { type: 'partida_match_day', matchId: matchId },
           ) as string | null;
         } catch {
           // Non-critical
@@ -46,8 +46,8 @@ export class ExpoLocalScheduler implements LocalSchedulerPort {
           results.matchDayId = await Notifications.scheduleNotificationAsync({
             content: {
               title: '🎾 ¡Hoy es Match Day!',
-              body: `Tienes partida a las ${horaFormateada}${courtText}`,
-              data: { type: 'partida_match_day', partidaId: matchId },
+              body: `Tienes partida a las ${timeFormateada}${courtText}`,
+              data: { type: 'partida_match_day', matchId: matchId },
               sound: true,
             },
             trigger: { date: matchDayDate },
@@ -61,7 +61,7 @@ export class ExpoLocalScheduler implements LocalSchedulerPort {
     // 2. Notification 10 minutes before
     const tenMinBefore = new Date(matchDate.getTime() - 10 * 60 * 1000);
     if (tenMinBefore > now) {
-      const horaFormateada = startTime.substring(0, 5);
+      const timeFormateada = startTime.substring(0, 5);
       const courtText = courtName ? ` en ${courtName}` : '';
 
       if (Platform.OS === 'web') {
@@ -70,9 +70,9 @@ export class ExpoLocalScheduler implements LocalSchedulerPort {
           const delayMs = tenMinBefore.getTime() - now.getTime();
           results.tenMinId = webPushService.scheduleNotification(
             '⏰ ¡Tu partida empieza en 10 minutos!',
-            `A las ${horaFormateada}${courtText}`,
+            `A las ${timeFormateada}${courtText}`,
             delayMs,
-            { type: 'partida_10_min', partidaId: matchId },
+            { type: 'partida_10_min', matchId: matchId },
           ) as string | null;
         } catch {
           // Non-critical
@@ -83,8 +83,8 @@ export class ExpoLocalScheduler implements LocalSchedulerPort {
           results.tenMinId = await Notifications.scheduleNotificationAsync({
             content: {
               title: '⏰ ¡Tu partida empieza en 10 minutos!',
-              body: `A las ${horaFormateada}${courtText}`,
-              data: { type: 'partida_10_min', partidaId: matchId },
+              body: `A las ${timeFormateada}${courtText}`,
+              data: { type: 'partida_10_min', matchId: matchId },
               sound: true,
             },
             trigger: { date: tenMinBefore },

@@ -1,20 +1,19 @@
 import type { AvailabilitySlot } from '@domain/entities/AvailabilitySlot';
 import { toLegacyFormat as reservationToLegacy } from './reservationMapper';
-import { priorityToDb } from './reservationMapper';
 
 export function toLegacyFormat(slot: AvailabilitySlot): Record<string, unknown> {
   return {
-    horaInicio: slot.startTime,
-    horaFin: slot.endTime,
-    disponible: slot.available,
-    bloqueado: slot.blocked,
-    bloqueoId: slot.blockoutId,
-    motivoBloqueo: slot.blockoutReason,
-    reservaExistente: slot.existingReservation
+    startTime: slot.startTime,
+    endTime: slot.endTime,
+    available: slot.available,
+    blocked: slot.blocked,
+    blockoutId: slot.blockoutId,
+    blockoutReason: slot.blockoutReason,
+    existingReservation: slot.existingReservation
       ? reservationToLegacy(slot.existingReservation)
       : null,
-    prioridad: slot.priority ? priorityToDb(slot.priority) : null,
-    esDesplazable: slot.isDisplaceable,
-    estaProtegida: slot.isProtected,
+    priority: slot.priority ?? null,
+    isDisplaceable: slot.isDisplaceable,
+    isProtected: slot.isProtected,
   };
 }

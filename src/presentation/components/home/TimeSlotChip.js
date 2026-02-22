@@ -7,67 +7,67 @@ import { hasSlotEnded } from '../../../utils/dateHelpers';
  * Individual time slot chip with all visual states
  */
 export function TimeSlotChip({
-  horario,
-  fecha,
-  userVivienda,
-  estaSeleccionado,
-  estaSeleccionadoParaBloquear,
-  estaSeleccionadoParaDesbloquear,
-  modoBloqueo,
+  timeSlot,
+  date,
+  userApartment,
+  estaSelected,
+  isSelectedForBlock,
+  isSelectedForUnblock,
+  blockoutMode,
   disabled,
   onPress,
 }) {
   // Calculate slot states
   const states = useMemo(() => {
-    const esPasado = hasSlotEnded(fecha, horario.horaFin);
-    const estaBloqueado = horario.bloqueado;
-    const esMiVivienda = horario.reservaExistente?.vivienda === userVivienda;
-    const esPrimeraOProtegida = horario.prioridad === 'primera' || horario.estaProtegida;
-    const esSegundaDesplazable = horario.prioridad === 'segunda' && !horario.estaProtegida;
+    const isPast = hasSlotEnded(date, timeSlot.endTime);
+    const isBlocked = timeSlot.blocked;
+    const isMyApartment = timeSlot.existingReservation?.apartment === userApartment;
+    const isGuaranteedOrProtected = timeSlot.priority === 'guaranteed' || timeSlot.isProtected;
+    const isProvisionalDisplaceable = timeSlot.priority === 'provisional' && !timeSlot.isProtected;
 
-    const esMiGarantizada = !horario.disponible && !estaBloqueado && esMiVivienda && esPrimeraOProtegida;
-    const esMiProvisional = !horario.disponible && !estaBloqueado && esMiVivienda && esSegundaDesplazable;
-    const esOtraGarantizada = !horario.disponible && !estaBloqueado && !esMiVivienda && esPrimeraOProtegida;
-    const esOtraProvisional = !horario.disponible && !estaBloqueado && !esMiVivienda && esSegundaDesplazable;
+    const isMyGuaranteed = !timeSlot.available && !isBlocked && isMyApartment && isGuaranteedOrProtected;
+    const isMyProvisional = !timeSlot.available && !isBlocked && isMyApartment && isProvisionalDisplaceable;
+    const isOtherGuaranteed = !timeSlot.available && !isBlocked && !isMyApartment && isGuaranteedOrProtected;
+    const isOtherProvisional = !timeSlot.available && !isBlocked && !isMyApartment && isProvisionalDisplaceable;
 
     return {
-      esPasado,
-      estaBloqueado,
-      esMiVivienda,
-      esMiGarantizada,
-      esMiProvisional,
-      esOtraGarantizada,
-      esOtraProvisional,
+      isPast,
+      isBlocked,
+      isMyApartment,
+      isMyGuaranteed,
+      isMyProvisional,
+      isOtherGuaranteed,
+      isOtherProvisional,
     };
-  }, [horario, fecha, userVivienda]);
+  }, [timeSlot, date, userApartment]);
 
   const {
-    esPasado,
-    estaBloqueado,
-    esMiGarantizada,
-    esMiProvisional,
-    esOtraGarantizada,
-    esOtraProvisional,
+    isPast,
+    isBlocked,
+    isMyGuaranteed,
+    isMyProvisional,
+    isOtherGuaranteed,
+    isOtherProvisional,
   } = states;
 
   // Show lock icon for blocked slots
-  const mostrarIconoBloqueado = !esPasado && estaBloqueado && !estaSeleccionadoParaDesbloquear;
+  const showIconoBlocked = !isPast && isBlocked && !isSelectedForUnblock;
   // Show displaceable icon
-  const mostrarIconoDesplazable = !esPasado && !estaBloqueado && esOtraProvisional;
+  const showIconoDisplaceable = !isPast && !isBlocked && isOtherProvisional;
 
   return (
     <TouchableOpacity
       style={[
         styles.slotChip,
-        esPasado && styles.slotChipPast,
-        !esPasado && estaBloqueado && styles.slotChipBlocked,
-        !esPasado && !estaBloqueado && esMiGarantizada && styles.slotChipMyGuaranteed,
-        !esPasado && !estaBloqueado && esMiProvisional && styles.slotChipMyProvisional,
-        !esPasado && !estaBloqueado && esOtraGarantizada && styles.slotChipOtherGuaranteed,
-        !esPasado && !estaBloqueado && esOtraProvisional && styles.slotChipOtherProvisional,
-        estaSeleccionado && styles.slotChipSelected,
-        estaSeleccionadoParaBloquear && styles.slotChipSelectedBlock,
-        estaSeleccionadoParaDesbloquear && styles.slotChipSelectedUnblock,
+        isPast && styles.slotChipPast,
+        !isPast && isBlocked && styles.slotChipBlocked,
+        !isPast && !isBlocked && isMyGuaranteed && styles.slotChipMyGuaranteed,
+        !isPast && !isBlocked && isMyProvisional && styles.slotChipMyProvisional,
+        !isPast && !isBlocked && isOtherGuaranteed && styles.slotChipOtherGuaranteed,
+        !isPast && !isBlocked && isOtherProvisional && styles.slotChipOtherProvisional,
+        estaSelected && styles.slotChipSelected,
+        isSelectedForBlock && styles.slotChipSelectedBlock,
+        isSelectedForUnblock && styles.slotChipSelectedUnblock,
       ]}
       onPress={onPress}
       disabled={disabled}
@@ -75,42 +75,42 @@ export function TimeSlotChip({
       <Text
         style={[
           styles.slotChipText,
-          esPasado && styles.slotChipTextPast,
-          !esPasado && estaBloqueado && !estaSeleccionadoParaDesbloquear && styles.slotChipTextBlocked,
-          !esPasado && !estaBloqueado && (esMiGarantizada || esMiProvisional) && styles.slotChipTextWhite,
-          !esPasado && !estaBloqueado && (esOtraGarantizada || esOtraProvisional) && styles.slotChipTextDark,
-          estaSeleccionado && styles.slotChipTextSelected,
-          (estaSeleccionadoParaBloquear || estaSeleccionadoParaDesbloquear) && styles.slotChipTextSelected,
+          isPast && styles.slotChipTextPast,
+          !isPast && isBlocked && !isSelectedForUnblock && styles.slotChipTextBlocked,
+          !isPast && !isBlocked && (isMyGuaranteed || isMyProvisional) && styles.slotChipTextWhite,
+          !isPast && !isBlocked && (isOtherGuaranteed || isOtherProvisional) && styles.slotChipTextDark,
+          estaSelected && styles.slotChipTextSelected,
+          (isSelectedForBlock || isSelectedForUnblock) && styles.slotChipTextSelected,
         ]}
       >
-        {horario.horaInicio}
+        {timeSlot.startTime}
       </Text>
 
-      {mostrarIconoBloqueado && (
+      {showIconoBlocked && (
         <View style={styles.blockedIcon}>
           <Text style={styles.blockedIconText}>🔒</Text>
         </View>
       )}
 
-      {mostrarIconoDesplazable && (
+      {showIconoDisplaceable && (
         <View style={styles.displaceableIcon}>
           <Text style={styles.displaceableIconText}>!</Text>
         </View>
       )}
 
-      {estaSeleccionado && (
+      {estaSelected && (
         <View style={styles.checkMark}>
           <Text style={styles.checkMarkText}>✓</Text>
         </View>
       )}
 
-      {estaSeleccionadoParaBloquear && (
+      {isSelectedForBlock && (
         <View style={styles.checkMarkBlock}>
           <Text style={styles.checkMarkText}>✓</Text>
         </View>
       )}
 
-      {estaSeleccionadoParaDesbloquear && (
+      {isSelectedForUnblock && (
         <View style={styles.checkMarkUnblock}>
           <Text style={styles.checkMarkText}>✓</Text>
         </View>
@@ -118,9 +118,6 @@ export function TimeSlotChip({
     </TouchableOpacity>
   );
 }
-
-// Legacy alias for backwards compatibility
-export const HorarioChip = TimeSlotChip;
 
 const styles = StyleSheet.create({
   slotChip: {

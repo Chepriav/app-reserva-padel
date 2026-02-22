@@ -13,16 +13,16 @@ import { ApartmentSelector } from '../ApartmentSelector';
 /**
  * Modal para editar vivienda de un usuario
  */
-export function EditViviendaModal({
+export function EditApartmentModal({
   visible,
-  usuario,
-  escalera,
-  piso,
-  puerta,
+  user,
+  staircase,
+  floor,
+  door,
   saving,
-  onChangeEscalera,
-  onChangePiso,
-  onChangePuerta,
+  onChangeStaircase,
+  onChangeFloor,
+  onChangeDoor,
   onSave,
   onClose,
 }) {
@@ -35,19 +35,19 @@ export function EditViviendaModal({
     >
       <View style={styles.overlay}>
         <View style={styles.content}>
-          <Text style={styles.title}>Cambiar Vivienda</Text>
-          {usuario && (
-            <Text style={styles.subtitle}>Usuario: {usuario.nombre}</Text>
+          <Text style={styles.title}>Cambiar vivienda</Text>
+          {user && (
+            <Text style={styles.subtitle}>Usuario: {user.name}</Text>
           )}
 
           <View style={styles.selectorContainer}>
             <ApartmentSelector
-              escalera={escalera}
-              piso={piso}
-              puerta={puerta}
-              onChangeEscalera={onChangeEscalera}
-              onChangePiso={onChangePiso}
-              onChangePuerta={onChangePuerta}
+              staircase={staircase}
+              floor={floor}
+              door={door}
+              onChangeStaircase={onChangeStaircase}
+              onChangeFloor={onChangeFloor}
+              onChangeDoor={onChangeDoor}
             />
           </View>
 
@@ -144,4 +144,3 @@ const styles = StyleSheet.create({
 });
 
 // Export with English name for consistency
-export { EditViviendaModal as EditApartmentModal };

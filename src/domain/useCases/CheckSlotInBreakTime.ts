@@ -75,13 +75,13 @@ export class CheckSlotInBreakTime {
    * Filter out slots that fall within break time.
    * Compatible with the legacy format where slots have horaInicio/horaFin.
    */
-  filterSlots<T extends { horaInicio: string; horaFin: string }>(
+  filterSlots<T extends { startTime: string; endTime: string }>(
     slots: T[],
     config: ScheduleConfig,
     date: Date = new Date(),
   ): T[] {
     return slots.filter(
-      (s) => !this.execute({ start: s.horaInicio, end: s.horaFin }, config, date),
+      (s) => !this.execute({ start: s.startTime, end: s.endTime }, config, date),
     );
   }
 }

@@ -8,23 +8,23 @@ import {
   StyleSheet,
 } from 'react-native';
 import { colors } from '../../constants/colors';
-import { VIVIENDA_CONFIG } from '../../constants/config';
+import { APARTMENT_CONFIG } from '../../constants/config';
 
 /**
  * Componente selector de vivienda estructurada
  * Permite seleccionar Escalera, Piso y Puerta
  */
-export function ViviendaSelector({
-  escalera,
-  piso,
-  puerta,
-  onChangeEscalera,
-  onChangePiso,
-  onChangePuerta,
+export function ApartmentSelector({
+  staircase,
+  floor,
+  door,
+  onChangeStaircase,
+  onChangeFloor,
+  onChangeDoor,
   disabled = false,
 }) {
   const [modalVisible, setModalVisible] = React.useState(false);
-  const [modalType, setModalType] = React.useState(null); // 'escalera' | 'piso' | 'puerta'
+  const [modalType, setModalType] = React.useState(null); // 'staircase' | 'floor' | 'door'
 
   const openModal = (type) => {
     if (disabled) return;
@@ -33,24 +33,24 @@ export function ViviendaSelector({
   };
 
   const handleSelect = (value) => {
-    if (modalType === 'escalera') {
-      onChangeEscalera(value.toString());
-    } else if (modalType === 'piso') {
-      onChangePiso(value.toString());
-    } else if (modalType === 'puerta') {
-      onChangePuerta(value);
+    if (modalType === 'staircase') {
+      onChangeStaircase(value.toString());
+    } else if (modalType === 'floor') {
+      onChangeFloor(value.toString());
+    } else if (modalType === 'door') {
+      onChangeDoor(value);
     }
     setModalVisible(false);
   };
 
   const getOptions = () => {
     switch (modalType) {
-      case 'escalera':
-        return VIVIENDA_CONFIG.escaleras;
-      case 'piso':
-        return VIVIENDA_CONFIG.pisos;
-      case 'puerta':
-        return VIVIENDA_CONFIG.puertas;
+      case 'staircase':
+        return APARTMENT_CONFIG.stairs;
+      case 'floor':
+        return APARTMENT_CONFIG.floors;
+      case 'door':
+        return APARTMENT_CONFIG.doors;
       default:
         return [];
     }
@@ -58,11 +58,11 @@ export function ViviendaSelector({
 
   const getModalTitle = () => {
     switch (modalType) {
-      case 'escalera':
+      case 'staircase':
         return 'Selecciona Escalera';
-      case 'piso':
+      case 'floor':
         return 'Selecciona Piso';
-      case 'puerta':
+      case 'door':
         return 'Selecciona Puerta';
       default:
         return '';
@@ -77,11 +77,11 @@ export function ViviendaSelector({
           <Text style={styles.selectorLabel}>Escalera</Text>
           <TouchableOpacity
             style={[styles.selector, disabled && styles.selectorDisabled]}
-            onPress={() => openModal('escalera')}
+            onPress={() => openModal('staircase')}
             disabled={disabled}
           >
-            <Text style={[styles.selectorText, !escalera && styles.placeholder]}>
-              {escalera || '-'}
+            <Text style={[styles.selectorText, !staircase && styles.placeholder]}>
+              {staircase || '-'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -91,11 +91,11 @@ export function ViviendaSelector({
           <Text style={styles.selectorLabel}>Piso</Text>
           <TouchableOpacity
             style={[styles.selector, disabled && styles.selectorDisabled]}
-            onPress={() => openModal('piso')}
+            onPress={() => openModal('floor')}
             disabled={disabled}
           >
-            <Text style={[styles.selectorText, !piso && styles.placeholder]}>
-              {piso || '-'}
+            <Text style={[styles.selectorText, !floor && styles.placeholder]}>
+              {floor || '-'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -105,11 +105,11 @@ export function ViviendaSelector({
           <Text style={styles.selectorLabel}>Puerta</Text>
           <TouchableOpacity
             style={[styles.selector, disabled && styles.selectorDisabled]}
-            onPress={() => openModal('puerta')}
+            onPress={() => openModal('door')}
             disabled={disabled}
           >
-            <Text style={[styles.selectorText, !puerta && styles.placeholder]}>
-              {puerta || '-'}
+            <Text style={[styles.selectorText, !door && styles.placeholder]}>
+              {door || '-'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -244,5 +244,3 @@ const styles = StyleSheet.create({
   },
 });
 
-// Re-export with English name
-export { ViviendaSelector as ApartmentSelector };

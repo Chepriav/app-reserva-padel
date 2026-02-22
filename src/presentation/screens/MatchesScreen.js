@@ -14,7 +14,7 @@ import { useAuth } from '../context/AuthContext';
 import { useReservations } from '../context/ReservationsContext';
 import { colors } from '../../constants/colors';
 import { CustomAlert } from '../components/CustomAlert';
-import { MatchCard, CreateMatchModal, AddPlayerModal } from '../components/partidas';
+import { MatchCard, CreateMatchModal, AddPlayerModal } from '../components/matches';
 import {
   useMatches,
   useMatchesActions,
@@ -40,7 +40,7 @@ export default function MatchesScreen() {
   const createModal = useCreateMatchModal(user?.id);
   const addPlayerModal = useAddPlayerModal((newPlayer) => {
     const isExistingPlayer = createModal.players.some(
-      (p) => p.tipo === 'urbanizacion' && p.usuario?.id === newPlayer.usuario?.id
+      (p) => p.type === 'urbanizacion' && p.user?.id === newPlayer.user?.id
     );
     if (isExistingPlayer) {
       showAlert('Ya añadido', 'Este jugador ya está en la partida');
@@ -127,8 +127,8 @@ export default function MatchesScreen() {
       </ScrollView>
 
       {/* Create button */}
-      <TouchableOpacity style={styles.botonCrear} onPress={handlers.handleOpenCreate}>
-        <Text style={styles.botonCrearText}>+ Buscar jugadores</Text>
+      <TouchableOpacity style={styles.buttonCreate} onPress={handlers.handleOpenCreate}>
+        <Text style={styles.buttonCreateText}>+ Buscar jugadores</Text>
       </TouchableOpacity>
 
       <CreateMatchModal
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   loadingContainer: { padding: 40, alignItems: 'center' },
   emptyContainer: { padding: 40, alignItems: 'center' },
   emptyText: { color: colors.textSecondary, fontSize: 15, textAlign: 'center' },
-  botonCrear: {
+  buttonCreate: {
     position: 'absolute',
     bottom: Platform.OS === 'web' ? 20 : 30,
     left: 20,
@@ -200,5 +200,5 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  botonCrearText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  buttonCreateText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

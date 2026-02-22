@@ -72,9 +72,9 @@ export function useAlert() {
     showCustomAlert,
     closeAlert,
     // Legacy Spanish names for backwards compatibility
-    mostrarAlerta: showAlert,
-    mostrarConfirmacion: showConfirmation,
-    mostrarAlertaPersonalizada: showCustomAlert,
-    cerrarAlerta: closeAlert,
+    showAlerta: showAlert,
+    showConfirmacion: showConfirmation,
+    showAlertaPersonalizada: showCustomAlert,
+    closeAlerta: closeAlert,
   };
 }

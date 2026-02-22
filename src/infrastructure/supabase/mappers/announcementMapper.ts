@@ -62,14 +62,14 @@ export function toDomain(row: Record<string, unknown>, isRead = false): Announce
 export function toLegacyFormat(announcement: Announcement): Record<string, unknown> {
   return {
     id: announcement.id,
-    creadorId: announcement.creatorId,
-    creadorNombre: announcement.creatorName,
-    titulo: announcement.title,
-    mensaje: announcement.message,
-    tipo: announcementTypeToDb(announcement.type),
-    destinatarios: recipientsToDb(announcement.recipients),
-    expiraEn: announcement.expiresAt,
+    creatorId: announcement.creatorId,
+    creatorName: announcement.creatorName,
+    title: announcement.title,
+    message: announcement.message,
+    type: announcement.type,
+    recipients: announcement.recipients,
+    expiresAt: announcement.expiresAt,
     createdAt: announcement.createdAt,
-    leido: announcement.isRead,
+    isRead: announcement.isRead,
   };
 }

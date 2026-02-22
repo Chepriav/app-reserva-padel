@@ -15,53 +15,53 @@ import { colors } from '../../../constants/colors';
 import { RecipientsSelector } from './RecipientsSelector';
 import { styles } from './CreateAnnouncementModalStyles';
 
-const TIPOS_ANUNCIO = [
-  { value: 'info', label: 'Información', icon: 'information-circle', color: colors.anuncioInfo },
-  { value: 'aviso', label: 'Aviso', icon: 'warning', color: colors.anuncioAviso },
-  { value: 'urgente', label: 'Urgente', icon: 'alert-circle', color: colors.anuncioUrgente },
-  { value: 'mantenimiento', label: 'Mantenimiento', icon: 'construct', color: colors.anuncioMantenimiento },
+const TYPES_ANNOUNCEMENT = [
+  { value: 'info', label: 'Información', icon: 'information-circle', color: colors.announcementInfo },
+  { value: 'aviso', label: 'Aviso', icon: 'warning', color: colors.announcementNotice },
+  { value: 'urgente', label: 'Urgente', icon: 'alert-circle', color: colors.announcementUrgent },
+  { value: 'mantenimiento', label: 'Mantenimiento', icon: 'construct', color: colors.announcementMaintenance },
 ];
 
-export function CrearAnuncioModal({
+export function CreateAnnouncementModal({
   visible,
   onClose,
-  onCrear,
-  usuarios,
-  loadingUsuarios,
+  onCreate,
+  users,
+  loadingUsers,
   creating,
 }) {
-  const [titulo, setTitulo] = useState('');
-  const [mensaje, setMensaje] = useState('');
-  const [tipo, setTipo] = useState('info');
-  const [destinatarios, setDestinatarios] = useState('todos');
-  const [usuariosSeleccionados, setUsuariosSeleccionados] = useState([]);
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
+  const [type, setType] = useState('info');
+  const [recipients, setRecipients] = useState('todos');
+  const [usersSelected, setUsersSelected] = useState([]);
 
   useEffect(() => {
     if (visible) {
-      setTitulo('');
-      setMensaje('');
-      setTipo('info');
-      setDestinatarios('todos');
-      setUsuariosSeleccionados([]);
+      setTitle('');
+      setMessage('');
+      setType('info');
+      setRecipients('todos');
+      setUsersSelected([]);
     }
   }, [visible]);
 
-  const handleCrear = () => {
-    if (!titulo.trim() || !mensaje.trim()) return;
-    if (destinatarios === 'seleccionados' && usuariosSeleccionados.length === 0) return;
+  const handleCreate = () => {
+    if (!title.trim() || !message.trim()) return;
+    if (recipients === 'seleccionados' && usersSelected.length === 0) return;
 
-    onCrear({
-      titulo: titulo.trim(),
-      mensaje: mensaje.trim(),
-      tipo,
-      destinatarios,
-      usuariosIds: destinatarios === 'seleccionados' ? usuariosSeleccionados : [],
+    onCreate({
+      title: title.trim(),
+      message: message.trim(),
+      type,
+      recipients,
+      usersIds: recipients === 'seleccionados' ? usersSelected : [],
     });
   };
 
-  const isValid = titulo.trim().length > 0 &&
-    mensaje.trim().length > 0 &&
-    (destinatarios === 'todos' || usuariosSeleccionados.length > 0);
+  const isValid = title.trim().length > 0 &&
+    message.trim().length > 0 &&
+    (recipients === 'todos' || usersSelected.length > 0);
 
   return (
     <Modal
@@ -76,7 +76,7 @@ export function CrearAnuncioModal({
       >
         <View style={styles.container}>
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Nuevo mensaje</Text>
+            <Text style={styles.headerTitle}>Nuevo message</Text>
             <TouchableOpacity onPress={onClose} disabled={creating}>
               <Ionicons name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -88,45 +88,45 @@ export function CrearAnuncioModal({
               style={styles.input}
               placeholder="Escribe el título..."
               placeholderTextColor={colors.disabled}
-              value={titulo}
-              onChangeText={setTitulo}
+              value={title}
+              onChangeText={setTitle}
               editable={!creating}
             />
 
-            <Text style={styles.label}>Mensaje</Text>
+            <Text style={styles.label}>Message</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               placeholder="Escribe el mensaje..."
               placeholderTextColor={colors.disabled}
-              value={mensaje}
-              onChangeText={setMensaje}
+              value={message}
+              onChangeText={setMessage}
               multiline
               numberOfLines={4}
               textAlignVertical="top"
               editable={!creating}
             />
 
-            <Text style={styles.label}>Tipo</Text>
-            <View style={styles.tiposContainer}>
-              {TIPOS_ANUNCIO.map(t => (
+            <Text style={styles.label}>Type</Text>
+            <View style={styles.typesContainer}>
+              {TYPES_ANNOUNCEMENT.map(t => (
                 <TouchableOpacity
                   key={t.value}
                   style={[
-                    styles.tipoButton,
-                    tipo === t.value && { backgroundColor: `${t.color}20`, borderColor: t.color },
+                    styles.typeButton,
+                    type === t.value && { backgroundColor: `${t.color}20`, borderColor: t.color },
                   ]}
-                  onPress={() => setTipo(t.value)}
+                  onPress={() => setType(t.value)}
                   disabled={creating}
                 >
                   <Ionicons
                     name={t.icon}
                     size={18}
-                    color={tipo === t.value ? t.color : colors.textSecondary}
+                    color={type === t.value ? t.color : colors.textSecondary}
                   />
                   <Text
                     style={[
-                      styles.tipoLabel,
-                      tipo === t.value && { color: t.color },
+                      styles.typeLabel,
+                      type === t.value && { color: t.color },
                     ]}
                   >
                     {t.label}
@@ -135,44 +135,44 @@ export function CrearAnuncioModal({
               ))}
             </View>
 
-            <Text style={styles.label}>Destinatarios</Text>
-            <View style={styles.destinatariosOptions}>
+            <Text style={styles.label}>Recipients</Text>
+            <View style={styles.recipientsOptions}>
               <TouchableOpacity
                 style={[
                   styles.optionButton,
-                  destinatarios === 'todos' && styles.optionButtonSelected,
+                  recipients === 'todos' && styles.optionButtonSelected,
                 ]}
-                onPress={() => setDestinatarios('todos')}
+                onPress={() => setRecipients('todos')}
                 disabled={creating}
               >
-                <View style={[styles.radio, destinatarios === 'todos' && styles.radioSelected]}>
-                  {destinatarios === 'todos' && <View style={styles.radioInner} />}
+                <View style={[styles.radio, recipients === 'todos' && styles.radioSelected]}>
+                  {recipients === 'todos' && <View style={styles.radioInner} />}
                 </View>
-                <Text style={styles.optionLabel}>Todos los usuarios</Text>
+                <Text style={styles.optionLabel}>Todos los users</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
                   styles.optionButton,
-                  destinatarios === 'seleccionados' && styles.optionButtonSelected,
+                  recipients === 'seleccionados' && styles.optionButtonSelected,
                 ]}
-                onPress={() => setDestinatarios('seleccionados')}
+                onPress={() => setRecipients('seleccionados')}
                 disabled={creating}
               >
-                <View style={[styles.radio, destinatarios === 'seleccionados' && styles.radioSelected]}>
-                  {destinatarios === 'seleccionados' && <View style={styles.radioInner} />}
+                <View style={[styles.radio, recipients === 'seleccionados' && styles.radioSelected]}>
+                  {recipients === 'seleccionados' && <View style={styles.radioInner} />}
                 </View>
-                <Text style={styles.optionLabel}>Seleccionar usuarios</Text>
+                <Text style={styles.optionLabel}>Select users</Text>
               </TouchableOpacity>
             </View>
 
-            {destinatarios === 'seleccionados' && (
+            {recipients === 'seleccionados' && (
               <View style={styles.selectorContainer}>
                 <RecipientsSelector
-                  usuarios={usuarios}
-                  seleccionados={usuariosSeleccionados}
-                  onSeleccionChange={setUsuariosSeleccionados}
-                  loading={loadingUsuarios}
+                  users={users}
+                  selected={usersSelected}
+                  onSelectionChange={setUsersSelected}
+                  loading={loadingUsers}
                 />
               </View>
             )}
@@ -184,18 +184,18 @@ export function CrearAnuncioModal({
               onPress={onClose}
               disabled={creating}
             >
-              <Text style={styles.cancelButtonText}>Cancelar</Text>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.submitButton, !isValid && styles.submitButtonDisabled]}
-              onPress={handleCrear}
+              onPress={handleCreate}
               disabled={!isValid || creating}
             >
               {creating ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.submitButtonText}>Enviar mensaje</Text>
+                <Text style={styles.submitButtonText}>Enviar message</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -204,5 +204,3 @@ export function CrearAnuncioModal({
     </Modal>
   );
 }
-// Re-export with English name
-export { CrearAnuncioModal as CreateAnnouncementModal };

@@ -6,36 +6,33 @@ import { formatReadableDate } from '../../../utils/dateHelpers';
 /**
  * Date navigator with arrows
  */
-export function DateSelector({ fechaSeleccionada, vistaActual, onCambiarFecha }) {
+export function DateSelector({ dateSelected, viewActual, onCambiarDate }) {
   return (
     <View style={styles.dateContainer}>
       <TouchableOpacity
         style={styles.dateButton}
-        onPress={() => onCambiarFecha(-1)}
+        onPress={() => onCambiarDate(-1)}
       >
         <Text style={styles.dateButtonText}>←</Text>
       </TouchableOpacity>
 
       <View style={styles.dateInfo}>
         <Text style={styles.dateText}>
-          {vistaActual === 'dia'
-            ? formatReadableDate(fechaSeleccionada)
-            : 'Semana del ' + formatReadableDate(fechaSeleccionada)}
+          {viewActual === 'dia'
+            ? formatReadableDate(dateSelected)
+            : 'Semana del ' + formatReadableDate(dateSelected)}
         </Text>
       </View>
 
       <TouchableOpacity
         style={styles.dateButton}
-        onPress={() => onCambiarFecha(1)}
+        onPress={() => onCambiarDate(1)}
       >
         <Text style={styles.dateButtonText}>→</Text>
       </TouchableOpacity>
     </View>
   );
 }
-
-// Legacy alias for backwards compatibility
-export const FechaSelector = DateSelector;
 
 const styles = StyleSheet.create({
   dateContainer: {

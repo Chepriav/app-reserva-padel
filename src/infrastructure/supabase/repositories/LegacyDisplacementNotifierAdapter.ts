@@ -18,10 +18,10 @@ export class LegacyDisplacementNotifierAdapter implements DisplacementNotifier {
     try {
       // Lazy import to avoid bundling legacy JS in TS compilation
       const { notificationService } = await import('../../../services/notificationService');
-      notificationService.notifyViviendaDisplacement(apartment, {
-        fecha: date,
-        horaInicio: startTime,
-        pistaNombre: courtName,
+      notificationService.notifyApartmentDisplacement(apartment, {
+        date: date,
+        startTime: startTime,
+        courtName: courtName,
       });
     } catch {
       // Fire-and-forget — notification failure is non-critical
@@ -38,11 +38,11 @@ export class LegacyDisplacementNotifierAdapter implements DisplacementNotifier {
   ): Promise<Result<void>> {
     try {
       const { notificationService } = await import('../../../services/notificationService');
-      notificationService.notifyViviendaBlockoutCancellation?.(apartment, {
-        fecha: date,
-        horaInicio: startTime,
-        horaFin: endTime,
-        pistaNombre: courtName,
+      notificationService.notifyApartmentBlockoutCancellation?.(apartment, {
+        date: date,
+        startTime: startTime,
+        endTime: endTime,
+        courtName: courtName,
       });
     } catch {
       // Fire-and-forget

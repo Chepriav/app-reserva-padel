@@ -11,15 +11,15 @@ export async function cleanupUserRelations(
   const { removeAdminContent = true } = options;
 
   // Find reservations to cascade-delete associated matches
-  const { data: reservasData } = await supabase
+  const { data: reservationsData } = await supabase
     .from('reservas')
     .select('id')
     .eq('usuario_id', userId);
 
-  const reservaIds = (reservasData || []).map((r: { id: string }) => r.id).filter(Boolean);
+  const reservationIds = (reservationsData || []).map((r: { id: string }) => r.id).filter(Boolean);
 
-  if (reservaIds.length > 0) {
-    await supabase.from('partidas').delete().in('reserva_id', reservaIds);
+  if (reservationIds.length > 0) {
+    await supabase.from('partidas').delete().in('reserva_id', reservationIds);
   }
 
   // Delete matches created by user

@@ -90,34 +90,34 @@ export const notificationService = {
    * @param {Object} reserva - { fecha, horaInicio, pistaNombre, id }
    * @param {number} minutosAntes - Minutes before reservation to notify
    */
-  async scheduleReservationReminder(reserva, minutosAntes = 60) {
+  async scheduleReservationReminder(reservation, minutosAntes = 60) {
     if (Platform.OS === 'web') {
-      const fechaReserva = new Date(`${reserva.fecha}T${reserva.horaInicio}`);
-      const fechaNotificacion = new Date(fechaReserva.getTime() - minutosAntes * 60 * 1000);
-      const delayMs = fechaNotificacion.getTime() - Date.now();
+      const reservationDate = new Date(`${reservation.date}T${reservation.startTime}`);
+      const dateNotification = new Date(reservationDate.getTime() - minutosAntes * 60 * 1000);
+      const delayMs = dateNotification.getTime() - Date.now();
       if (delayMs <= 0) return null;
 
       return webPushService.scheduleNotification(
         'Recordatorio de Reserva',
-        `Tu reserva en ${reserva.pistaNombre} es en ${minutosAntes} minutos (${reserva.horaInicio})`,
+        `Tu reserva en ${reservation.courtName} es en ${minutosAntes} minutos (${reservation.startTime})`,
         delayMs,
-        { type: 'reservation_reminder', reservaId: reserva.id },
+        { type: 'reservation_reminder', reservationId: reservation.id },
       );
     }
 
     try {
-      const fechaReserva = new Date(`${reserva.fecha}T${reserva.horaInicio}`);
-      const fechaNotificacion = new Date(fechaReserva.getTime() - minutosAntes * 60 * 1000);
-      if (fechaNotificacion <= new Date()) return null;
+      const reservationDate = new Date(`${reservation.date}T${reservation.startTime}`);
+      const dateNotification = new Date(reservationDate.getTime() - minutosAntes * 60 * 1000);
+      if (dateNotification <= new Date()) return null;
 
       return await Notifications.scheduleNotificationAsync({
         content: {
           title: 'Recordatorio de Reserva',
-          body: `Tu reserva en ${reserva.pistaNombre} es en ${minutosAntes} minutos (${reserva.horaInicio})`,
-          data: { type: 'reservation_reminder', reservaId: reserva.id },
+          body: `Tu reserva en ${reservation.courtName} es en ${minutosAntes} minutos (${reservation.startTime})`,
+          data: { type: 'reservation_reminder', reservationId: reservation.id },
           sound: true,
         },
-        trigger: { date: fechaNotificacion },
+        trigger: { date: dateNotification },
       });
     } catch (error) {
       console.error('Error programando recordatorio:', error);
@@ -164,13 +164,13 @@ export const notificationService = {
   /**
    * Notifies a user about apartment change approved/rejected.
    */
-  async notifyViviendaChange(userId, aprobado, viviendaNueva) {
-    const title = aprobado ? 'Cambio de vivienda aprobado' : 'Cambio de vivienda rechazado';
-    const body = aprobado
-      ? `Tu solicitud de cambio a ${viviendaNueva} ha sido aprobada.`
+  async notifyApartmentChange(userId, approved, apartmentNueva) {
+    const title = approved ? 'Cambio de vivienda aprobado' : 'Cambio de vivienda rechazado';
+    const body = approved
+      ? `Tu solicitud de cambio a ${apartmentNueva} ha sido aprobada.`
       : 'Tu solicitud de cambio de vivienda ha sido rechazada.';
 
-    await pushDelivery.sendToUser(userId, title, body, { type: 'vivienda_change', aprobado });
+    await pushDelivery.sendToUser(userId, title, body, { type: 'vivienda_change', approved });
     return { success: true };
   },
 
@@ -178,9 +178,9 @@ export const notificationService = {
    * Notifies users about a new admin announcement.
    * If usuariosIds is empty, sends to all approved users.
    */
-  async notifyNuevoAnuncio(titulo, mensaje, anuncioId, usuariosIds = []) {
-    const body = mensaje.length > 100 ? mensaje.substring(0, 97) + '...' : mensaje;
-    let targetIds = usuariosIds;
+  async notifyNuevoAnnouncement(title, message, announcementId, usersIds = []) {
+    const body = message.length > 100 ? message.substring(0, 97) + '...' : message;
+    let targetIds = usersIds;
 
     if (!targetIds || targetIds.length === 0) {
       try {
@@ -199,9 +199,9 @@ export const notificationService = {
 
     await Promise.allSettled(
       targetIds.map((userId) =>
-        pushDelivery.sendToUser(userId, `📢 ${titulo}`, body, {
+        pushDelivery.sendToUser(userId, `📢 ${title}`, body, {
           type: 'nuevo_anuncio',
-          anuncioId,
+          announcementId,
         }),
       ),
     );

@@ -22,32 +22,32 @@ export function useMatchHandlers({
     if (!reservations) return [];
     const now = new Date();
     return reservations.filter((r) => {
-      const reservationDate = new Date(r.fecha + 'T' + r.horaInicio);
-      const isCurrentReservation = currentMatch && r.id === currentMatch.reservaId;
+      const reservationDate = new Date(r.date + 'T' + r.startTime);
+      const isCurrentReservation = currentMatch && r.id === currentMatch.reservationId;
       const hasMatch = createModal.reservationsWithMatch.includes(r.id);
-      return r.estado === 'confirmada' && reservationDate > now && (!hasMatch || isCurrentReservation);
+      return r.status === 'confirmed' && reservationDate > now && (!hasMatch || isCurrentReservation);
     });
   };
 
   const getModalPlayers = () => {
     if (isMatchEditing) {
-      return (isMatchEditing.jugadores || [])
-        .filter((p) => p.estado === 'confirmado')
+      return (isMatchEditing.players || [])
+        .filter((p) => p.status === 'confirmed')
         .map((p) => ({
-          tipo: p.esExterno ? 'externo' : 'urbanizacion',
-          usuario: p.esExterno ? null : {
-            id: p.usuarioId, nombre: p.usuarioNombre,
-            vivienda: p.usuarioVivienda, nivelJuego: p.nivelJuego,
+          type: p.isExternal ? 'externo' : 'urbanizacion',
+          user: p.isExternal ? null : {
+            id: p.userId, name: p.userName,
+            apartment: p.userApartment, skillLevel: p.skillLevel,
           },
-          nombre: p.usuarioNombre, vivienda: p.usuarioVivienda, nivel: p.nivelJuego,
+          name: p.userName, apartment: p.userApartment, level: p.skillLevel,
         }));
     }
     return createModal.players;
   };
 
   const handleOpenCreate = async () => {
-    if (user?.esDemo) {
-      showAlert('Demo Account', 'This is a view-only demo account. You cannot make reservations or modifications.');
+    if (user?.isDemo) {
+      showAlert('Cuenta demo', 'Esta es una cuenta demo de solo lectura. No puedes hacer reservas ni modificaciones.');
       return;
     }
     setMatchEditing(null);
@@ -59,33 +59,33 @@ export function useMatchHandlers({
     await createModal.open();
 
     const futureReservations = getFutureReservations(match);
-    const currentReservation = match.reservaId
-      ? futureReservations.find((r) => r.id === match.reservaId)
+    const currentReservation = match.reservationId
+      ? futureReservations.find((r) => r.id === match.reservationId)
       : null;
 
-    const confirmedPlayers = (match.jugadores || [])
-      .filter((p) => p.estado === 'confirmado')
+    const confirmedPlayers = (match.players || [])
+      .filter((p) => p.status === 'confirmed')
       .map((p) => ({
-        tipo: p.esExterno ? 'externo' : 'urbanizacion',
-        usuario: p.esExterno ? null : {
-          id: p.usuarioId, nombre: p.usuarioNombre,
-          vivienda: p.usuarioVivienda, nivelJuego: p.nivelJuego,
+        type: p.isExternal ? 'externo' : 'urbanizacion',
+        user: p.isExternal ? null : {
+          id: p.userId, name: p.userName,
+          apartment: p.userApartment, skillLevel: p.skillLevel,
         },
-        nombre: p.usuarioNombre, vivienda: p.usuarioVivienda, nivel: p.nivelJuego,
+        name: p.userName, apartment: p.userApartment, level: p.skillLevel,
       }));
 
     createModal.setModalState({
-      type: match.reservaId ? 'con_reserva' : (match.tipo || 'abierta'),
+      type: match.reservationId ? 'with_reservation' : (match.type || 'open'),
       selectedReservation: currentReservation,
-      message: match.mensaje || '',
-      preferredLevel: match.nivelPreferido || null,
+      message: match.message || '',
+      preferredLevel: match.preferredLevel || null,
       saving: false,
-      isClass: match.esClase || false,
-      levels: match.niveles || [],
-      minParticipants: match.minParticipantes || 2,
-      maxParticipants: match.maxParticipantes || (match.esClase ? 8 : 4),
-      pricePerStudent: match.precioAlumno ? String(match.precioAlumno) : '',
-      pricePerGroup: match.precioGrupo ? String(match.precioGrupo) : '',
+      isClass: match.isLesson || false,
+      levels: match.levels || [],
+      minParticipants: match.minParticipants || 2,
+      maxParticipants: match.maxParticipants || (match.isLesson ? 8 : 4),
+      pricePerStudent: match.studentPrice ? String(match.studentPrice) : '',
+      pricePerGroup: match.groupPrice ? String(match.groupPrice) : '',
     });
 
     confirmedPlayers.forEach((p) => createModal.addPlayer(p));
@@ -97,7 +97,8 @@ export function useMatchHandlers({
       isClass, levels, minParticipants, maxParticipants, pricePerStudent, pricePerGroup,
     } = createModal.modalState;
 
-    if (type === 'con_reserva' && !selectedReservation) {
+    const isWithReservation = type === 'con_reserva' || type === 'with_reservation';
+    if (isWithReservation && !selectedReservation) {
       showAlert('Error', `Selecciona una reserva para vincular la ${isClass ? 'clase' : 'partida'}`);
       return;
     }
@@ -107,21 +108,21 @@ export function useMatchHandlers({
 
     if (isMatchEditing) {
       const updates = {
-        mensaje: message.trim() || null,
-        nivelPreferido: isClass ? null : preferredLevel,
-        niveles: isClass ? levels : null,
-        minParticipantes: isClass ? minParticipants : 4,
-        maxParticipantes: isClass ? maxParticipants : 4,
-        precioAlumno: isClass ? toPrice(pricePerStudent) : null,
-        precioGrupo: isClass ? toPrice(pricePerGroup) : null,
+        message: message.trim() || null,
+        preferredLevel: isClass ? null : preferredLevel,
+        levels: isClass ? levels : null,
+        minParticipants: isClass ? minParticipants : 4,
+        maxParticipants: isClass ? maxParticipants : 4,
+        studentPrice: isClass ? toPrice(pricePerStudent) : null,
+        groupPrice: isClass ? toPrice(pricePerGroup) : null,
       };
-      if (type === 'abierta') {
-        Object.assign(updates, { reservaId: null, fecha: null, horaInicio: null, horaFin: null, pistaNombre: null });
+      if (type === 'abierta' || type === 'open') {
+        Object.assign(updates, { reservationId: null, date: null, startTime: null, endTime: null, courtName: null });
       } else if (selectedReservation) {
         Object.assign(updates, {
-          reservaId: selectedReservation.id, fecha: selectedReservation.fecha,
-          horaInicio: selectedReservation.horaInicio, horaFin: selectedReservation.horaFin,
-          pistaNombre: selectedReservation.pistaNombre,
+          reservationId: selectedReservation.id, date: selectedReservation.date,
+          startTime: selectedReservation.startTime, endTime: selectedReservation.endTime,
+          courtName: selectedReservation.courtName,
         });
       }
       const result = await actions.editMatch(isMatchEditing.id, updates);
@@ -137,21 +138,21 @@ export function useMatchHandlers({
 
     // Create mode
     const matchData = {
-      creadorId: user.id, creadorNombre: user.nombre, creadorVivienda: user.vivienda,
-      tipo: type, mensaje: message.trim() || null,
-      nivelPreferido: isClass ? null : preferredLevel,
-      jugadoresIniciales: createModal.players,
-      esClase: isClass, niveles: isClass ? levels : null,
-      minParticipantes: isClass ? minParticipants : 4,
-      maxParticipantes: isClass ? maxParticipants : 4,
-      precioAlumno: isClass ? toPrice(pricePerStudent) : null,
-      precioGrupo: isClass ? toPrice(pricePerGroup) : null,
+      creatorId: user.id, creatorName: user.name, creatorApartment: user.apartment,
+      type: type, message: message.trim() || null,
+      preferredLevel: isClass ? null : preferredLevel,
+      initialPlayers: createModal.players,
+      isLesson: isClass, levels: isClass ? levels : null,
+      minParticipants: isClass ? minParticipants : 4,
+      maxParticipants: isClass ? maxParticipants : 4,
+      studentPrice: isClass ? toPrice(pricePerStudent) : null,
+      groupPrice: isClass ? toPrice(pricePerGroup) : null,
     };
-    if (type === 'con_reserva' && selectedReservation) {
+    if (isWithReservation && selectedReservation) {
       Object.assign(matchData, {
-        reservaId: selectedReservation.id, fecha: selectedReservation.fecha,
-        horaInicio: selectedReservation.horaInicio, horaFin: selectedReservation.horaFin,
-        pistaNombre: selectedReservation.pistaNombre,
+        reservationId: selectedReservation.id, date: selectedReservation.date,
+        startTime: selectedReservation.startTime, endTime: selectedReservation.endTime,
+        courtName: selectedReservation.courtName,
       });
     }
     const result = await actions.createMatch(matchData);
@@ -183,18 +184,18 @@ export function useMatchHandlers({
   const handleAddCommunityUser = async (selectedUser) => {
     if (isMatchEditing) {
       const result = await actions.addPlayerToMatch(isMatchEditing.id, {
-        usuarioId: selectedUser.id, usuarioNombre: selectedUser.nombre,
-        usuarioVivienda: selectedUser.vivienda, nivelJuego: selectedUser.nivelJuego, esExterno: false,
+        userId: selectedUser.id, userName: selectedUser.name,
+        userApartment: selectedUser.apartment, skillLevel: selectedUser.skillLevel, isExternal: false,
       });
       if (result.success) {
         addPlayerModal.close();
         setMatchEditing((prev) => ({
           ...prev,
-          jugadores: [...(prev.jugadores || []), {
-            id: result.jugadorId || Date.now().toString(),
-            usuarioId: selectedUser.id, usuarioNombre: selectedUser.nombre,
-            usuarioVivienda: selectedUser.vivienda, nivelJuego: selectedUser.nivelJuego,
-            esExterno: false, estado: 'confirmado',
+          players: [...(prev.players || []), {
+            id: result.playerId || Date.now().toString(),
+            userId: selectedUser.id, userName: selectedUser.name,
+            userApartment: selectedUser.apartment, skillLevel: selectedUser.skillLevel,
+            isExternal: false, status: 'confirmed',
           }],
         }));
         loadMatches();
@@ -215,18 +216,18 @@ export function useMatchHandlers({
     if (isMatchEditing) {
       const trimmedName = externalName.trim();
       const result = await actions.addPlayerToMatch(isMatchEditing.id, {
-        usuarioId: null, usuarioNombre: trimmedName,
-        usuarioVivienda: null, nivelJuego: externalLevel, esExterno: true,
+        userId: null, userName: trimmedName,
+        userApartment: null, skillLevel: externalLevel, isExterno: true,
       });
       if (result.success) {
         addPlayerModal.close();
         setMatchEditing((prev) => ({
           ...prev,
-          jugadores: [...(prev.jugadores || []), {
-            id: result.jugadorId || Date.now().toString(),
-            usuarioId: null, usuarioNombre: trimmedName,
-            usuarioVivienda: null, nivelJuego: externalLevel,
-            esExterno: true, estado: 'confirmado',
+          players: [...(prev.players || []), {
+            id: result.playerId || Date.now().toString(),
+            userId: null, userName: trimmedName,
+            userApartment: null, skillLevel: externalLevel,
+            isExternal: true, status: 'confirmed',
           }],
         }));
         loadMatches();
@@ -241,14 +242,14 @@ export function useMatchHandlers({
 
   const handleRemovePlayer = async (index) => {
     if (isMatchEditing) {
-      const confirmedPlayers = (isMatchEditing.jugadores || []).filter((p) => p.estado === 'confirmado');
+      const confirmedPlayers = (isMatchEditing.players || []).filter((p) => p.status === 'confirmed');
       const playerToRemove = confirmedPlayers[index];
       if (playerToRemove) {
         const result = await actions.removePlayer(playerToRemove.id, isMatchEditing.id);
         if (result.success) {
           setMatchEditing((prev) => ({
             ...prev,
-            jugadores: (prev.jugadores || []).filter((p) => p.id !== playerToRemove.id),
+            players: (prev.players || []).filter((p) => p.id !== playerToRemove.id),
           }));
           loadMatches();
         } else {

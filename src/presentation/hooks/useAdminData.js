@@ -13,42 +13,42 @@ export function useAdminData() {
 
   const loadAllData = useCallback(async () => {
     setLoading(true);
-    const [pendientesResult, usuariosResult, cambiosResult] = await Promise.all([
-      authService.getUsuariosPendientes(),
-      authService.getTodosUsuarios(),
-      authService.getSolicitudesCambioVivienda(),
+    const [pendingResult, usersResult, changesResult] = await Promise.all([
+      authService.getUsersPending(),
+      authService.getTodosUsers(),
+      authService.getRequestsChangeApartment(),
     ]);
-    if (pendientesResult.success) {
-      setPendingUsers(pendientesResult.data);
+    if (pendingResult.success) {
+      setPendingUsers(pendingResult.data);
     }
-    if (usuariosResult.success) {
-      setAllUsers(usuariosResult.data);
+    if (usersResult.success) {
+      setAllUsers(usersResult.data);
     }
-    if (cambiosResult.success) {
-      setChangeRequests(cambiosResult.data);
+    if (changesResult.success) {
+      setChangeRequests(changesResult.data);
     }
     setLoading(false);
   }, []);
 
-  const loadTabData = useCallback(async (tabActiva, cargarAnunciosCallback, cargarUsuariosCallback) => {
-    if (tabActiva === 'solicitudes') {
-      const [pendientesResult, cambiosResult] = await Promise.all([
-        authService.getUsuariosPendientes(),
-        authService.getSolicitudesCambioVivienda(),
+  const loadTabData = useCallback(async (activeTab, loadAnnouncementsCallback, loadUsersCallback) => {
+    if (activeTab === 'requests') {
+      const [pendingResult, changesResult] = await Promise.all([
+        authService.getUsersPending(),
+        authService.getRequestsChangeApartment(),
       ]);
-      if (pendientesResult.success) {
-        setPendingUsers(pendientesResult.data);
+      if (pendingResult.success) {
+        setPendingUsers(pendingResult.data);
       }
-      if (cambiosResult.success) {
-        setChangeRequests(cambiosResult.data);
+      if (changesResult.success) {
+        setChangeRequests(changesResult.data);
       }
-    } else if (tabActiva === 'usuarios') {
-      const result = await authService.getTodosUsuarios();
+    } else if (activeTab === 'users') {
+      const result = await authService.getTodosUsers();
       if (result.success) {
         setAllUsers(result.data);
       }
-    } else if (tabActiva === 'mensajes' && cargarAnunciosCallback && cargarUsuariosCallback) {
-      await Promise.all([cargarAnunciosCallback(), cargarUsuariosCallback()]);
+    } else if (activeTab === 'messages' && loadAnnouncementsCallback && loadUsersCallback) {
+      await Promise.all([loadAnnouncementsCallback(), loadUsersCallback()]);
     }
   }, []);
 

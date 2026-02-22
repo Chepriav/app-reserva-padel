@@ -14,10 +14,10 @@ export function toDomain(row: Record<string, unknown>): Court {
 export function toLegacyFormat(court: Court): Record<string, unknown> {
   return {
     id: court.id,
-    nombre: court.name,
-    descripcion: court.description,
-    techada: court.covered,
-    conLuz: court.hasLights,
-    capacidadJugadores: court.playerCapacity,
+    name: court.name,
+    description: court.description,
+    covered: court.covered,
+    hasLights: court.hasLights,
+    playerCapacity: court.playerCapacity,
   };
 }

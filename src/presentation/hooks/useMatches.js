@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { partidasService } from '../../services/matchesService';
+import { matchesService } from '../../services/matchesService';
 
 export function useMatches(userId, activeTab) {
   const [matches, setMatches] = useState([]);
@@ -11,23 +11,23 @@ export function useMatches(userId, activeTab) {
     setLoading(true);
     try {
       if (activeTab === 'disponibles') {
-        const result = await partidasService.obtenerPartidasActivas();
+        const result = await matchesService.getMatchesActivas();
         if (result.success) {
           setMatches(
             result.data
-              .filter((p) => p.creadorId !== userId)
-              .map((p) => ({ ...p, esCreador: false }))
+              .filter((p) => p.creatorId !== userId)
+              .map((p) => ({ ...p, isCreator: false }))
           );
         }
       } else {
         const [created, joined] = await Promise.all([
-          partidasService.obtenerMisPartidas(userId),
-          partidasService.obtenerPartidasApuntado(userId),
+          matchesService.getMisMatches(userId),
+          matchesService.getMatchesApuntado(userId),
         ]);
         const all = [];
-        if (created.success) created.data.forEach((p) => { p.esCreador = true; all.push(p); });
+        if (created.success) created.data.forEach((p) => { p.isCreator = true; all.push(p); });
         if (joined.success) joined.data.forEach((p) => {
-          if (!all.find((t) => t.id === p.id)) { p.esCreador = false; all.push(p); }
+          if (!all.find((t) => t.id === p.id)) { p.isCreator = false; all.push(p); }
         });
         setMatches(all);
       }

@@ -5,8 +5,8 @@ import { colors } from '../../../constants/colors';
 /**
  * Floating reserve button
  */
-export function ReserveButton({ cantidadBloques, onPress, disabled }) {
-  if (cantidadBloques === 0) return null;
+export function ReserveButton({ countSlots, onPress, disabled }) {
+  if (countSlots === 0) return null;
 
   return (
     <View style={styles.fixedButtonContainer}>
@@ -16,7 +16,7 @@ export function ReserveButton({ cantidadBloques, onPress, disabled }) {
         disabled={disabled}
       >
         <Text style={styles.reserveButtonText}>
-          Reservar {cantidadBloques} bloque{cantidadBloques > 1 ? 's' : ''}
+          Reservar {countSlots} bloque{countSlots > 1 ? 's' : ''}
         </Text>
       </TouchableOpacity>
     </View>
@@ -27,15 +27,15 @@ export function ReserveButton({ cantidadBloques, onPress, disabled }) {
  * Floating block/unblock buttons
  */
 export function BlockoutButtons({
-  cantidadBloquear,
-  cantidadDesbloquear,
-  onBloquear,
-  onDesbloquear,
+  countBlock,
+  countUnblock,
+  onBlock,
+  onUnblock,
   onLimpiar,
   disabled,
 }) {
   // Show block button
-  if (cantidadBloquear > 0 && cantidadDesbloquear === 0) {
+  if (countBlock > 0 && countUnblock === 0) {
     return (
       <View style={styles.fixedButtonContainer}>
         <View style={styles.blockoutButtonsContainer}>
@@ -47,11 +47,11 @@ export function BlockoutButtons({
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.blockButton}
-            onPress={onBloquear}
+            onPress={onBlock}
             disabled={disabled}
           >
             <Text style={styles.blockButtonText}>
-              🔒 Bloquear {cantidadBloquear} horario{cantidadBloquear > 1 ? 's' : ''}
+              🔒 Bloquear {countBlock} franja{countBlock > 1 ? 's' : ''}
             </Text>
           </TouchableOpacity>
         </View>
@@ -60,7 +60,7 @@ export function BlockoutButtons({
   }
 
   // Show unblock button
-  if (cantidadDesbloquear > 0 && cantidadBloquear === 0) {
+  if (countUnblock > 0 && countBlock === 0) {
     return (
       <View style={styles.fixedButtonContainer}>
         <View style={styles.blockoutButtonsContainer}>
@@ -72,11 +72,11 @@ export function BlockoutButtons({
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.unblockButton}
-            onPress={onDesbloquear}
+            onPress={onUnblock}
             disabled={disabled}
           >
             <Text style={styles.unblockButtonText}>
-              🔓 Desbloquear {cantidadDesbloquear} horario{cantidadDesbloquear > 1 ? 's' : ''}
+              🔓 Desbloquear {countUnblock} franja{countUnblock > 1 ? 's' : ''}
             </Text>
           </TouchableOpacity>
         </View>
@@ -88,8 +88,8 @@ export function BlockoutButtons({
 }
 
 // Legacy aliases for backwards compatibility
-export const BotonReservar = ReserveButton;
-export const BotonesBloqueo = BlockoutButtons;
+export const ButtonReservar = ReserveButton;
+export const ButtonsBlockout = BlockoutButtons;
 
 const styles = StyleSheet.create({
   fixedButtonContainer: {

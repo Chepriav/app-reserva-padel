@@ -56,7 +56,7 @@ export function ImportResultsModal({ visible, results, onClose }) {
         <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Resultado de Importación</Text>
+            <Text style={styles.headerTitle}>Resultado de importación</Text>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -110,7 +110,7 @@ export function ImportResultsModal({ visible, results, onClose }) {
                         <Text style={styles.errorItemEmail}>{item.user.email}</Text>
                       </View>
                       <Text style={styles.errorItemMessage}>
-                        {item.user.nombre} - {item.error}
+                        {item.user.name} - {item.error}
                       </Text>
                     </View>
                   ))}
@@ -122,7 +122,7 @@ export function ImportResultsModal({ visible, results, onClose }) {
                   onPress={handleExportErrors}
                 >
                   <Ionicons name="download-outline" size={18} color={colors.primary} />
-                  <Text style={styles.exportButtonText}>Exportar log de errores (CSV)</Text>
+                  <Text style={styles.exportButtonText}>Exportar registro de errores (CSV)</Text>
                 </TouchableOpacity>
               </View>
             )}

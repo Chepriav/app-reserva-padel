@@ -135,8 +135,8 @@ export const authService = {
     return mapListResult(result, 'Error al obtener usuarios');
   },
 
-  async toggleAdminRole(userId, esAdmin) {
-    const result = await toggleAdminRole.execute(userId, esAdmin);
+  async toggleAdminRole(userId, isAdmin) {
+    const result = await toggleAdminRole.execute(userId, isAdmin);
     if (!result.success) {
       return { success: false, error: 'Error al cambiar rol de usuario' };
     }
@@ -176,7 +176,7 @@ export const authService = {
   },
 
   async updateProfile(userId, updates) {
-    const { esAdmin, estadoAprobacion, ...safeUpdates } = updates;
+    const { isAdmin, approvalStatus, ...safeUpdates } = updates;
     const domainUpdates = fromLegacyFormat(safeUpdates);
     const result = await updateProfile.execute(userId, domainUpdates);
     if (!result.success) {
@@ -249,8 +249,8 @@ export const authService = {
     return { success: true };
   },
 
-  async requestApartmentChange(userId, nuevaVivienda) {
-    const result = await userAdminRepository.setRequestedApartment(userId, nuevaVivienda);
+  async requestApartmentChange(userId, newApartment) {
+    const result = await userAdminRepository.setRequestedApartment(userId, newApartment);
     if (!result.success) {
       return { success: false, error: 'Error al solicitar cambio de vivienda' };
     }
@@ -315,8 +315,8 @@ export const authService = {
     return () => subscription.unsubscribe();
   },
 
-  async getUsersBySameApartment(vivienda) {
-    const result = await getApartmentUsers.execute(vivienda);
+  async getUsersBySameApartment(apartment) {
+    const result = await getApartmentUsers.execute(apartment);
     if (!result.success) {
       return { success: false, error: 'Error al obtener usuarios de la vivienda' };
     }
@@ -324,23 +324,17 @@ export const authService = {
       success: true,
       data: result.value.map((u) => ({
         id: u.id,
-        nombre: u.name,
+        name: u.name,
         email: u.email,
-        fotoPerfil: u.profilePhoto,
-        nivelJuego: u.skillLevel,
+        profilePhoto: u.profilePhoto,
+        skillLevel: u.skillLevel,
       })),
     };
   },
 
   // Legacy aliases
-  getUsuariosPendientes(...args) { return this.getPendingUsers(...args); },
-  getTodosUsuarios(...args) { return this.getAllUsers(...args); },
-  aprobarUsuario(...args) { return this.approveUser(...args); },
-  rechazarUsuario(...args) { return this.rejectUser(...args); },
-  solicitarCambioVivienda(...args) { return this.requestApartmentChange(...args); },
-  cancelarSolicitudVivienda(...args) { return this.cancelApartmentRequest(...args); },
-  getSolicitudesCambioVivienda(...args) { return this.getApartmentChangeRequests(...args); },
-  aprobarCambioVivienda(...args) { return this.approveApartmentChange(...args); },
-  rechazarCambioVivienda(...args) { return this.rejectApartmentChange(...args); },
-  getUsuariosMismaVivienda(...args) { return this.getUsersBySameApartment(...args); },
+  getUsersPending(...args) { return this.getPendingUsers(...args); },
+  getTodosUsers(...args) { return this.getAllUsers(...args); },
+  getRequestsChangeApartment(...args) { return this.getApartmentChangeRequests(...args); },
+  getUsersMismaApartment(...args) { return this.getUsersBySameApartment(...args); },
 };

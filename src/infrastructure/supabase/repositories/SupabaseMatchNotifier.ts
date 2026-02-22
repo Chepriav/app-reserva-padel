@@ -35,9 +35,9 @@ export class SupabaseMatchNotifier implements MatchNotifier {
     matchId: string,
     isClass: boolean,
   ): Promise<Result<void>> {
-    const tipo = isClass ? 'clase' : 'partida';
+    const typeLabel = isClass ? 'clase' : 'partida';
     const title = isClass ? 'Nueva solicitud de clase' : 'Nueva solicitud de partida';
-    const body = `${requesterName} quiere unirse a tu ${tipo}.`;
+    const body = `${requesterName} quiere unirse a tu ${typeLabel}.`;
     const type: NotificationType = isClass ? 'class_request' : 'match_request';
 
     await this.notify(creatorId, type, title, body, { matchId, requesterName });
@@ -84,9 +84,9 @@ export class SupabaseMatchNotifier implements MatchNotifier {
     matchId: string,
     isClass: boolean,
   ): Promise<Result<void>> {
-    const tipo = isClass ? 'clase' : 'partida';
+    const typeLabel = isClass ? 'clase' : 'partida';
     const title = isClass ? 'Clase cancelada' : 'Partida cancelada';
-    const body = `La ${tipo} de ${creatorName} ha sido cancelada.`;
+    const body = `La ${typeLabel} de ${creatorName} ha sido cancelada.`;
     const type: NotificationType = isClass ? 'class_cancelled' : 'match_cancelled';
 
     await Promise.allSettled(
@@ -103,15 +103,15 @@ export class SupabaseMatchNotifier implements MatchNotifier {
     isClass: boolean,
     reason: string,
   ): Promise<Result<void>> {
-    const tipo = isClass ? 'clase' : 'partida';
+    const typeLabel = isClass ? 'clase' : 'partida';
     const emoji = isClass ? '📚' : '🎾';
-    const title = `${emoji} ${tipo.charAt(0).toUpperCase() + tipo.slice(1)} cancelada`;
+    const title = `${emoji} ${typeLabel.charAt(0).toUpperCase() + typeLabel.slice(1)} cancelada`;
     const body =
       reason === 'reserva_desplazada'
-        ? `La reserva de la ${tipo} de ${creatorName} ha sido desplazada por otra vivienda.`
+        ? `La reserva de la ${typeLabel} de ${creatorName} ha sido desplazada por otra vivienda.`
         : date
-          ? `La reserva de la ${tipo} del ${date} ha sido cancelada.`
-          : `La reserva de la ${tipo} de ${creatorName} ha sido cancelada.`;
+          ? `La reserva de la ${typeLabel} del ${date} ha sido cancelada.`
+          : `La reserva de la ${typeLabel} de ${creatorName} ha sido cancelada.`;
     const type: NotificationType = isClass
       ? 'class_cancelled_by_reservation'
       : 'match_cancelled_by_reservation';

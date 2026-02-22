@@ -124,12 +124,12 @@ export const csvImportService = {
     const errors = [];
 
     // Validate nombre
-    const nombre = row.nombre?.trim();
-    if (!nombre) {
+    const name = row.name?.trim();
+    if (!name) {
       errors.push(`Línea ${lineNumber}: El nombre es obligatorio`);
-    } else if (nombre.length < 2) {
+    } else if (name.length < 2) {
       errors.push(`Línea ${lineNumber}: El nombre es demasiado corto (mínimo 2 caracteres)`);
-    } else if (nombre.length > 100) {
+    } else if (name.length > 100) {
       errors.push(`Línea ${lineNumber}: El nombre es demasiado largo (máximo 100 caracteres)`);
     }
 
@@ -182,9 +182,9 @@ export const csvImportService = {
       valid: true,
       errors: [],
       sanitized: {
-        nombre,
+        name,
         email: email.toLowerCase(),
-        vivienda: `${parsedApartment.escalera}-${parsedApartment.piso}-${parsedApartment.puerta}`,
+        apartment: `${parsedApartment.escalera}-${parsedApartment.piso}-${parsedApartment.puerta}`,
         codigoOriginal: codigo,
       },
     };
@@ -266,11 +266,11 @@ Pedro López,1-2-A,pedro.lopez@example.com`;
   exportErrorLog(errors) {
     const header = 'Línea,Nombre,Código,Email,Error\n';
     const rows = errors.map((error) => {
-      const nombre = error.row?.nombre || '';
+      const name = error.row?.name || '';
       const codigo = error.row?.codigo || '';
       const email = error.row?.email || '';
       const errorMsg = error.errors.join('; ');
-      return `${error.line},"${nombre}","${codigo}","${email}","${errorMsg}"`;
+      return `${error.line},"${name}","${codigo}","${email}","${errorMsg}"`;
     });
     return header + rows.join('\n');
   },

@@ -9,32 +9,32 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../../constants/colors';
 
-const TIPO_CONFIG = {
+const TYPE_CONFIG = {
   info: {
     icon: 'information-circle',
-    color: colors.anuncioInfo,
+    color: colors.announcementInfo,
     label: 'Info',
   },
-  aviso: {
+  notice: {
     icon: 'warning',
-    color: colors.anuncioAviso,
+    color: colors.announcementNotice,
     label: 'Aviso',
   },
-  urgente: {
+  urgent: {
     icon: 'alert-circle',
-    color: colors.anuncioUrgente,
+    color: colors.announcementUrgent,
     label: 'Urgente',
   },
-  mantenimiento: {
+  maintenance: {
     icon: 'construct',
-    color: colors.anuncioMantenimiento,
+    color: colors.announcementMaintenance,
     label: 'Manten.',
   },
 };
 
-function formatearFecha(fechaStr) {
-  const fecha = new Date(fechaStr);
-  return fecha.toLocaleDateString('es-ES', {
+function formatDate(dateStr) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('es-ES', {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
@@ -42,58 +42,58 @@ function formatearFecha(fechaStr) {
   });
 }
 
-export function AnuncioAdminCard({ anuncio, onEliminar }) {
-  const config = TIPO_CONFIG[anuncio.tipo] || TIPO_CONFIG.info;
+export function AnnouncementAdminCard({ announcement, onDelete }) {
+  const config = TYPE_CONFIG[announcement.type] || TYPE_CONFIG.info;
 
-  const handleEliminar = () => {
+  const handleDelete = () => {
     // Call parent handler with the announcement id
     // Parent component handles confirmation dialog
-    onEliminar?.(anuncio.id);
+    onDelete?.(announcement.id);
   };
 
   return (
     <View style={[styles.container, { borderLeftColor: config.color }]}>
       <View style={styles.header}>
-        <View style={[styles.tipoBadge, { backgroundColor: `${config.color}15` }]}>
+        <View style={[styles.typeBadge, { backgroundColor: `${config.color}15` }]}>
           <Ionicons name={config.icon} size={14} color={config.color} />
-          <Text style={[styles.tipoLabel, { color: config.color }]}>
+          <Text style={[styles.typeLabel, { color: config.color }]}>
             {config.label}
           </Text>
         </View>
 
-        <View style={[styles.destinatariosBadge,
-          anuncio.destinatarios === 'todos' ? styles.destinatariosTodos : styles.destinatariosSeleccionados
+        <View style={[styles.recipientsBadge,
+          announcement.recipients === 'todos' ? styles.recipientsTodos : styles.recipientsSelected
         ]}>
           <Ionicons
-            name={anuncio.destinatarios === 'todos' ? 'people' : 'person'}
+            name={announcement.recipients === 'todos' ? 'people' : 'person'}
             size={12}
-            color={anuncio.destinatarios === 'todos' ? colors.success : colors.primary}
+            color={announcement.recipients === 'todos' ? colors.success : colors.primary}
           />
-          <Text style={[styles.destinatariosLabel,
-            { color: anuncio.destinatarios === 'todos' ? colors.success : colors.primary }
+          <Text style={[styles.recipientsLabel,
+            { color: announcement.recipients === 'todos' ? colors.success : colors.primary }
           ]}>
-            {anuncio.destinatarios === 'todos' ? 'Todos' : 'Seleccionados'}
+            {announcement.recipients === 'todos' ? 'Todos' : 'Seleccionados'}
           </Text>
         </View>
       </View>
 
-      <Text style={styles.titulo} numberOfLines={1}>
-        {anuncio.titulo}
+      <Text style={styles.title} numberOfLines={1}>
+        {announcement.title}
       </Text>
 
-      <Text style={styles.mensaje} numberOfLines={2}>
-        {anuncio.mensaje}
+      <Text style={styles.message} numberOfLines={2}>
+        {announcement.message}
       </Text>
 
       <View style={styles.footer}>
-        <Text style={styles.fecha}>
+        <Text style={styles.date}>
           <Ionicons name="time-outline" size={12} color={colors.disabled} />
-          {' '}{formatearFecha(anuncio.createdAt)}
+          {' '}{formatDate(announcement.createdAt)}
         </Text>
 
         <TouchableOpacity
           style={styles.deleteButton}
-          onPress={handleEliminar}
+          onPress={handleDelete}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="trash-outline" size={18} color={colors.error} />
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 8,
   },
-  tipoBadge: {
+  typeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
@@ -139,11 +139,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     gap: 4,
   },
-  tipoLabel: {
+  typeLabel: {
     fontSize: 11,
     fontWeight: '600',
   },
-  destinatariosBadge: {
+  recipientsBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
@@ -151,23 +151,23 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     gap: 4,
   },
-  destinatariosTodos: {
+  recipientsTodos: {
     backgroundColor: `${colors.success}15`,
   },
-  destinatariosSeleccionados: {
+  recipientsSelected: {
     backgroundColor: `${colors.primary}15`,
   },
-  destinatariosLabel: {
+  recipientsLabel: {
     fontSize: 11,
     fontWeight: '600',
   },
-  titulo: {
+  title: {
     fontSize: 15,
     fontWeight: '600',
     color: colors.text,
     marginBottom: 4,
   },
-  mensaje: {
+  message: {
     fontSize: 13,
     color: colors.textSecondary,
     lineHeight: 18,
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  fecha: {
+  date: {
     fontSize: 12,
     color: colors.disabled,
   },
@@ -188,4 +188,3 @@ const styles = StyleSheet.create({
 });
 
 // Export with English name for consistency
-export { AnuncioAdminCard as AnnouncementAdminCard };

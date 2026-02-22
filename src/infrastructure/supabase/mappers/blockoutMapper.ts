@@ -16,12 +16,12 @@ export function toDomain(row: Record<string, unknown>): Blockout {
 export function toLegacyFormat(blockout: Blockout): Record<string, unknown> {
   return {
     id: blockout.id,
-    pistaId: blockout.courtId,
-    fecha: blockout.date,
-    horaInicio: blockout.startTime,
-    horaFin: blockout.endTime,
-    motivo: blockout.reason,
-    creadoPor: blockout.createdBy,
+    courtId: blockout.courtId,
+    date: blockout.date,
+    startTime: blockout.startTime,
+    endTime: blockout.endTime,
+    reason: blockout.reason,
+    createdBy: blockout.createdBy,
     createdAt: blockout.createdAt,
   };
 }

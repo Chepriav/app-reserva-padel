@@ -14,8 +14,8 @@ import {
   EditApartmentModal,
   AdminHeader,
   AdminTabs,
-  SolicitudesContent,
-  UsuariosContent,
+  RequestsContent,
+  UsersContent,
   LoadingContent,
   ScheduleConfigSection,
   ImportUsersModal,
@@ -24,7 +24,7 @@ import {
 
 export default function AdminScreen() {
   const { user } = useAuth();
-  const [tabActiva, setTabActiva] = useState('solicitudes');
+  const [activeTab, setActiveTab] = useState('requests');
 
   // Import modals state
   const [showImportModal, setShowImportModal] = useState(false);
@@ -32,7 +32,7 @@ export default function AdminScreen() {
   const [importResults, setImportResults] = useState(null);
 
   // Hook de alertas
-  const { alertConfig, mostrarAlerta, mostrarConfirmacion, cerrarAlerta } = useAlert();
+  const { alertConfig, showAlert, showConfirmation, closeAlert } = useAlert();
 
   // Hook de importación
   const { startImport } = useUserImport();
@@ -63,8 +63,8 @@ export default function AdminScreen() {
     handleSaveApartment,
   } = useAdminActions({
     currentUserId: user?.id,
-    mostrarAlerta,
-    mostrarConfirmacion,
+    showAlert,
+    showConfirmation,
     removePendingUser,
     removeChangeRequest,
     updateUser,
@@ -76,14 +76,14 @@ export default function AdminScreen() {
 
   // Cargar datos cuando cambia la tab
   useEffect(() => {
-    loadTabData(tabActiva);
-  }, [tabActiva, loadTabData]);
+    loadTabData(activeTab);
+  }, [activeTab, loadTabData]);
 
   // Handler para guardar vivienda
-  const onSaveVivienda = useCallback(async () => {
-    const { usuario, staircase, floor, door } = editApartmentModal.modalState;
+  const onSaveApartment = useCallback(async () => {
+    const { user, staircase, floor, door } = editApartmentModal.modalState;
     editApartmentModal.setSaving(true);
-    const result = await handleSaveApartment(usuario, staircase, floor, door);
+    const result = await handleSaveApartment(user, staircase, floor, door);
     if (result.success) {
       editApartmentModal.close();
     } else {
@@ -113,7 +113,7 @@ export default function AdminScreen() {
     setShowResultsModal(false);
     setImportResults(null);
     // Reload users list
-    loadTabData('usuarios');
+    loadTabData('users');
   }, [loadTabData]);
 
   // Renderizar contenido según tab activa
@@ -122,32 +122,32 @@ export default function AdminScreen() {
       return <LoadingContent />;
     }
 
-    switch (tabActiva) {
-      case 'solicitudes':
+    switch (activeTab) {
+      case 'requests':
         return (
-          <SolicitudesContent
-            usuariosPendientes={pendingUsers}
-            solicitudesCambio={changeRequests}
-            onAprobar={handleApprove}
-            onRechazar={handleReject}
-            onAprobarCambio={handleApproveApartmentChange}
-            onRechazarCambio={handleRejectApartmentChange}
+          <RequestsContent
+            usersPending={pendingUsers}
+            requestsChange={changeRequests}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            onApproveChange={handleApproveApartmentChange}
+            onRejectChange={handleRejectApartmentChange}
           />
         );
 
-      case 'usuarios':
+      case 'users':
         return (
-          <UsuariosContent
-            usuarios={allUsers}
+          <UsersContent
+            users={allUsers}
             currentUserId={user?.id}
             onToggleAdmin={handleToggleAdmin}
-            onEditVivienda={editApartmentModal.open}
+            onEditApartment={editApartmentModal.open}
             onDelete={handleDeleteUser}
             onImportUsers={handleOpenImport}
           />
         );
 
-      case 'configuracion':
+      case 'configuration':
         return <ScheduleConfigSection userId={user?.id} />;
 
       default:
@@ -160,10 +160,10 @@ export default function AdminScreen() {
       <AdminHeader />
 
       <AdminTabs
-        tabActiva={tabActiva}
-        onTabChange={setTabActiva}
-        contadorSolicitudes={pendingUsers.length + changeRequests.length}
-        contadorUsuarios={allUsers.length}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        requestsCount={pendingUsers.length + changeRequests.length}
+        usersCount={allUsers.length}
       />
 
       <ScrollView
@@ -178,15 +178,15 @@ export default function AdminScreen() {
       {/* Modal editar vivienda */}
       <EditApartmentModal
         visible={editApartmentModal.modalState.visible}
-        usuario={editApartmentModal.modalState.usuario}
-        escalera={editApartmentModal.modalState.staircase}
-        piso={editApartmentModal.modalState.floor}
-        puerta={editApartmentModal.modalState.door}
+        user={editApartmentModal.modalState.user}
+        staircase={editApartmentModal.modalState.staircase}
+        floor={editApartmentModal.modalState.floor}
+        door={editApartmentModal.modalState.door}
         saving={editApartmentModal.modalState.saving}
-        onChangeEscalera={editApartmentModal.setStaircase}
-        onChangePiso={editApartmentModal.setFloor}
-        onChangePuerta={editApartmentModal.setDoor}
-        onSave={onSaveVivienda}
+        onChangeStaircase={editApartmentModal.setStaircase}
+        onChangeFloor={editApartmentModal.setFloor}
+        onChangeDoor={editApartmentModal.setDoor}
+        onSave={onSaveApartment}
         onClose={editApartmentModal.close}
       />
 
@@ -211,7 +211,7 @@ export default function AdminScreen() {
         title={alertConfig.title}
         message={alertConfig.message}
         buttons={alertConfig.buttons}
-        onDismiss={cerrarAlerta}
+        onDismiss={closeAlert}
       />
     </View>
   );

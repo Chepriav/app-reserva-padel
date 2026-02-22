@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { tablonService } from '../../services/bulletinService';
+import { bulletinService } from '../../services/bulletinService';
 
 /**
  * Hook to manage announcements (user view)
@@ -13,7 +13,7 @@ export function useAnnouncements(userId, onCountChange) {
   const loadAnnouncements = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
-    const result = await tablonService.obtenerAnunciosParaUsuario(userId);
+    const result = await bulletinService.getAnnouncementsForUser(userId);
     if (result.success) setAnnouncements(result.data);
     setLoading(false);
   }, [userId]);
@@ -30,13 +30,13 @@ export function useAnnouncements(userId, onCountChange) {
 
   const viewAnnouncement = async (announcement) => {
     setSelectedAnnouncement(announcement);
-    if (!announcement.leido) {
-      const result = await tablonService.marcarAnuncioLeido(announcement.id, userId);
+    if (!announcement.read) {
+      const result = await bulletinService.markAnnouncementRead(announcement.id, userId);
       if (result.success) {
         setAnnouncements((prev) =>
-          prev.map((a) => (a.id === announcement.id ? { ...a, leido: true } : a))
+          prev.map((a) => (a.id === announcement.id ? { ...a, read: true } : a))
         );
-        setSelectedAnnouncement((prev) => (prev ? { ...prev, leido: true } : null));
+        setSelectedAnnouncement((prev) => (prev ? { ...prev, read: true } : null));
         onCountChange?.();
       }
     }
@@ -46,17 +46,17 @@ export function useAnnouncements(userId, onCountChange) {
     const current = selectedAnnouncement;
     setSelectedAnnouncement(null);
 
-    if (current && !current.leido && userId) {
-      const result = await tablonService.marcarAnuncioLeido(current.id, userId);
+    if (current && !current.read && userId) {
+      const result = await bulletinService.markAnnouncementRead(current.id, userId);
       if (result.success) {
         setAnnouncements((prev) =>
-          prev.map((a) => (a.id === current.id ? { ...a, leido: true } : a))
+          prev.map((a) => (a.id === current.id ? { ...a, read: true } : a))
         );
         onCountChange?.();
       }
     }
   };
-  const countUnread = () => announcements.filter((a) => !a.leido).length;
+  const countUnread = () => announcements.filter((a) => !a.read).length;
 
   return {
     announcements, loading, refreshing, selectedAnnouncement,
@@ -77,13 +77,13 @@ export function useAnnouncementsAdmin(userId, onCountChange) {
 
   const loadAnnouncements = useCallback(async () => {
     setLoading(true);
-    const result = await tablonService.obtenerTodosAnuncios();
+    const result = await bulletinService.getAllAnnouncements();
     if (result.success) setAnnouncements(result.data);
     setLoading(false);
   }, []);
 
   const loadUsers = useCallback(async () => {
-    const result = await tablonService.obtenerUsuariosAprobados();
+    const result = await bulletinService.getApprovedUsers();
     if (result.success) setUsers(result.data);
     return result;
   }, []);
@@ -104,7 +104,7 @@ export function useAnnouncementsAdmin(userId, onCountChange) {
     setSelectedAnnouncement(null);
 
     if (current && userId) {
-      await tablonService.marcarAnuncioLeido(current.id, userId);
+      await bulletinService.markAnnouncementRead(current.id, userId);
       onCountChange?.();
     }
   };
@@ -112,24 +112,24 @@ export function useAnnouncementsAdmin(userId, onCountChange) {
 
   const createAnnouncement = async (announcementData) => {
     setCreating(true);
-    const result = await tablonService.crearAnuncio(
+    const result = await bulletinService.createAnnouncement(
       userId,
       announcementData.userName || 'Admin',
-      announcementData.titulo,
-      announcementData.mensaje,
-      announcementData.tipo,
-      announcementData.destinatarios,
-      announcementData.usuariosIds
+      announcementData.title,
+      announcementData.message,
+      announcementData.type,
+      announcementData.recipients,
+      announcementData.usersIds
     );
 
     if (result.success) {
       try {
         const { notificationService } = require('../../services/notificationService');
-        await notificationService.notifyNuevoAnuncio(
-          announcementData.titulo,
-          announcementData.mensaje,
+        await notificationService.notifyNuevoAnnouncement(
+          announcementData.title,
+          announcementData.message,
           result.data.id,
-          announcementData.destinatarios === 'todos' ? undefined : announcementData.usuariosIds
+          announcementData.recipients === 'todos' ? undefined : announcementData.usersIds
         );
       } catch (notifError) {
         console.error('[useAnnouncements] Notification error:', notifError);
@@ -143,7 +143,7 @@ export function useAnnouncementsAdmin(userId, onCountChange) {
   };
 
   const deleteAnnouncement = async (announcementId) => {
-    const result = await tablonService.eliminarAnuncio(announcementId);
+    const result = await bulletinService.deleteAnnouncement(announcementId);
     if (result.success) {
       setAnnouncements((prev) => prev.filter((a) => a.id !== announcementId));
       onCountChange?.();

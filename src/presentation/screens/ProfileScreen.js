@@ -21,12 +21,12 @@ import { useApartmentChange } from '../hooks/profile/useApartmentChange';
 import { useProfileActions } from '../hooks/profile/useProfileActions';
 import { authService } from '../../services/authService.supabase';
 
-export default function PerfilScreen() {
+export default function ProfileScreen() {
   const { user, logout, updateProfile, refreshUser, notificationMessage, clearNotificationMessage } = useAuth();
 
   const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', buttons: [] });
-  const [usuariosVivienda, setUsuariosVivienda] = useState([]);
-  const [loadingUsuarios, setLoadingUsuarios] = useState(false);
+  const [apartmentUsers, setApartmentUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   const showAlert = (title, message, buttons = [{ text: 'OK', onPress: () => {} }]) => {
     setAlertConfig({ visible: true, title, message, buttons });
@@ -40,14 +40,14 @@ export default function PerfilScreen() {
   // Load users in same apartment
   useEffect(() => {
     const load = async () => {
-      if (!user?.vivienda) return;
-      setLoadingUsuarios(true);
-      const result = await authService.getUsuariosMismaVivienda(user.vivienda);
-      if (result.success) setUsuariosVivienda(result.data);
-      setLoadingUsuarios(false);
+      if (!user?.apartment) return;
+      setLoadingUsers(true);
+      const result = await authService.getUsersMismaApartment(user.apartment);
+      if (result.success) setApartmentUsers(result.data);
+      setLoadingUsers(false);
     };
     load();
-  }, [user?.vivienda]);
+  }, [user?.apartment]);
 
   // Show notification message if arriving from push
   useEffect(() => {
@@ -66,7 +66,7 @@ export default function PerfilScreen() {
       <ProfileHeader
         user={user}
         editMode={edit.editMode}
-        fotoPerfil={edit.fotoPerfil}
+        profilePhoto={edit.profilePhoto}
         imageError={edit.imageError}
         onImageError={() => edit.setImageError(true)}
         onPickImage={edit.handlePickImage}
@@ -77,22 +77,22 @@ export default function PerfilScreen() {
       <ProfilePersonalInfo
         user={user}
         editMode={edit.editMode}
-        nombre={edit.nombre} setNombre={edit.setNombre}
-        telefono={edit.telefono} setTelefono={edit.setTelefono}
-        escalera={edit.escalera} setEscalera={edit.setEscalera}
-        piso={edit.piso} setPiso={edit.setPiso}
-        puerta={edit.puerta} setPuerta={edit.setPuerta}
-        nivelJuego={edit.nivelJuego} setNivelJuego={edit.setNivelJuego}
-        showNivelPicker={edit.showNivelPicker} setShowNivelPicker={edit.setShowNivelPicker}
-        cancelingSolicitud={apartment.cancelingSolicitud}
-        onCancelarSolicitud={apartment.handleCancelarSolicitud}
-        onSolicitarCambio={apartment.openSolicitudModal}
+        name={edit.name} setName={edit.setName}
+        phone={edit.phone} setPhone={edit.setPhone}
+        staircase={edit.staircase} setStaircase={edit.setStaircase}
+        floor={edit.floor} setFloor={edit.setFloor}
+        door={edit.door} setDoor={edit.setDoor}
+        skillLevel={edit.skillLevel} setSkillLevel={edit.setSkillLevel}
+        showLevelPicker={edit.showLevelPicker} setShowLevelPicker={edit.setShowLevelPicker}
+        cancelingRequest={apartment.cancelingRequest}
+        onCancelRequest={apartment.handleCancelRequest}
+        onRequestChange={apartment.openRequestModal}
       />
 
       <ProfileApartmentUsers
         user={user}
-        usuariosVivienda={usuariosVivienda}
-        loadingUsuarios={loadingUsuarios}
+        apartmentUsers={apartmentUsers}
+        loadingUsers={loadingUsers}
       />
 
       {/* Save/Cancel buttons in edit mode */}
@@ -106,7 +106,7 @@ export default function PerfilScreen() {
             {edit.saving ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.saveButtonText}>Guardar Cambios</Text>
+              <Text style={styles.saveButtonText}>Guardar cambios</Text>
             )}
           </TouchableOpacity>
           <TouchableOpacity style={styles.cancelButton} onPress={edit.cancelEdit} disabled={edit.saving}>
@@ -125,18 +125,18 @@ export default function PerfilScreen() {
           {notifications.enablingNotifications ? (
             <ActivityIndicator color="#fff" size="small" />
           ) : (
-            <Text style={styles.notificationButtonText}>🔔 Activar Notificaciones</Text>
+            <Text style={styles.notificationButtonText}>🔔 Activar notificaciones</Text>
           )}
         </TouchableOpacity>
       )}
 
       <TouchableOpacity style={styles.logoutButton} onPress={actions.handleLogout}>
-        <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
+        <Text style={styles.logoutButtonText}>Cerrar sesión</Text>
       </TouchableOpacity>
 
       {/* Danger zone */}
       <View style={styles.dangerSection}>
-        <Text style={styles.dangerSectionTitle}>Zona de Peligro</Text>
+        <Text style={styles.dangerSectionTitle}>Zona de peligro</Text>
         <View style={styles.dangerCard}>
           <Text style={styles.dangerText}>
             Eliminar tu cuenta borrará permanentemente todos tus datos y reservas.
@@ -158,10 +158,10 @@ export default function PerfilScreen() {
       <Text style={styles.footer}>Desarrollado con React Native y Expo</Text>
 
       <ApartmentChangeModal
-        solicitudModal={apartment.solicitudModal}
-        setSolicitudModal={apartment.setSolicitudModal}
-        onClose={apartment.closeSolicitudModal}
-        onSubmit={apartment.handleEnviarSolicitud}
+        requestModal={apartment.requestModal}
+        setRequestModal={apartment.setRequestModal}
+        onClose={apartment.closeRequestModal}
+        onSubmit={apartment.handleSubmitRequest}
       />
 
       <CustomAlert

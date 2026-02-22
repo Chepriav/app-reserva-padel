@@ -15,11 +15,11 @@ export function toDomain(row: Record<string, unknown>): DisplacementNotification
 export function toLegacyFormat(n: DisplacementNotification): Record<string, unknown> {
   return {
     id: n.id,
-    fechaReserva: n.reservationDate,
-    horaInicio: n.startTime,
-    horaFin: n.endTime,
-    pistaNombre: n.courtName,
-    desplazadoPorVivienda: n.displacedByApartment,
+    reservationDate: n.reservationDate,
+    startTime: n.startTime,
+    endTime: n.endTime,
+    courtName: n.courtName,
+    displacedByApartment: n.displacedByApartment,
     createdAt: n.createdAt,
   };
 }

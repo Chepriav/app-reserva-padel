@@ -4,24 +4,24 @@ import { useState, useCallback } from 'react';
  * Hook to manage time slot selection for reservations
  * Handles multi-selection logic and consecutiveness validation
  */
-export function useSlotSelection({ mostrarAlerta }) {
+export function useSlotSelection({ showAlerta }) {
   const [selectedSlots, setSelectedSlots] = useState([]);
 
   // Validate that slots are consecutive
   const areSlotsConsecutive = useCallback((slots) => {
     if (slots.length <= 1) return true;
 
-    const primeraFecha = slots[0].fecha;
-    if (!slots.every(b => b.fecha === primeraFecha)) {
+    const primeraDate = slots[0].date;
+    if (!slots.every(b => b.date === primeraDate)) {
       return false;
     }
 
-    const bloquesOrdenados = [...slots].sort((a, b) =>
-      a.horaInicio.localeCompare(b.horaInicio)
+    const slotsOrdenados = [...slots].sort((a, b) =>
+      a.startTime.localeCompare(b.startTime)
     );
 
-    for (let i = 0; i < bloquesOrdenados.length - 1; i++) {
-      if (bloquesOrdenados[i].horaFin !== bloquesOrdenados[i + 1].horaInicio) {
+    for (let i = 0; i < slotsOrdenados.length - 1; i++) {
+      if (slotsOrdenados[i].endTime !== slotsOrdenados[i + 1].startTime) {
         return false;
       }
     }
@@ -30,42 +30,42 @@ export function useSlotSelection({ mostrarAlerta }) {
   }, []);
 
   // Select/deselect a time slot
-  const toggleSlotSelected = useCallback((horario, fechaReserva) => {
-    const yaSeleccionado = selectedSlots.some(b =>
-      b.fecha === fechaReserva && b.horaInicio === horario.horaInicio
+  const toggleSlotSelected = useCallback((timeSlot, reservationDate) => {
+    const yaSelected = selectedSlots.some(b =>
+      b.date === reservationDate && b.startTime === timeSlot.startTime
     );
 
-    if (yaSeleccionado) {
+    if (yaSelected) {
       setSelectedSlots(prev => prev.filter(b =>
-        !(b.fecha === fechaReserva && b.horaInicio === horario.horaInicio)
+        !(b.date === reservationDate && b.startTime === timeSlot.startTime)
       ));
       return;
     }
 
     if (selectedSlots.length >= 3) {
-      mostrarAlerta('Máximo 3 bloques', 'Solo puedes seleccionar hasta 3 bloques consecutivos (1.5 horas)');
+      showAlerta('Máximo 3 bloques', 'Solo puedes seleccionar hasta 3 bloques consecutivos (1.5 horas)');
       return;
     }
 
-    const esDesplazable = !horario.disponible && horario.prioridad === 'segunda' && !horario.estaProtegida;
+    const isDisplaceable = !timeSlot.available && timeSlot.priority === 'provisional' && !timeSlot.isProtected;
 
-    const nuevoBloque = {
-      fecha: fechaReserva,
-      horaInicio: horario.horaInicio,
-      horaFin: horario.horaFin,
-      esDesplazable,
-      viviendaDesplazada: esDesplazable ? horario.reservaExistente?.vivienda : null,
+    const nuevoSlot = {
+      date: reservationDate,
+      startTime: timeSlot.startTime,
+      endTime: timeSlot.endTime,
+      isDisplaceable,
+      apartmentDisplaced: isDisplaceable ? timeSlot.existingReservation?.apartment : null,
     };
 
-    const nuevaSeleccion = [...selectedSlots, nuevoBloque];
+    const nuevaSelection = [...selectedSlots, nuevoSlot];
 
-    if (!areSlotsConsecutive(nuevaSeleccion)) {
-      mostrarAlerta('Bloques no consecutivos', 'Los bloques deben ser consecutivos y del mismo día');
+    if (!areSlotsConsecutive(nuevaSelection)) {
+      showAlerta('Bloques no consecutivos', 'Los bloques deben ser consecutivos y del mismo día');
       return;
     }
 
-    setSelectedSlots(nuevaSeleccion);
-  }, [selectedSlots, mostrarAlerta, areSlotsConsecutive]);
+    setSelectedSlots(nuevaSelection);
+  }, [selectedSlots, showAlerta, areSlotsConsecutive]);
 
   const clearSelection = useCallback(() => {
     setSelectedSlots([]);
@@ -75,16 +75,16 @@ export function useSlotSelection({ mostrarAlerta }) {
   const getReservationData = useCallback(() => {
     if (selectedSlots.length === 0) return null;
 
-    const bloquesOrdenados = [...selectedSlots].sort((a, b) =>
-      a.horaInicio.localeCompare(b.horaInicio)
+    const slotsOrdenados = [...selectedSlots].sort((a, b) =>
+      a.startTime.localeCompare(b.startTime)
     );
 
     return {
-      horaInicio: bloquesOrdenados[0].horaInicio,
-      horaFin: bloquesOrdenados[bloquesOrdenados.length - 1].horaFin,
-      fecha: bloquesOrdenados[0].fecha,
-      duracionMinutos: selectedSlots.length * 30,
-      bloquesDesplazables: bloquesOrdenados.filter(b => b.esDesplazable),
+      startTime: slotsOrdenados[0].startTime,
+      endTime: slotsOrdenados[slotsOrdenados.length - 1].endTime,
+      date: slotsOrdenados[0].date,
+      durationMinutos: selectedSlots.length * 30,
+      slotsDesplazables: slotsOrdenados.filter(b => b.isDisplaceable),
     };
   }, [selectedSlots]);
 

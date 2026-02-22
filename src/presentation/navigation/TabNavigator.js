@@ -15,7 +15,7 @@ const Tab = createBottomTabNavigator();
 
 export default function TabNavigator() {
   const { user } = useAuth();
-  const esAdmin = user?.esAdmin;
+  const isAdmin = user?.isAdmin;
   const { totalCount } = useBulletinCounter(user?.id);
 
   return (
@@ -81,7 +81,7 @@ export default function TabNavigator() {
           ),
         }}
       />
-      {esAdmin && (
+      {isAdmin && (
         <Tab.Screen
           name="Admin"
           component={AdminScreen}

@@ -11,48 +11,48 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../../constants/colors';
 
-export function SelectorDestinatarios({
-  usuarios,
-  seleccionados,
-  onSeleccionChange,
+export function SelectorRecipients({
+  users,
+  selected,
+  onSelectionChange,
   loading,
 }) {
   const [busqueda, setBusqueda] = useState('');
 
-  const usuariosFiltrados = useMemo(() => {
-    if (!busqueda.trim()) return usuarios;
+  const usersFiltrados = useMemo(() => {
+    if (!busqueda.trim()) return users;
     const termino = busqueda.toLowerCase();
-    return usuarios.filter(
+    return users.filter(
       u =>
-        u.nombre.toLowerCase().includes(termino) ||
-        u.vivienda.toLowerCase().includes(termino) ||
+        u.name.toLowerCase().includes(termino) ||
+        u.apartment.toLowerCase().includes(termino) ||
         u.email.toLowerCase().includes(termino)
     );
-  }, [usuarios, busqueda]);
+  }, [users, busqueda]);
 
-  const toggleUsuario = (userId) => {
-    if (seleccionados.includes(userId)) {
-      onSeleccionChange(seleccionados.filter(id => id !== userId));
+  const toggleUser = (userId) => {
+    if (selected.includes(userId)) {
+      onSelectionChange(selected.filter(id => id !== userId));
     } else {
-      onSeleccionChange([...seleccionados, userId]);
+      onSelectionChange([...selected, userId]);
     }
   };
 
-  const seleccionarTodos = () => {
-    if (seleccionados.length === usuariosFiltrados.length) {
-      onSeleccionChange([]);
+  const selectTodos = () => {
+    if (selected.length === usersFiltrados.length) {
+      onSelectionChange([]);
     } else {
-      onSeleccionChange(usuariosFiltrados.map(u => u.id));
+      onSelectionChange(usersFiltrados.map(u => u.id));
     }
   };
 
-  const renderUsuario = ({ item }) => {
-    const isSelected = seleccionados.includes(item.id);
+  const renderUser = ({ item }) => {
+    const isSelected = selected.includes(item.id);
 
     return (
       <TouchableOpacity
-        style={[styles.usuarioItem, isSelected && styles.usuarioItemSelected]}
-        onPress={() => toggleUsuario(item.id)}
+        style={[styles.userItem, isSelected && styles.userItemSelected]}
+        onPress={() => toggleUser(item.id)}
         activeOpacity={0.7}
       >
         <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
@@ -60,9 +60,9 @@ export function SelectorDestinatarios({
             <Ionicons name="checkmark" size={14} color="#fff" />
           )}
         </View>
-        <View style={styles.usuarioInfo}>
-          <Text style={styles.usuarioNombre}>{item.nombre}</Text>
-          <Text style={styles.usuarioVivienda}>{item.vivienda}</Text>
+        <View style={styles.userInfo}>
+          <Text style={styles.userName}>{item.name}</Text>
+          <Text style={styles.userApartment}>{item.apartment}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -71,7 +71,7 @@ export function SelectorDestinatarios({
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Cargando usuarios...</Text>
+        <Text style={styles.loadingText}>Cargando users...</Text>
       </View>
     );
   }
@@ -80,11 +80,11 @@ export function SelectorDestinatarios({
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.label}>
-          Seleccionar destinatarios ({seleccionados.length})
+          Select recipients ({selected.length})
         </Text>
-        <TouchableOpacity onPress={seleccionarTodos}>
+        <TouchableOpacity onPress={selectTodos}>
           <Text style={styles.selectAllText}>
-            {seleccionados.length === usuariosFiltrados.length ? 'Deseleccionar' : 'Seleccionar todos'}
+            {selected.length === usersFiltrados.length ? 'Deseleccionar' : 'Seleccionar todos'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -106,14 +106,14 @@ export function SelectorDestinatarios({
       </View>
 
       <FlatList
-        data={usuariosFiltrados}
-        renderItem={renderUsuario}
+        data={usersFiltrados}
+        renderItem={renderUser}
         keyExtractor={item => item.id}
         style={styles.list}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>No se encontraron usuarios</Text>
+          <Text style={styles.emptyText}>No se encontraron users</Text>
         }
       />
     </View>
@@ -169,13 +169,13 @@ const styles = StyleSheet.create({
   listContent: {
     paddingVertical: 4,
   },
-  usuarioItem: {
+  userItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  usuarioItemSelected: {
+  userItemSelected: {
     backgroundColor: `${colors.primary}10`,
   },
   checkbox: {
@@ -192,15 +192,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
-  usuarioInfo: {
+  userInfo: {
     flex: 1,
   },
-  usuarioNombre: {
+  userName: {
     fontSize: 14,
     fontWeight: '500',
     color: colors.text,
   },
-  usuarioVivienda: {
+  userApartment: {
     fontSize: 12,
     color: colors.textSecondary,
     marginTop: 2,
@@ -220,4 +220,4 @@ const styles = StyleSheet.create({
 });
 
 // Re-export with English name
-export { SelectorDestinatarios as RecipientsSelector };
+export { SelectorRecipients as RecipientsSelector };

@@ -36,7 +36,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  reservaCard: {
+  reservationCard: {
     backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
@@ -47,80 +47,80 @@ export const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  reservaHeader: {
+  reservationHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
-  pistaNombre: {
+  courtName: {
     fontSize: 20,
     fontWeight: '600',
     color: colors.text,
   },
-  estadoBadge: {
+  statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
   },
-  estadoConfirmada: {
+  statusConfirmada: {
     backgroundColor: colors.secondary,
   },
-  estadoCancelada: {
+  statusCancelled: {
     backgroundColor: colors.error,
   },
-  estadoCompletada: {
+  statusCompletada: {
     backgroundColor: colors.disabled,
   },
-  estadoText: {
+  statusText: {
     fontSize: 12,
     color: '#fff',
     fontWeight: '500',
   },
-  reservaInfo: {
+  reservationInfo: {
     marginBottom: 12,
   },
-  fecha: {
+  date: {
     fontSize: 16,
     color: colors.text,
     marginBottom: 4,
   },
-  horario: {
+  timeSlot: {
     fontSize: 18,
     fontWeight: '600',
     color: colors.primary,
     marginBottom: 8,
   },
-  reservadoPor: {
+  reservedBy: {
     fontSize: 14,
     color: colors.textSecondary,
     fontStyle: 'italic',
     marginBottom: 4,
   },
-  jugadoresContainer: {
+  playersContainer: {
     marginTop: 8,
     padding: 12,
     backgroundColor: colors.background,
     borderRadius: 8,
   },
-  jugadoresLabel: {
+  playersLabel: {
     fontSize: 14,
     fontWeight: '600',
     color: colors.text,
     marginBottom: 4,
   },
-  jugadorNombre: {
+  playerName: {
     fontSize: 14,
     color: colors.textSecondary,
     marginTop: 2,
   },
-  cancelarButton: {
+  cancelButton: {
     backgroundColor: colors.error,
     borderRadius: 8,
     padding: 12,
     alignItems: 'center',
   },
-  cancelarButtonText: {
+  cancelButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
@@ -146,37 +146,37 @@ export const styles = StyleSheet.create({
     gap: 8,
     flexWrap: 'wrap',
   },
-  prioridadBadge: {
+  priorityBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
-  prioridadGarantizada: {
-    backgroundColor: colors.reservaGarantizada,
+  guaranteedPriority: {
+    backgroundColor: colors.guaranteedReservation,
   },
-  prioridadProvisional: {
-    backgroundColor: colors.reservaProvisional,
+  provisionalPriority: {
+    backgroundColor: colors.provisionalReservation,
   },
-  prioridadText: {
+  priorityText: {
     fontSize: 11,
     color: '#fff',
     fontWeight: '600',
   },
-  avisoProvisional: {
+  noticeProvisional: {
     marginTop: 12,
     padding: 12,
     backgroundColor: '#fffbeb',
     borderRadius: 8,
     borderLeftWidth: 3,
-    borderLeftColor: colors.reservaProvisional,
+    borderLeftColor: colors.provisionalReservation,
   },
-  avisoProvisionalText: {
+  noticeProvisionalText: {
     fontSize: 13,
     color: colors.text,
     lineHeight: 18,
   },
-  estadoDisfrutada: {
-    backgroundColor: colors.reservaPasada,
+  statusDisfrutada: {
+    backgroundColor: colors.pastReservation,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,

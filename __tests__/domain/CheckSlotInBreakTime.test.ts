@@ -127,16 +127,16 @@ describe('CheckSlotInBreakTime', () => {
 
   describe('filterSlots', () => {
     const slots = [
-      { horaInicio: '12:00', horaFin: '12:30' },
-      { horaInicio: '14:00', horaFin: '14:30' },
-      { horaInicio: '15:00', horaFin: '15:30' },
+      { startTime: '12:00', endTime: '12:30' },
+      { startTime: '14:00', endTime: '14:30' },
+      { startTime: '15:00', endTime: '15:30' },
     ];
 
     it('removes slots that overlap with break', () => {
       const filtered = useCase.filterSlots(slots, configWithBreak, wednesday);
       expect(filtered).toHaveLength(2);
-      expect(filtered[0].horaInicio).toBe('12:00');
-      expect(filtered[1].horaInicio).toBe('15:00');
+      expect(filtered[0].startTime).toBe('12:00');
+      expect(filtered[1].startTime).toBe('15:00');
     });
   });
 });

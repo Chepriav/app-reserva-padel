@@ -54,7 +54,7 @@ const translateError = (error) => {
   return ERROR_MESSAGES[error?.code] || error?.message || 'Ha ocurrido un error. Intenta de nuevo';
 };
 
-export const reservasService = {
+export const reservationsService = {
   /**
    * Gets the list of available courts
    */
@@ -80,8 +80,8 @@ export const reservasService = {
   /**
    * Gets reservations for a specific apartment
    */
-  async getReservationsByApartment(vivienda) {
-    const result = await getReservationsByApartment.execute(vivienda);
+  async getReservationsByApartment(apartment) {
+    const result = await getReservationsByApartment.execute(apartment);
     if (!result.success) {
       return { success: false, error: 'Error al obtener reservas de la vivienda' };
     }
@@ -91,8 +91,8 @@ export const reservasService = {
   /**
    * Gets confirmed reservations for a specific date
    */
-  async getReservationsByDate(fecha) {
-    const result = await getReservationsByDate.execute(fecha);
+  async getReservationsByDate(date) {
+    const result = await getReservationsByDate.execute(date);
     if (!result.success) {
       return { success: false, error: 'Error al obtener disponibilidad' };
     }
@@ -102,8 +102,8 @@ export const reservasService = {
   /**
    * Gets schedule availability for a court on a specific date
    */
-  async getAvailability(pistaId, fecha) {
-    const result = await getAvailability.execute(pistaId, fecha);
+  async getAvailability(courtId, date) {
+    const result = await getAvailability.execute(courtId, date);
     if (!result.success) {
       return { success: false, error: 'Error al verificar disponibilidad' };
     }
@@ -113,8 +113,8 @@ export const reservasService = {
   /**
    * Gets active future reservations for an apartment
    */
-  async getActiveApartmentReservations(vivienda) {
-    const result = await getActiveApartmentReservations.execute(vivienda);
+  async getActiveApartmentReservations(apartment) {
+    const result = await getActiveApartmentReservations.execute(apartment);
     if (!result.success) return [];
     return result.value.map(reservationToLegacy);
   },
@@ -122,13 +122,13 @@ export const reservasService = {
   /**
    * Determines what priority a new reservation will have
    */
-  async getPriorityForNewReservation(vivienda) {
-    const result = await getActiveApartmentReservations.execute(vivienda);
-    if (!result.success) return 'primera';
+  async getPriorityForNewReservation(apartment) {
+    const result = await getActiveApartmentReservations.execute(apartment);
+    if (!result.success) return 'guaranteed';
 
     const count = result.value.length;
-    if (count === 0) return 'primera';
-    if (count === 1) return 'segunda';
+    if (count === 0) return 'guaranteed';
+    if (count === 1) return 'provisional';
     return null;
   },
 
@@ -136,33 +136,33 @@ export const reservasService = {
    * Displaces a secondary reservation (legacy facade — direct call)
    * @deprecated Use createReservation with forceDisplacement instead
    */
-  async displaceReservation(reservaADesplazar, viviendaDesplazadora) {
+  async displaceReservation(reservationToDisplace, displacingApartment) {
     const { displaceReservation: displace } = await import('../di/container');
     const { toDomain } = await import('../infrastructure/supabase/mappers/reservationMapper');
 
     // Convert legacy format to domain entity
     const domainReservation = {
-      id: reservaADesplazar.id,
-      courtId: reservaADesplazar.pistaId,
-      courtName: reservaADesplazar.pistaNombre,
-      userId: reservaADesplazar.usuarioId,
-      userName: reservaADesplazar.usuarioNombre,
-      apartment: reservaADesplazar.vivienda,
-      date: reservaADesplazar.fecha,
-      startTime: reservaADesplazar.horaInicio,
-      endTime: reservaADesplazar.horaFin,
-      duration: reservaADesplazar.duracion || 30,
+      id: reservationToDisplace.id,
+      courtId: reservationToDisplace.courtId,
+      courtName: reservationToDisplace.courtName,
+      userId: reservationToDisplace.userId,
+      userName: reservationToDisplace.userName,
+      apartment: reservationToDisplace.apartment,
+      date: reservationToDisplace.date,
+      startTime: reservationToDisplace.startTime,
+      endTime: reservationToDisplace.endTime,
+      duration: reservationToDisplace.duration || 30,
       status: 'confirmed',
       priority: 'provisional',
-      players: reservaADesplazar.jugadores || [],
+      players: reservationToDisplace.players || [],
       conversionTimestamp: null,
       conversionRule: null,
       convertedAt: null,
-      createdAt: reservaADesplazar.createdAt || '',
-      updatedAt: reservaADesplazar.updatedAt || '',
+      createdAt: reservationToDisplace.createdAt || '',
+      updatedAt: reservationToDisplace.updatedAt || '',
     };
 
-    const result = await displace.execute(domainReservation, viviendaDesplazadora);
+    const result = await displace.execute(domainReservation, displacingApartment);
     if (!result.success) {
       return { success: false, error: 'Error al desplazar la reserva' };
     }
@@ -173,8 +173,8 @@ export const reservasService = {
    * Creates a new reservation with business validations.
    * Returns { requiereConfirmacion, reservaADesplazar } when displacement is needed.
    */
-  async createReservation(reservaData) {
-    const domainData = fromLegacyCreateData(reservaData);
+  async createReservation(reservationData) {
+    const domainData = fromLegacyCreateData(reservationData);
     const result = await createReservation.execute(domainData);
 
     if (!result.success) {
@@ -183,7 +183,7 @@ export const reservasService = {
         return {
           success: false,
           requiereConfirmacion: true,
-          reservaADesplazar: reservationToLegacy(result.error.reservationToDisplace),
+          reservationADisplace: reservationToLegacy(result.error.reservationToDisplace),
           error: 'Este horario tiene una reserva provisional que será desplazada',
         };
       }
@@ -196,8 +196,8 @@ export const reservasService = {
   /**
    * Cancels an existing reservation
    */
-  async cancelReservation(reservaId, usuarioId, viviendaUsuario = null) {
-    const result = await cancelReservation.execute(reservaId, usuarioId, viviendaUsuario || undefined);
+  async cancelReservation(reservationId, userId, apartmentUser = null) {
+    const result = await cancelReservation.execute(reservationId, userId, apartmentUser || undefined);
     if (!result.success) {
       return { success: false, error: translateError(result.error) };
     }
@@ -227,11 +227,11 @@ export const reservasService = {
     return {
       success: true,
       data: {
-        totalReservas: s.totalReservations,
-        reservasConfirmadas: s.confirmedReservations,
-        reservasCanceladas: s.cancelledReservations,
-        reservasHoy: s.todayReservations,
-        reservasSemana: s.weekReservations,
+        totalReservations: s.totalReservations,
+        reservationsConfirmadas: s.confirmedReservations,
+        reservationsCanceladas: s.cancelledReservations,
+        reservationsToday: s.todayReservations,
+        reservationsWeek: s.weekReservations,
       },
     };
   },
@@ -239,8 +239,8 @@ export const reservasService = {
   /**
    * Gets unread displacement notifications for user
    */
-  async getPendingNotifications(usuarioId) {
-    const result = await getPendingDisplacementNotifications.execute(usuarioId);
+  async getPendingNotifications(userId) {
+    const result = await getPendingDisplacementNotifications.execute(userId);
     if (!result.success) {
       return { success: false, error: 'Error al obtener notificaciones' };
     }
@@ -250,8 +250,8 @@ export const reservasService = {
   /**
    * Marks all user's notifications as read
    */
-  async markNotificationsAsRead(usuarioId) {
-    const result = await markDisplacementNotificationsRead.execute(usuarioId);
+  async markNotificationsAsRead(userId) {
+    const result = await markDisplacementNotificationsRead.execute(userId);
     if (!result.success) {
       return { success: false, error: 'Error al marcar notificaciones' };
     }
@@ -262,26 +262,26 @@ export const reservasService = {
    * Creates a reservation using RPC (legacy method — now delegates to createReservation)
    * The CreateReservation use case already tries RPC first internally.
    */
-  async createReservationWithRPC(reservaData) {
-    return this.createReservation({ ...reservaData, forzarDesplazamiento: false });
+  async createReservationWithRPC(reservationData) {
+    return this.createReservation({ ...reservationData, forceDisplacement: false });
   },
 
   /**
    * Displaces a provisional reservation and creates a new guaranteed one
    * (legacy method — now delegates to createReservation with forceDisplacement)
    */
-  async displaceAndCreateReservation(reservaADesplazar, nuevaReservaData) {
+  async displaceAndCreateReservation(reservationToDisplace, newReservationData) {
     return this.createReservation({
-      ...nuevaReservaData,
-      forzarDesplazamiento: true,
+      ...newReservationData,
+      forceDisplacement: true,
     });
   },
 
   /**
    * Gets conversion information for a provisional reservation
    */
-  async getConversionInfo(reservaId) {
-    const result = await getConversionInfo.execute(reservaId);
+  async getConversionInfo(reservationId) {
+    const result = await getConversionInfo.execute(reservationId);
     if (!result.success) {
       return { success: false, error: 'Error al obtener información de conversión' };
     }
@@ -293,11 +293,11 @@ export const reservasService = {
       success: true,
       data: {
         id: c.id,
-        prioridad: c.priority === 'guaranteed' ? 'primera' : 'segunda',
+        priority: c.priority,
         conversionTimestamp: c.conversionTimestamp,
         conversionRule: c.conversionRule,
         convertedAt: c.convertedAt,
-        tiempoRestante: c.timeRemaining,
+        timeRemaining: c.timeRemaining,
       },
     };
   },
@@ -305,8 +305,8 @@ export const reservasService = {
   /**
    * Forces recalculation of conversions for an apartment
    */
-  async recalculateApartmentConversions(vivienda) {
-    const result = await recalculateApartmentConversions.execute(vivienda);
+  async recalculateApartmentConversions(apartment) {
+    const result = await recalculateApartmentConversions.execute(apartment);
     if (!result.success) {
       return { success: false, error: 'Error al recalcular conversiones' };
     }
@@ -316,8 +316,8 @@ export const reservasService = {
   /**
    * Gets schedule blockouts for a court on a specific date
    */
-  async getBlockouts(pistaId, fecha) {
-    const result = await getBlockouts.execute(fecha, pistaId);
+  async getBlockouts(courtId, date) {
+    const result = await getBlockouts.execute(date, courtId);
     if (!result.success) {
       return { success: false, error: 'Error al obtener bloqueos' };
     }
@@ -327,14 +327,14 @@ export const reservasService = {
   /**
    * Creates a schedule blockout (admin only)
    */
-  async createBlockout(pistaId, fecha, horaInicio, horaFin, motivo, creadoPor) {
+  async createBlockout(courtId, date, startTime, endTime, reason, createdBy) {
     const result = await createBlockout.execute({
-      courtId: pistaId,
-      date: fecha,
-      startTime: horaInicio,
-      endTime: horaFin,
-      reason: motivo || undefined,
-      createdBy: creadoPor,
+      courtId: courtId,
+      date: date,
+      startTime: startTime,
+      endTime: endTime,
+      reason: reason || undefined,
+      createdBy: createdBy,
     });
     if (!result.success) {
       return { success: false, error: translateError(result.error) };
@@ -345,8 +345,8 @@ export const reservasService = {
   /**
    * Deletes a schedule blockout (admin only)
    */
-  async deleteBlockout(bloqueoId) {
-    const result = await deleteBlockout.execute(bloqueoId);
+  async deleteBlockout(blockoutId) {
+    const result = await deleteBlockout.execute(blockoutId);
     if (!result.success) {
       return { success: false, error: 'Error al eliminar bloqueo' };
     }
@@ -356,28 +356,14 @@ export const reservasService = {
   // ============================================================================
   // LEGACY ALIASES
   // ============================================================================
-  obtenerPistas(...args) { return this.getCourts(...args); },
-  obtenerReservasUsuario(...args) { return this.getUserReservations(...args); },
-  obtenerReservasPorVivienda(...args) { return this.getReservationsByApartment(...args); },
-  obtenerReservasPorFecha(...args) { return this.getReservationsByDate(...args); },
-  obtenerDisponibilidad(...args) { return this.getAvailability(...args); },
-  obtenerReservasActivasVivienda(...args) { return this.getActiveApartmentReservations(...args); },
-  obtenerPrioridadParaNuevaReserva(...args) { return this.getPriorityForNewReservation(...args); },
-  desplazarReserva(...args) { return this.displaceReservation(...args); },
-  crearReserva(...args) { return this.createReservation(...args); },
-  cancelarReserva(...args) { return this.cancelReservation(...args); },
-  obtenerTodasReservas(...args) { return this.getAllReservations(...args); },
-  obtenerEstadisticas(...args) { return this.getStatistics(...args); },
-  obtenerNotificacionesPendientes(...args) { return this.getPendingNotifications(...args); },
-  marcarNotificacionesLeidas(...args) { return this.markNotificationsAsRead(...args); },
-  crearReservaConRPC(...args) { return this.createReservationWithRPC(...args); },
-  desplazarReservaYCrear(...args) { return this.displaceAndCreateReservation(...args); },
-  obtenerInfoConversion(...args) { return this.getConversionInfo(...args); },
-  recalcularConversionesVivienda(...args) { return this.recalculateApartmentConversions(...args); },
-  obtenerBloqueos(...args) { return this.getBlockouts(...args); },
-  crearBloqueo(...args) { return this.createBlockout(...args); },
-  eliminarBloqueo(...args) { return this.deleteBlockout(...args); },
+  getReservationsUser(...args) { return this.getUserReservations(...args); },
+  getReservationsActivasApartment(...args) { return this.getActiveApartmentReservations(...args); },
+  getPriorityForNuevaReservation(...args) { return this.getPriorityForNewReservation(...args); },
+  getTodasReservations(...args) { return this.getAllReservations(...args); },
+  getEstadisticas(...args) { return this.getStatistics(...args); },
+  getNotificationsPending(...args) { return this.getPendingNotifications(...args); },
+  markNotificationsRead(...args) { return this.markNotificationsAsRead(...args); },
+  displaceReservationYCreate(...args) { return this.displaceAndCreateReservation(...args); },
+  getInfoConversion(...args) { return this.getConversionInfo(...args); },
+  recalcularConversionesApartment(...args) { return this.recalculateApartmentConversions(...args); },
 };
-
-// Re-export with English name
-export { reservasService as reservationsService };

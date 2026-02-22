@@ -1,17 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors } from '../../../constants/colors';
-import { formatearVivienda } from '../../../constants/config';
+import { formatApartment } from '../../../constants/config';
 
 /**
  * Tarjeta de solicitud de cambio de vivienda
  */
-export function CambioViviendaCard({ usuario, onAprobar, onRechazar }) {
+export function ChangeApartmentCard({ user, onApprove, onReject }) {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.nombre}>{usuario.nombre}</Text>
-        <View style={styles.cambioBadge}>
+        <Text style={styles.name}>{user.name}</Text>
+        <View style={styles.changeBadge}>
           <Text style={styles.badgeText}>Cambio</Text>
         </View>
       </View>
@@ -19,31 +19,31 @@ export function CambioViviendaCard({ usuario, onAprobar, onRechazar }) {
       <View style={styles.info}>
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Email:</Text>
-          <Text style={styles.infoValue}>{usuario.email}</Text>
+          <Text style={styles.infoValue}>{user.email}</Text>
         </View>
-        <View style={styles.cambioViviendaContainer}>
-          <Text style={styles.cambioValue}>
-            {formatearVivienda(usuario.vivienda)}
+        <View style={styles.changeApartmentContainer}>
+          <Text style={styles.changeValue}>
+            {formatApartment(user.apartment)}
           </Text>
-          <Text style={styles.cambioArrow}>→</Text>
-          <Text style={[styles.cambioValue, styles.cambioNueva]}>
-            {formatearVivienda(usuario.viviendaSolicitada)}
+          <Text style={styles.changeArrow}>→</Text>
+          <Text style={[styles.changeValue, styles.changeNew]}>
+            {formatApartment(user.requestedApartment)}
           </Text>
         </View>
       </View>
 
-      <View style={styles.botonesContainer}>
+      <View style={styles.buttonsContainer}>
         <TouchableOpacity
-          style={styles.botonAprobar}
-          onPress={() => onAprobar(usuario)}
+          style={styles.buttonApprove}
+          onPress={() => onApprove(user)}
         >
-          <Text style={styles.botonAprobarText}>Aprobar</Text>
+          <Text style={styles.buttonApproveText}>Aprobar</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.botonRechazar}
-          onPress={() => onRechazar(usuario)}
+          style={styles.buttonReject}
+          onPress={() => onReject(user)}
         >
-          <Text style={styles.botonRechazarText}>Rechazar</Text>
+          <Text style={styles.buttonRejectText}>Rechazar</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -68,12 +68,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  nombre: {
+  name: {
     fontSize: 18,
     fontWeight: '600',
     color: colors.text,
   },
-  cambioBadge: {
+  changeBadge: {
     backgroundColor: colors.primary,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     flex: 1,
   },
-  cambioViviendaContainer: {
+  changeApartmentContainer: {
     marginTop: 8,
     backgroundColor: colors.background,
     borderRadius: 8,
@@ -112,36 +112,36 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
-  cambioValue: {
+  changeValue: {
     fontSize: 14,
     color: colors.text,
     fontWeight: '500',
   },
-  cambioNueva: {
+  changeNew: {
     color: colors.primary,
     fontWeight: '600',
   },
-  cambioArrow: {
+  changeArrow: {
     fontSize: 18,
     color: colors.textSecondary,
   },
-  botonesContainer: {
+  buttonsContainer: {
     flexDirection: 'row',
     gap: 12,
   },
-  botonAprobar: {
+  buttonApprove: {
     flex: 1,
     backgroundColor: colors.secondary,
     borderRadius: 8,
     padding: 12,
     alignItems: 'center',
   },
-  botonAprobarText: {
+  buttonApproveText: {
     color: '#fff',
     fontSize: 15,
     fontWeight: '600',
   },
-  botonRechazar: {
+  buttonReject: {
     flex: 1,
     backgroundColor: colors.surface,
     borderRadius: 8,
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.error,
   },
-  botonRechazarText: {
+  buttonRejectText: {
     color: colors.error,
     fontSize: 15,
     fontWeight: '600',
@@ -158,4 +158,4 @@ const styles = StyleSheet.create({
 });
 
 // Export with English name for consistency
-export { CambioViviendaCard as ApartmentChangeCard };
+export { ChangeApartmentCard as ApartmentChangeCard };

@@ -128,27 +128,27 @@ describe('MatchMapper — matchToDomain', () => {
 });
 
 describe('MatchMapper — toLegacyFormat', () => {
-  it('converts domain match to legacy camelCase Spanish', () => {
+  it('converts domain match to legacy English camelCase', () => {
     const players = [playerToDomain(makePlayerRow())];
     const match = matchToDomain(makeMatchRow(), players);
     const legacy = toLegacyFormat(match) as Record<string, unknown>;
 
     expect(legacy.id).toBe('match-1');
-    expect(legacy.creadorId).toBe('user-1');
-    expect(legacy.creadorNombre).toBe('Alice');
-    expect(legacy.estado).toBe('buscando');
-    expect(legacy.tipo).toBe('abierta');
-    expect(legacy.esClase).toBe(false);
-    expect(Array.isArray(legacy.jugadores)).toBe(true);
-    expect((legacy.jugadores as unknown[]).length).toBe(1);
+    expect(legacy.creatorId).toBe('user-1');
+    expect(legacy.creatorName).toBe('Alice');
+    expect(legacy.status).toBe('searching');
+    expect(legacy.type).toBe('open');
+    expect(legacy.isLesson).toBe(false);
+    expect(Array.isArray(legacy.players)).toBe(true);
+    expect((legacy.players as unknown[]).length).toBe(1);
   });
 
   it('roundtrip: DB row → domain → legacy preserves key data', () => {
     const match = matchToDomain(makeMatchRow({ estado: 'completa', tipo: 'con_reserva' }));
     const legacy = toLegacyFormat(match) as Record<string, unknown>;
 
-    expect(legacy.estado).toBe('completa');
-    expect(legacy.tipo).toBe('con_reserva');
+    expect(legacy.status).toBe('full');
+    expect(legacy.type).toBe('with_reservation');
   });
 });
 

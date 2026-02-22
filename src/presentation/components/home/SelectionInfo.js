@@ -5,13 +5,13 @@ import { colors } from '../../../constants/colors';
 /**
  * Schedule section header with clear button
  */
-export function ScheduleHeader({ vistaActual, cantidadSeleccionados, onLimpiar }) {
+export function ScheduleHeader({ viewActual, countSelected, onLimpiar }) {
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>
-        {vistaActual === 'dia' ? 'Horarios Disponibles' : 'Horarios de la Semana'}
+        {viewActual === 'dia' ? 'Horarios Disponibles' : 'Horarios de la Semana'}
       </Text>
-      {cantidadSeleccionados > 0 && (
+      {countSelected > 0 && (
         <TouchableOpacity
           style={styles.clearButton}
           onPress={onLimpiar}
@@ -27,14 +27,14 @@ export function ScheduleHeader({ vistaActual, cantidadSeleccionados, onLimpiar }
  * Selected slots information
  * Always renders to reserve space and prevent layout shift
  */
-export function SelectionInfo({ cantidadBloques }) {
-  const hasSelection = cantidadBloques > 0;
+export function SelectionInfo({ countSlots }) {
+  const hasSelection = countSlots > 0;
 
   return (
     <View style={[styles.selectionInfo, !hasSelection && styles.selectionInfoHidden]}>
       <Text style={[styles.selectionText, !hasSelection && styles.selectionTextHidden]}>
         {hasSelection
-          ? `${cantidadBloques} bloque${cantidadBloques > 1 ? 's' : ''} seleccionado${cantidadBloques > 1 ? 's' : ''} (${cantidadBloques * 30} min)`
+          ? `${countSlots} bloque${countSlots > 1 ? 's' : ''} seleccionado${countSlots > 1 ? 's' : ''} (${countSlots * 30} min)`
           : 'Selecciona horarios para reservar'
         }
       </Text>
@@ -43,8 +43,7 @@ export function SelectionInfo({ cantidadBloques }) {
 }
 
 // Legacy aliases for backwards compatibility
-export const HorariosHeader = ScheduleHeader;
-export const SeleccionInfo = SelectionInfo;
+export const TimeSlotsHeader = ScheduleHeader;
 
 const styles = StyleSheet.create({
   sectionHeader: {

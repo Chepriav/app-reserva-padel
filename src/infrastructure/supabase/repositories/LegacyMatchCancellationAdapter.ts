@@ -9,8 +9,8 @@ import type { MatchCancellationPort } from '@domain/ports/repositories/MatchCanc
 export class LegacyMatchCancellationAdapter implements MatchCancellationPort {
   async cancelMatchByReservation(reservationId: string): Promise<Result<void>> {
     try {
-      const { partidasService } = await import('../../../services/matchesService');
-      await partidasService.cancelarPartidaPorReserva(reservationId, 'reserva_cancelada');
+      const { matchesService } = await import('../../../services/matchesService');
+      await matchesService.cancelMatchByReservation(reservationId, 'reserva_cancelada');
     } catch {
       // Non-critical — match cancellation failure should not block reservation flow
     }

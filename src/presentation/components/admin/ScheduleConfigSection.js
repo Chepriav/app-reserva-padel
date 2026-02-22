@@ -39,36 +39,36 @@ export function ScheduleConfigSection({ userId }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Horario de Apertura y Cierre</Text>
+      <Text style={styles.sectionTitle}>Horario de apertura y cierre</Text>
       <Text style={styles.sectionDescription}>
-        Configura los horarios en que las pistas están disponibles para reserva
+        Configura los horarios en que las pistas están disponibles para reservar
       </Text>
 
       <TouchableOpacity
         style={styles.checkboxContainer}
         onPress={() => setConfig({
           ...config,
-          usarHorariosDiferenciados: !config.usarHorariosDiferenciados
+          useDifferentiatedSchedules: !config.useDifferentiatedSchedules
         })}
       >
-        <View style={[styles.checkbox, config.usarHorariosDiferenciados && styles.checkboxChecked]}>
-          {config.usarHorariosDiferenciados && <Text style={styles.checkboxIcon}>✓</Text>}
+        <View style={[styles.checkbox, config.useDifferentiatedSchedules && styles.checkboxChecked]}>
+          {config.useDifferentiatedSchedules && <Text style={styles.checkboxIcon}>✓</Text>}
         </View>
         <Text style={styles.checkboxLabel}>
-          Usar horarios diferentes para semana y fin de semana
+          Usar horarios diferentes entre semana y fin de semana
         </Text>
       </TouchableOpacity>
 
-      {config.usarHorariosDiferenciados ? (
+      {config.useDifferentiatedSchedules ? (
         <>
-          <Text style={styles.subsectionTitle}>Lunes a Viernes</Text>
+          <Text style={styles.subsectionTitle}>Lunes a viernes</Text>
           <View style={styles.row}>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Apertura</Text>
               <TextInput
                 style={styles.input}
-                value={config.semanaHoraApertura}
-                onChangeText={(text) => setConfig({ ...config, semanaHoraApertura: text })}
+                value={config.weekdayOpeningTime}
+                onChangeText={(text) => setConfig({ ...config, weekdayOpeningTime: text })}
                 placeholder="08:00"
                 placeholderTextColor={colors.textSecondary}
                 maxLength={5}
@@ -80,8 +80,8 @@ export function ScheduleConfigSection({ userId }) {
               <Text style={styles.label}>Cierre</Text>
               <TextInput
                 style={styles.input}
-                value={config.semanaHoraCierre}
-                onChangeText={(text) => setConfig({ ...config, semanaHoraCierre: text })}
+                value={config.weekdayClosingTime}
+                onChangeText={(text) => setConfig({ ...config, weekdayClosingTime: text })}
                 placeholder="22:00"
                 placeholderTextColor={colors.textSecondary}
                 maxLength={5}
@@ -90,14 +90,14 @@ export function ScheduleConfigSection({ userId }) {
             </View>
           </View>
 
-          <Text style={styles.subsectionTitle}>Sábado y Domingo</Text>
+          <Text style={styles.subsectionTitle}>Sábado y domingo</Text>
           <View style={styles.row}>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Apertura</Text>
               <TextInput
                 style={styles.input}
-                value={config.findeHoraApertura}
-                onChangeText={(text) => setConfig({ ...config, findeHoraApertura: text })}
+                value={config.weekendOpeningTime}
+                onChangeText={(text) => setConfig({ ...config, weekendOpeningTime: text })}
                 placeholder="09:00"
                 placeholderTextColor={colors.textSecondary}
                 maxLength={5}
@@ -109,8 +109,8 @@ export function ScheduleConfigSection({ userId }) {
               <Text style={styles.label}>Cierre</Text>
               <TextInput
                 style={styles.input}
-                value={config.findeHoraCierre}
-                onChangeText={(text) => setConfig({ ...config, findeHoraCierre: text })}
+                value={config.weekendClosingTime}
+                onChangeText={(text) => setConfig({ ...config, weekendClosingTime: text })}
                 placeholder="23:00"
                 placeholderTextColor={colors.textSecondary}
                 maxLength={5}
@@ -123,11 +123,11 @@ export function ScheduleConfigSection({ userId }) {
         <>
           <View style={styles.row}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Hora de Apertura</Text>
+              <Text style={styles.label}>Hora de apertura</Text>
               <TextInput
                 style={styles.input}
-                value={config.horaApertura}
-                onChangeText={(text) => setConfig({ ...config, horaApertura: text })}
+                value={config.openingTime}
+                onChangeText={(text) => setConfig({ ...config, openingTime: text })}
                 placeholder="08:00"
                 placeholderTextColor={colors.textSecondary}
                 maxLength={5}
@@ -136,11 +136,11 @@ export function ScheduleConfigSection({ userId }) {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Hora de Cierre</Text>
+              <Text style={styles.label}>Hora de cierre</Text>
               <TextInput
                 style={styles.input}
-                value={config.horaCierre}
-                onChangeText={(text) => setConfig({ ...config, horaCierre: text })}
+                value={config.closingTime}
+                onChangeText={(text) => setConfig({ ...config, closingTime: text })}
                 placeholder="22:00"
                 placeholderTextColor={colors.textSecondary}
                 maxLength={5}
@@ -170,14 +170,14 @@ export function ScheduleConfigSection({ userId }) {
 
       {breakEnabled && (
         <>
-          <Text style={styles.subsectionTitle}>Pausa de Lunes a Viernes</Text>
+          <Text style={styles.subsectionTitle}>Pausa de lunes a viernes</Text>
           <View style={styles.row}>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Inicio</Text>
               <TextInput
                 style={styles.input}
-                value={config.pausaInicio || ''}
-                onChangeText={(text) => setConfig({ ...config, pausaInicio: text })}
+                value={config.breakStart || ''}
+                onChangeText={(text) => setConfig({ ...config, breakStart: text })}
                 placeholder="14:00"
                 placeholderTextColor={colors.textSecondary}
                 maxLength={5}
@@ -189,8 +189,8 @@ export function ScheduleConfigSection({ userId }) {
               <Text style={styles.label}>Fin</Text>
               <TextInput
                 style={styles.input}
-                value={config.pausaFin || ''}
-                onChangeText={(text) => setConfig({ ...config, pausaFin: text })}
+                value={config.breakEnd || ''}
+                onChangeText={(text) => setConfig({ ...config, breakEnd: text })}
                 placeholder="16:30"
                 placeholderTextColor={colors.textSecondary}
                 maxLength={5}
@@ -201,13 +201,13 @@ export function ScheduleConfigSection({ userId }) {
         </>
       )}
 
-      {config.usarHorariosDiferenciados && (
+      {config.useDifferentiatedSchedules && (
         <>
           <View style={styles.separator} />
 
-          <Text style={styles.sectionTitle}>Pausa de Fin de Semana</Text>
+          <Text style={styles.sectionTitle}>Pausa de fin de semana</Text>
           <Text style={styles.sectionDescription}>
-            Define un horario de pausa específico para sábados y domingos
+            Define una pausa específica para sábados y domingos
           </Text>
 
           <TouchableOpacity
@@ -227,8 +227,8 @@ export function ScheduleConfigSection({ userId }) {
                   <Text style={styles.label}>Inicio</Text>
                   <TextInput
                     style={styles.input}
-                    value={config.findePausaInicio || ''}
-                    onChangeText={(text) => setConfig({ ...config, findePausaInicio: text })}
+                    value={config.weekendBreakStart || ''}
+                    onChangeText={(text) => setConfig({ ...config, weekendBreakStart: text })}
                     placeholder="14:00"
                     placeholderTextColor={colors.textSecondary}
                     maxLength={5}
@@ -240,8 +240,8 @@ export function ScheduleConfigSection({ userId }) {
                   <Text style={styles.label}>Fin</Text>
                   <TextInput
                     style={styles.input}
-                    value={config.findePausaFin || ''}
-                    onChangeText={(text) => setConfig({ ...config, findePausaFin: text })}
+                    value={config.weekendBreakEnd || ''}
+                    onChangeText={(text) => setConfig({ ...config, weekendBreakEnd: text })}
                     placeholder="16:30"
                     placeholderTextColor={colors.textSecondary}
                     maxLength={5}
@@ -262,14 +262,14 @@ export function ScheduleConfigSection({ userId }) {
         {saving ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.saveButtonText}>Guardar Configuración</Text>
+          <Text style={styles.saveButtonText}>Guardar configuración</Text>
         )}
       </TouchableOpacity>
 
       <View style={styles.infoBox}>
         <Text style={styles.infoTitle}>ℹ️ Información</Text>
         <Text style={styles.infoText}>
-          • Los bloques de la pausa no aparecerán en el calendario
+          • Los horarios de la pausa no aparecerán en el calendario
         </Text>
         <Text style={styles.infoText}>
           • La pausa aplicará todos los días de la semana

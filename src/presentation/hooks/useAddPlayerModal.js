@@ -18,11 +18,11 @@ export function useAddPlayerModal(onAddPlayer) {
 
   const addCommunityUser = (user) => {
     const player = {
-      tipo: 'urbanizacion',
-      usuario: user,
-      nombre: user.nombre,
-      vivienda: user.vivienda,
-      nivel: user.nivelJuego,
+      type: 'urbanizacion',
+      user: user,
+      name: user.name,
+      apartment: user.apartment,
+      level: user.skillLevel,
     };
     if (onAddPlayer(player)) {
       close();
@@ -36,7 +36,7 @@ export function useAddPlayerModal(onAddPlayer) {
     if (!externalName.trim()) {
       return { success: false, error: 'Introduce el nombre del jugador' };
     }
-    const player = { tipo: 'externo', nombre: externalName.trim(), vivienda: null, nivel: externalLevel };
+    const player = { type: 'externo', name: externalName.trim(), apartment: null, level: externalLevel };
     if (onAddPlayer(player)) {
       close();
       return { success: true };

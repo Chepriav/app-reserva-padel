@@ -5,20 +5,20 @@ import { colors } from '../../../constants/colors';
 /**
  * Day/week view selector
  */
-export function ViewSelector({ vistaActual, onVistaChange }) {
+export function ViewSelector({ viewActual, onViewChange }) {
   return (
     <View style={styles.viewSelector}>
       <TouchableOpacity
         style={[
           styles.viewButton,
-          vistaActual === 'dia' && styles.viewButtonActive,
+          viewActual === 'dia' && styles.viewButtonActive,
         ]}
-        onPress={() => onVistaChange('dia')}
+        onPress={() => onViewChange('dia')}
       >
         <Text
           style={[
             styles.viewButtonText,
-            vistaActual === 'dia' && styles.viewButtonTextActive,
+            viewActual === 'dia' && styles.viewButtonTextActive,
           ]}
         >
           Día
@@ -27,14 +27,14 @@ export function ViewSelector({ vistaActual, onVistaChange }) {
       <TouchableOpacity
         style={[
           styles.viewButton,
-          vistaActual === 'semana' && styles.viewButtonActive,
+          viewActual === 'semana' && styles.viewButtonActive,
         ]}
-        onPress={() => onVistaChange('semana')}
+        onPress={() => onViewChange('semana')}
       >
         <Text
           style={[
             styles.viewButtonText,
-            vistaActual === 'semana' && styles.viewButtonTextActive,
+            viewActual === 'semana' && styles.viewButtonTextActive,
           ]}
         >
           Semana
@@ -43,9 +43,6 @@ export function ViewSelector({ vistaActual, onVistaChange }) {
     </View>
   );
 }
-
-// Legacy alias for backwards compatibility
-export const VistaSelector = ViewSelector;
 
 const styles = StyleSheet.create({
   viewSelector: {

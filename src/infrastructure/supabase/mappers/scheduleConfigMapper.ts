@@ -23,22 +23,22 @@ interface ScheduleConfigRow {
 
 /** Legacy format used by existing consumers (Spanish camelCase) */
 export interface LegacyScheduleConfig {
-  horaApertura: string;
-  horaCierre: string;
-  duracionBloque: number;
-  pausaInicio: string | null;
-  pausaFin: string | null;
-  motivoPausa: string;
-  pausaDiasSemana: number[] | null;
-  usarHorariosDiferenciados: boolean;
-  semanaHoraApertura: string | null;
-  semanaHoraCierre: string | null;
-  findeHoraApertura: string | null;
-  findeHoraCierre: string | null;
-  findePausaInicio: string | null;
-  findePausaFin: string | null;
-  findeMotivoPausa: string | null;
-  findePausaDiasSemana: number[] | null;
+  openingTime: string;
+  closingTime: string;
+  slotDuration: number;
+  breakStart: string | null;
+  breakEnd: string | null;
+  breakReason: string;
+  breakWeekdays: number[] | null;
+  useDifferentiatedSchedules: boolean;
+  weekdayOpeningTime: string | null;
+  weekdayClosingTime: string | null;
+  weekendOpeningTime: string | null;
+  weekendClosingTime: string | null;
+  weekendBreakStart: string | null;
+  weekendBreakEnd: string | null;
+  weekendBreakReason: string | null;
+  weekendBreakWeekdays: number[] | null;
 }
 
 /** DB snake_case → domain entity */
@@ -91,43 +91,43 @@ export function toRpcParams(userId: string, config: ScheduleConfig) {
 /** Domain entity → legacy Spanish camelCase (for facade backward compat) */
 export function toLegacyFormat(config: ScheduleConfig): LegacyScheduleConfig {
   return {
-    horaApertura: config.openingTime,
-    horaCierre: config.closingTime,
-    duracionBloque: config.slotDuration,
-    pausaInicio: config.breakStart,
-    pausaFin: config.breakEnd,
-    motivoPausa: config.breakReason,
-    pausaDiasSemana: config.breakDaysOfWeek,
-    usarHorariosDiferenciados: config.useDifferentiatedSchedules,
-    semanaHoraApertura: config.weekdayOpeningTime,
-    semanaHoraCierre: config.weekdayClosingTime,
-    findeHoraApertura: config.weekendOpeningTime,
-    findeHoraCierre: config.weekendClosingTime,
-    findePausaInicio: config.weekendBreakStart,
-    findePausaFin: config.weekendBreakEnd,
-    findeMotivoPausa: config.weekendBreakReason,
-    findePausaDiasSemana: config.weekendBreakDaysOfWeek,
+    openingTime: config.openingTime,
+    closingTime: config.closingTime,
+    slotDuration: config.slotDuration,
+    breakStart: config.breakStart,
+    breakEnd: config.breakEnd,
+    breakReason: config.breakReason,
+    breakWeekdays: config.breakDaysOfWeek,
+    useDifferentiatedSchedules: config.useDifferentiatedSchedules,
+    weekdayOpeningTime: config.weekdayOpeningTime,
+    weekdayClosingTime: config.weekdayClosingTime,
+    weekendOpeningTime: config.weekendOpeningTime,
+    weekendClosingTime: config.weekendClosingTime,
+    weekendBreakStart: config.weekendBreakStart,
+    weekendBreakEnd: config.weekendBreakEnd,
+    weekendBreakReason: config.weekendBreakReason,
+    weekendBreakWeekdays: config.weekendBreakDaysOfWeek,
   };
 }
 
 /** Legacy Spanish camelCase → domain entity (for facade inbound) */
 export function fromLegacyFormat(legacy: LegacyScheduleConfig): ScheduleConfig {
   return {
-    openingTime: legacy.horaApertura,
-    closingTime: legacy.horaCierre,
-    slotDuration: legacy.duracionBloque,
-    breakStart: legacy.pausaInicio,
-    breakEnd: legacy.pausaFin,
-    breakReason: legacy.motivoPausa,
-    breakDaysOfWeek: legacy.pausaDiasSemana,
-    useDifferentiatedSchedules: legacy.usarHorariosDiferenciados,
-    weekdayOpeningTime: legacy.semanaHoraApertura,
-    weekdayClosingTime: legacy.semanaHoraCierre,
-    weekendOpeningTime: legacy.findeHoraApertura,
-    weekendClosingTime: legacy.findeHoraCierre,
-    weekendBreakStart: legacy.findePausaInicio,
-    weekendBreakEnd: legacy.findePausaFin,
-    weekendBreakReason: legacy.findeMotivoPausa,
-    weekendBreakDaysOfWeek: legacy.findePausaDiasSemana,
+    openingTime: legacy.openingTime,
+    closingTime: legacy.closingTime,
+    slotDuration: legacy.slotDuration,
+    breakStart: legacy.breakStart,
+    breakEnd: legacy.breakEnd,
+    breakReason: legacy.breakReason,
+    breakDaysOfWeek: legacy.breakWeekdays,
+    useDifferentiatedSchedules: legacy.useDifferentiatedSchedules,
+    weekdayOpeningTime: legacy.weekdayOpeningTime,
+    weekdayClosingTime: legacy.weekdayClosingTime,
+    weekendOpeningTime: legacy.weekendOpeningTime,
+    weekendClosingTime: legacy.weekendClosingTime,
+    weekendBreakStart: legacy.weekendBreakStart,
+    weekendBreakEnd: legacy.weekendBreakEnd,
+    weekendBreakReason: legacy.weekendBreakReason,
+    weekendBreakDaysOfWeek: legacy.weekendBreakWeekdays,
   };
 }

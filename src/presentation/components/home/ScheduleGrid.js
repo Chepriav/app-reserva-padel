@@ -8,56 +8,56 @@ import { TimeSlotChip } from './TimeSlotChip';
  * Schedule grid for day view
  */
 export function DayScheduleGrid({
-  horarios,
-  fecha,
-  userVivienda,
-  bloquesSeleccionados = [],
-  bloquesABloquear = [],
-  bloquesADesbloquear = [],
-  modoBloqueo,
-  esAdmin,
+  timeSlots,
+  date,
+  userApartment,
+  selectedSlots = [],
+  slotsToBlock = [],
+  slotsToUnblock = [],
+  blockoutMode,
+  isAdmin,
   reservando,
-  onHorarioPress,
+  onTimeSlotPress,
 }) {
-  if (!horarios || horarios.length === 0) {
-    return <Text style={styles.emptyText}>No hay horarios disponibles</Text>;
+  if (!timeSlots || timeSlots.length === 0) {
+    return <Text style={styles.emptyText}>No hay timeSlots disponibles</Text>;
   }
 
   return (
     <View style={styles.slotsGrid}>
-      {horarios.map((horario, index) => {
-        const estaSeleccionado = bloquesSeleccionados.some(b =>
-          b.fecha === fecha && b.horaInicio === horario.horaInicio
+      {timeSlots.map((timeSlot, index) => {
+        const estaSelected = selectedSlots.some(b =>
+          b.date === date && b.startTime === timeSlot.startTime
         );
-        const estaSeleccionadoParaBloquear = bloquesABloquear.some(b =>
-          b.fecha === fecha && b.horaInicio === horario.horaInicio
+        const isSelectedForBlock = slotsToBlock.some(b =>
+          b.date === date && b.startTime === timeSlot.startTime
         );
-        const estaSeleccionadoParaDesbloquear = bloquesADesbloquear.some(b =>
-          b.fecha === fecha && b.horaInicio === horario.horaInicio
+        const isSelectedForUnblock = slotsToUnblock.some(b =>
+          b.date === date && b.startTime === timeSlot.startTime
         );
 
-        const esPasado = hasSlotEnded(fecha, horario.horaFin);
-        const estaBloqueado = horario.bloqueado;
-        const esMiVivienda = horario.reservaExistente?.vivienda === userVivienda;
-        const esPrimeraOProtegida = horario.prioridad === 'primera' || horario.estaProtegida;
-        const esOtraGarantizada = !horario.disponible && !estaBloqueado && !esMiVivienda && esPrimeraOProtegida;
+        const isPast = hasSlotEnded(date, timeSlot.endTime);
+        const isBlocked = timeSlot.blocked;
+        const isMyApartment = timeSlot.existingReservation?.apartment === userApartment;
+        const isGuaranteedOrProtected = timeSlot.priority === 'guaranteed' || timeSlot.isProtected;
+        const isOtherGuaranteed = !timeSlot.available && !isBlocked && !isMyApartment && isGuaranteedOrProtected;
 
         const estaDeshabilitado = reservando ||
-          (esPasado && !modoBloqueo) ||
-          (!modoBloqueo && !estaBloqueado && (esOtraGarantizada || esMiVivienda));
+          (isPast && !blockoutMode) ||
+          (!blockoutMode && !isBlocked && (isOtherGuaranteed || isMyApartment));
 
         return (
           <TimeSlotChip
             key={index}
-            horario={horario}
-            fecha={fecha}
-            userVivienda={userVivienda}
-            estaSeleccionado={estaSeleccionado}
-            estaSeleccionadoParaBloquear={estaSeleccionadoParaBloquear}
-            estaSeleccionadoParaDesbloquear={estaSeleccionadoParaDesbloquear}
-            modoBloqueo={modoBloqueo}
+            timeSlot={timeSlot}
+            date={date}
+            userApartment={userApartment}
+            estaSelected={estaSelected}
+            isSelectedForBlock={isSelectedForBlock}
+            isSelectedForUnblock={isSelectedForUnblock}
+            blockoutMode={blockoutMode}
             disabled={estaDeshabilitado}
-            onPress={() => onHorarioPress(horario, fecha)}
+            onPress={() => onTimeSlotPress(timeSlot, date)}
           />
         );
       })}
@@ -69,80 +69,80 @@ export function DayScheduleGrid({
  * Schedule grid for week view
  */
 export function WeekScheduleGrid({
-  horariosSemanales,
-  userVivienda,
-  bloquesSeleccionados = [],
-  bloquesABloquear = [],
-  bloquesADesbloquear = [],
-  modoBloqueo,
-  esAdmin,
+  timeSlotsSemanales,
+  userApartment,
+  selectedSlots = [],
+  slotsToBlock = [],
+  slotsToUnblock = [],
+  blockoutMode,
+  isAdmin,
   reservando,
-  onHorarioPress,
+  onTimeSlotPress,
 }) {
-  if (!horariosSemanales) {
-    return <Text style={styles.emptyText}>No hay horarios disponibles esta semana</Text>;
+  if (!timeSlotsSemanales) {
+    return <Text style={styles.emptyText}>No hay timeSlots disponibles esta week</Text>;
   }
-  const fechas = Object.keys(horariosSemanales);
+  const dates = Object.keys(timeSlotsSemanales);
 
-  if (fechas.length === 0) {
-    return <Text style={styles.emptyText}>No hay horarios disponibles esta semana</Text>;
+  if (dates.length === 0) {
+    return <Text style={styles.emptyText}>No hay timeSlots disponibles esta week</Text>;
   }
 
   return (
     <>
-      {fechas.map((fecha) => {
-        const horariosDia = horariosSemanales[fecha];
-        const cantidadDisponibles = horariosDia.filter(h =>
-          (h.disponible || h.esDesplazable) && !h.bloqueado
+      {dates.map((date) => {
+        const timeSlotsDay = timeSlotsSemanales[date];
+        const countDisponibles = timeSlotsDay.filter(h =>
+          (h.available || h.isDisplaceable) && !h.blocked
         ).length;
 
         return (
-          <View key={fecha} style={styles.dayCard}>
+          <View key={date} style={styles.dayCard}>
             <View style={styles.dayHeader}>
               <Text style={styles.dayDate}>
-                {formatReadableDate(fecha)}
+                {formatReadableDate(date)}
               </Text>
               <View style={styles.availableBadge}>
                 <Text style={styles.availableText}>
-                  {cantidadDisponibles} disponibles
+                  {countDisponibles} disponibles
                 </Text>
               </View>
             </View>
 
             <View style={styles.slotsGrid}>
-              {horariosDia.map((horario, index) => {
-                const estaSeleccionado = bloquesSeleccionados.some(b =>
-                  b.fecha === fecha && b.horaInicio === horario.horaInicio
+              {timeSlotsDay.map((timeSlot, index) => {
+                const estaSelected = selectedSlots.some(b =>
+                  b.date === date && b.startTime === timeSlot.startTime
                 );
-                const estaSeleccionadoParaBloquear = bloquesABloquear.some(b =>
-                  b.fecha === fecha && b.horaInicio === horario.horaInicio
+                const isSelectedForBlock = slotsToBlock.some(b =>
+                  b.date === date && b.startTime === timeSlot.startTime
                 );
-                const estaSeleccionadoParaDesbloquear = bloquesADesbloquear.some(b =>
-                  b.fecha === fecha && b.horaInicio === horario.horaInicio
+                const isSelectedForUnblock = slotsToUnblock.some(b =>
+                  b.date === date && b.startTime === timeSlot.startTime
                 );
 
-                const esPasado = hasSlotEnded(fecha, horario.horaFin);
-                const estaBloqueado = horario.bloqueado;
-                const esMiVivienda = horario.reservaExistente?.vivienda === userVivienda;
-                const esPrimeraOProtegida = horario.prioridad === 'primera' || horario.estaProtegida;
-                const esOtraGarantizada = !horario.disponible && !estaBloqueado && !esMiVivienda && esPrimeraOProtegida;
+                const isPast = hasSlotEnded(date, timeSlot.endTime);
+                const isBlocked = timeSlot.blocked;
+                const isMyApartment = timeSlot.existingReservation?.apartment === userApartment;
+                const isGuaranteedOrProtected = timeSlot.priority === 'guaranteed' || timeSlot.isProtected;
+                const isOtherGuaranteed = !timeSlot.available && !isBlocked && !isMyApartment && isGuaranteedOrProtected;
 
                 const estaDeshabilitado = reservando ||
-                  (esPasado && !modoBloqueo) ||
-                  (!modoBloqueo && !estaBloqueado && (esOtraGarantizada || esMiVivienda));
+                  (isPast && !blockoutMode) ||
+                  (!blockoutMode && !isBlocked && (isOtherGuaranteed || isMyApartment));
 
                 return (
                   <TimeSlotChip
                     key={index}
-                    horario={horario}
-                    fecha={fecha}
-                    userVivienda={userVivienda}
-                    estaSeleccionado={estaSeleccionado}
-                    estaSeleccionadoParaBloquear={estaSeleccionadoParaBloquear}
-                    estaSeleccionadoParaDesbloquear={estaSeleccionadoParaDesbloquear}
-                    modoBloqueo={modoBloqueo}
+                    timeSlot={timeSlot}
+                    date={date}
+                    userApartment={userApartment}
+                    estaSelected={estaSelected}
+                    isSelectedForBlock={isSelectedForBlock}
+                    isSelectedForUnblock={isSelectedForUnblock}
+                    blockoutMode={blockoutMode}
                     disabled={estaDeshabilitado}
-                    onPress={() => onHorarioPress(horario, fecha)}
+                    onPress={() => onTimeSlotPress(timeSlot, date)}
                   />
                 );
               })}
@@ -159,59 +159,59 @@ export function WeekScheduleGrid({
  */
 export function ScheduleContainer({
   loading,
-  vistaActual,
-  horarios,
-  horariosSemanales,
-  fechaSeleccionada,
-  userVivienda,
-  bloquesSeleccionados = [],
-  bloquesABloquear = [],
-  bloquesADesbloquear = [],
-  modoBloqueo,
-  esAdmin,
+  viewActual,
+  timeSlots,
+  timeSlotsSemanales,
+  dateSelected,
+  userApartment,
+  selectedSlots = [],
+  slotsToBlock = [],
+  slotsToUnblock = [],
+  blockoutMode,
+  isAdmin,
   reservando,
-  onHorarioPress,
+  onTimeSlotPress,
 }) {
   if (loading) {
     return <ActivityIndicator size="large" color={colors.primary} />;
   }
 
-  if (vistaActual === 'dia') {
+  if (viewActual === 'dia') {
     return (
       <DayScheduleGrid
-        horarios={horarios}
-        fecha={fechaSeleccionada}
-        userVivienda={userVivienda}
-        bloquesSeleccionados={bloquesSeleccionados}
-        bloquesABloquear={bloquesABloquear}
-        bloquesADesbloquear={bloquesADesbloquear}
-        modoBloqueo={modoBloqueo}
-        esAdmin={esAdmin}
+        timeSlots={timeSlots}
+        date={dateSelected}
+        userApartment={userApartment}
+        selectedSlots={selectedSlots}
+        slotsToBlock={slotsToBlock}
+        slotsToUnblock={slotsToUnblock}
+        blockoutMode={blockoutMode}
+        isAdmin={isAdmin}
         reservando={reservando}
-        onHorarioPress={onHorarioPress}
+        onTimeSlotPress={onTimeSlotPress}
       />
     );
   }
 
   return (
     <WeekScheduleGrid
-      horariosSemanales={horariosSemanales}
-      userVivienda={userVivienda}
-      bloquesSeleccionados={bloquesSeleccionados}
-      bloquesABloquear={bloquesABloquear}
-      bloquesADesbloquear={bloquesADesbloquear}
-      modoBloqueo={modoBloqueo}
-      esAdmin={esAdmin}
+      timeSlotsSemanales={timeSlotsSemanales}
+      userApartment={userApartment}
+      selectedSlots={selectedSlots}
+      slotsToBlock={slotsToBlock}
+      slotsToUnblock={slotsToUnblock}
+      blockoutMode={blockoutMode}
+      isAdmin={isAdmin}
       reservando={reservando}
-      onHorarioPress={onHorarioPress}
+      onTimeSlotPress={onTimeSlotPress}
     />
   );
 }
 
 // Legacy aliases for backwards compatibility
-export const HorariosGridDia = DayScheduleGrid;
-export const HorariosGridSemana = WeekScheduleGrid;
-export const HorariosContainer = ScheduleContainer;
+export const TimeSlotsGridDay = DayScheduleGrid;
+export const TimeSlotsGridWeek = WeekScheduleGrid;
+export const TimeSlotsContainer = ScheduleContainer;
 
 const styles = StyleSheet.create({
   slotsGrid: {

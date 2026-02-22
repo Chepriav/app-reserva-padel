@@ -127,3 +127,6 @@ export const formatearVivienda = formatApartment;
 export const parseVivienda = parseApartment;
 export const combinarVivienda = combineApartment;
 export const esViviendaValida = isValidApartment;
+export const SKILL_LEVELS = PLAY_LEVELS;
+export const isApartmentValid = isValidApartment;
+export const LESSON_CONFIG = CLASE_CONFIG;

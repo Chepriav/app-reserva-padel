@@ -8,8 +8,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../../constants/colors';
-import { SolicitudCard } from './SolicitudCard';
-import { UsuarioCard } from './UsuarioCard';
+import { RequestCard } from './RequestCard';
+import { UserCard } from './UserCard';
 import { ApartmentChangeCard } from './ApartmentChangeCard';
 import { ImportUsersButton } from './ImportUsersButton';
 
@@ -31,10 +31,10 @@ function EmptyState({ icon, text, subtext }) {
  */
 function Section({ icon, title, children }) {
   return (
-    <View style={styles.seccionContainer}>
-      <View style={styles.seccionHeader}>
+    <View style={styles.sectionContainer}>
+      <View style={styles.sectionHeader}>
         <Ionicons name={icon} size={18} color={colors.primary} />
-        <Text style={styles.seccionTitulo}>{title}</Text>
+        <Text style={styles.sectionTitle}>{title}</Text>
       </View>
       {children}
     </View>
@@ -44,15 +44,15 @@ function Section({ icon, title, children }) {
 /**
  * Contenido de la tab Solicitudes
  */
-export function SolicitudesContent({
-  usuariosPendientes,
-  solicitudesCambio,
-  onAprobar,
-  onRechazar,
-  onAprobarCambio,
-  onRechazarCambio,
+export function RequestsContent({
+  usersPending,
+  requestsChange,
+  onApprove,
+  onReject,
+  onApproveChange,
+  onRejectChange,
 }) {
-  if (usuariosPendientes.length === 0 && solicitudesCambio.length === 0) {
+  if (usersPending.length === 0 && requestsChange.length === 0) {
     return (
       <EmptyState
         text="No hay solicitudes pendientes"
@@ -63,33 +63,33 @@ export function SolicitudesContent({
 
   return (
     <>
-      {usuariosPendientes.length > 0 && (
+      {usersPending.length > 0 && (
         <Section
           icon="person-add-outline"
-          title={`Nuevos usuarios (${usuariosPendientes.length})`}
+          title={`Nuevos usuarios (${usersPending.length})`}
         >
-          {usuariosPendientes.map((usuario) => (
-            <SolicitudCard
-              key={usuario.id}
-              usuario={usuario}
-              onAprobar={onAprobar}
-              onRechazar={onRechazar}
+          {usersPending.map((user) => (
+            <RequestCard
+              key={user.id}
+              user={user}
+              onApprove={onApprove}
+              onReject={onReject}
             />
           ))}
         </Section>
       )}
 
-      {solicitudesCambio.length > 0 && (
+      {requestsChange.length > 0 && (
         <Section
           icon="home-outline"
-          title={`Cambios de vivienda (${solicitudesCambio.length})`}
+          title={`Cambios de vivienda (${requestsChange.length})`}
         >
-          {solicitudesCambio.map((usuario) => (
+          {requestsChange.map((user) => (
             <ApartmentChangeCard
-              key={usuario.id}
-              usuario={usuario}
-              onAprobar={onAprobarCambio}
-              onRechazar={onRechazarCambio}
+              key={user.id}
+              user={user}
+              onApprove={onApproveChange}
+              onReject={onRejectChange}
             />
           ))}
         </Section>
@@ -101,33 +101,33 @@ export function SolicitudesContent({
 /**
  * Contenido de la tab Usuarios
  */
-export function UsuariosContent({
-  usuarios,
+export function UsersContent({
+  users,
   currentUserId,
   onToggleAdmin,
-  onEditVivienda,
+  onEditApartment,
   onDelete,
   onImportUsers,
 }) {
   return (
     <>
       {/* Header with import button */}
-      <View style={styles.usuariosHeader}>
-        <Text style={styles.usuariosTitle}>Usuarios Registrados</Text>
+      <View style={styles.usersHeader}>
+        <Text style={styles.usersTitle}>Usuarios registrados</Text>
         <ImportUsersButton onPress={onImportUsers} />
       </View>
 
       {/* User list */}
-      {usuarios.length === 0 ? (
+      {users.length === 0 ? (
         <EmptyState text="No hay usuarios" />
       ) : (
-        usuarios.map((usuario) => (
-          <UsuarioCard
-            key={usuario.id}
-            usuario={usuario}
+        users.map((user) => (
+          <UserCard
+            key={user.id}
+            user={user}
             currentUserId={currentUserId}
             onToggleAdmin={onToggleAdmin}
-            onEditVivienda={onEditVivienda}
+            onEditApartment={onEditApartment}
             onDelete={onDelete}
           />
         ))
@@ -169,10 +169,10 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
   },
-  seccionContainer: {
+  sectionContainer: {
     marginBottom: 20,
   },
-  seccionHeader: {
+  sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -181,12 +181,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  seccionTitulo: {
+  sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.primary,
   },
-  usuariosHeader: {
+  usersHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  usuariosTitle: {
+  usersTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: colors.text,

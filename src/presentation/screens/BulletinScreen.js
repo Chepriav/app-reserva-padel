@@ -19,18 +19,18 @@ import {
   AnnouncementCard,
   AnnouncementModal,
   EmptyState,
-} from '../components/tablon';
+} from '../components/bulletin';
 import { CreateAnnouncementModal } from '../components/admin';
 import { CustomAlert } from '../components/CustomAlert';
 
-export default function TablonScreen() {
+export default function BulletinScreen() {
   const { user } = useAuth();
   const { alertConfig, showAlert, showConfirmation, closeAlert } = useAlert();
   const [tabActivo, setTabActivo] = useState('anuncios');
   const [createModalVisible, setCreateModalVisible] = useState(false);
-  const [usuarios, setUsuarios] = useState([]);
+  const [users, setUsers] = useState([]);
 
-  const isAdmin = user?.esAdmin === true;
+  const isAdmin = user?.isAdmin === true;
 
   const {
     notifications,
@@ -81,7 +81,7 @@ export default function TablonScreen() {
     if (isAdmin && loadUsers) {
       const usersResult = await loadUsers();
       if (usersResult.success) {
-        setUsuarios(usersResult.data || []);
+        setUsers(usersResult.data || []);
       }
     }
     setCreateModalVisible(true);
@@ -145,17 +145,17 @@ export default function TablonScreen() {
   const unreadNotifCount = countNotifUnread();
   const unreadAnnouncementsCount = countAnnouncementsUnread();
 
-  const renderNotificacion = ({ item }) => (
+  const renderNotification = ({ item }) => (
     <NotificationCard
-      notificacion={item}
-      onMarcarLeida={markAsRead}
-      onEliminar={handleDeleteNotification}
+      notification={item}
+      onMarkRead={markAsRead}
+      onDelete={handleDeleteNotification}
     />
   );
 
-  const renderAnuncio = ({ item }) => (
+  const renderAnnouncement = ({ item }) => (
     <AnnouncementCard
-      anuncio={item}
+      announcement={item}
       onPress={viewAnnouncement}
       isAdmin={isAdmin}
       onDelete={handleDeleteAnnouncement}
@@ -169,10 +169,10 @@ export default function TablonScreen() {
           <Text style={styles.title}>Tablón</Text>
           {tabActivo === 'notificaciones' && unreadNotifCount > 0 && (
             <TouchableOpacity
-              style={styles.marcarTodasButton}
+              style={styles.markTodasButton}
               onPress={handleMarkAllAsRead}
             >
-              <Text style={styles.marcarTodasText}>Marcar leídas</Text>
+              <Text style={styles.markTodasText}>Marcar leídas</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -210,7 +210,7 @@ export default function TablonScreen() {
         {tabActivo === 'notificaciones' ? (
           <FlatList
             data={notifications}
-            renderItem={renderNotificacion}
+            renderItem={renderNotification}
             keyExtractor={item => item.id}
             contentContainerStyle={styles.listContent}
             refreshControl={
@@ -228,7 +228,7 @@ export default function TablonScreen() {
         ) : (
           <FlatList
             data={announcements}
-            renderItem={renderAnuncio}
+            renderItem={renderAnnouncement}
             keyExtractor={item => item.id}
             contentContainerStyle={[
               styles.listContent,
@@ -249,7 +249,7 @@ export default function TablonScreen() {
         )}
 
         <AnnouncementModal
-          anuncio={selectedAnnouncement}
+          announcement={selectedAnnouncement}
           visible={!!selectedAnnouncement}
           onClose={closeAnnouncement}
           isAdmin={isAdmin}
@@ -268,8 +268,8 @@ export default function TablonScreen() {
             <CreateAnnouncementModal
               visible={createModalVisible}
               onClose={() => setCreateModalVisible(false)}
-              onCrear={handleCreateAnnouncement}
-              usuarios={usuarios}
+              onCreate={handleCreateAnnouncement}
+              users={users}
             />
           </>
         )}

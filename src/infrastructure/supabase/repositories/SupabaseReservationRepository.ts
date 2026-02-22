@@ -136,7 +136,7 @@ export class SupabaseReservationRepository implements ReservationRepository {
         .eq('id', data.courtId)
         .single();
 
-      const courtName = (court as { nombre?: string })?.nombre ?? 'Pista';
+      const courtName = (court as { name?: string })?.name ?? 'Pista';
       const insertRow = toDbInsert(data, courtName, priority);
 
       const { data: row, error } = await supabase

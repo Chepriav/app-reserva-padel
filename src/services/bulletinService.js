@@ -35,36 +35,36 @@ function toFail(appError) {
   return { success: false, error: appError?.message ?? 'Error inesperado' };
 }
 
-export const tablonService = {
+export const bulletinService = {
   // ============ USER NOTIFICATIONS ============
 
-  async getNotifications(usuarioId) {
-    const result = await getUserNotificationsUC.execute(usuarioId);
+  async getNotifications(userId) {
+    const result = await getUserNotificationsUC.execute(userId);
     if (!result.success) return { success: true, data: [] }; // non-critical
     return { success: true, data: result.value.map(notificationToLegacy) };
   },
 
-  async countUnreadNotifications(usuarioId) {
-    const result = await getUserNotificationsUC.execute(usuarioId);
+  async countUnreadNotifications(userId) {
+    const result = await getUserNotificationsUC.execute(userId);
     if (!result.success) return { success: true, count: 0 };
     const count = result.value.filter((n) => !n.isRead).length;
     return { success: true, count };
   },
 
-  async markNotificationAsRead(notificacionId) {
-    const result = await markNotificationAsReadUC.execute(notificacionId);
+  async markNotificationAsRead(notificationId) {
+    const result = await markNotificationAsReadUC.execute(notificationId);
     if (!result.success) return toFail(result.error);
     return { success: true };
   },
 
-  async markAllAsRead(usuarioId) {
-    const result = await markAllNotificationsAsReadUC.execute(usuarioId);
+  async markAllAsRead(userId) {
+    const result = await markAllNotificationsAsReadUC.execute(userId);
     if (!result.success) return toFail(result.error);
     return { success: true };
   },
 
-  async deleteNotification(notificacionId) {
-    const result = await deleteUserNotificationUC.execute(notificacionId);
+  async deleteNotification(notificationId) {
+    const result = await deleteUserNotificationUC.execute(notificationId);
     if (!result.success) return toFail(result.error);
     return { success: true };
   },
@@ -74,15 +74,15 @@ export const tablonService = {
    * Accepts Spanish tipo strings (from notificationService.js legacy calls)
    * or domain English strings.
    */
-  async createNotification(usuarioId, tipo, titulo, mensaje, datos = {}) {
-    const domainType = notificationTypeToDomain(tipo); // translates Spanish → domain
+  async createNotification(userId, type, title, message, data = {}) {
+    const domainType = notificationTypeToDomain(type); // translates Spanish → domain
 
     const result = await createUserNotificationUC.execute({
-      userId: usuarioId,
+      userId: userId,
       type: domainType,
-      title: titulo,
-      message: mensaje,
-      data: datos,
+      title: title,
+      message: message,
+      data: data,
     });
     if (!result.success) return toFail(result.error);
     return { success: true, data: notificationToLegacy(result.value) };
@@ -90,21 +90,21 @@ export const tablonService = {
 
   // ============ ANNOUNCEMENTS (user read) ============
 
-  async getAnnouncementsForUser(usuarioId) {
-    const result = await getAnnouncementsForUserUC.execute(usuarioId);
+  async getAnnouncementsForUser(userId) {
+    const result = await getAnnouncementsForUserUC.execute(userId);
     if (!result.success) return { success: true, data: [] }; // non-critical
     return { success: true, data: result.value.map(announcementToLegacy) };
   },
 
-  async countUnreadAnnouncements(usuarioId) {
-    const result = await getAnnouncementsForUserUC.execute(usuarioId);
+  async countUnreadAnnouncements(userId) {
+    const result = await getAnnouncementsForUserUC.execute(userId);
     if (!result.success) return { success: true, count: 0 };
     const count = result.value.filter((a) => !a.isRead).length;
     return { success: true, count };
   },
 
-  async markAnnouncementAsRead(anuncioId, usuarioId) {
-    const result = await markAnnouncementAsReadUC.execute(anuncioId, usuarioId);
+  async markAnnouncementAsRead(announcementId, userId) {
+    const result = await markAnnouncementAsReadUC.execute(announcementId, userId);
     if (!result.success) return toFail(result.error);
     return { success: true };
   },
@@ -118,34 +118,34 @@ export const tablonService = {
   },
 
   async createAnnouncement(
-    creadorId,
-    creadorNombre,
-    titulo,
-    mensaje,
-    tipo = 'info',
-    destinatarios = 'todos',
-    usuariosIds = [],
+    creatorId,
+    creatorName,
+    title,
+    message,
+    type = 'info',
+    recipients = 'todos',
+    usersIds = [],
   ) {
     const result = await createAnnouncementUC.execute({
-      creatorId: creadorId,
-      creatorName: creadorNombre,
-      title: titulo,
-      message: mensaje,
-      type: announcementTypeToDomain(tipo),
-      recipients: recipientsToDomain(destinatarios),
-      userIds: usuariosIds,
+      creatorId: creatorId,
+      creatorName: creatorName,
+      title: title,
+      message: message,
+      type: announcementTypeToDomain(type),
+      recipients: recipientsToDomain(recipients),
+      userIds: usersIds,
     });
 
     if (!result.success) return toFail(result.error);
     return {
       success: true,
       data: announcementToLegacy(result.value.announcement),
-      usuariosIds: result.value.recipientIds,
+      usersIds: result.value.recipientIds,
     };
   },
 
-  async deleteAnnouncement(anuncioId) {
-    const result = await deleteAnnouncementUC.execute(anuncioId);
+  async deleteAnnouncement(announcementId) {
+    const result = await deleteAnnouncementUC.execute(announcementId);
     if (!result.success) return toFail(result.error);
     return { success: true };
   },
@@ -158,8 +158,8 @@ export const tablonService = {
       success: true,
       data: result.value.map((u) => ({
         id: u.id,
-        nombre: u.name,
-        vivienda: u.apartment,
+        name: u.name,
+        apartment: u.apartment,
         email: u.email,
       })),
     };
@@ -168,20 +168,9 @@ export const tablonService = {
   // ============================================================================
   // LEGACY ALIASES - For backwards compatibility
   // ============================================================================
-  obtenerNotificaciones(...args) { return this.getNotifications(...args); },
-  contarNotificacionesNoLeidas(...args) { return this.countUnreadNotifications(...args); },
-  marcarNotificacionLeida(...args) { return this.markNotificationAsRead(...args); },
-  marcarTodasLeidas(...args) { return this.markAllAsRead(...args); },
-  eliminarNotificacion(...args) { return this.deleteNotification(...args); },
-  crearNotificacion(...args) { return this.createNotification(...args); },
-  obtenerAnunciosParaUsuario(...args) { return this.getAnnouncementsForUser(...args); },
-  contarAnunciosNoLeidos(...args) { return this.countUnreadAnnouncements(...args); },
-  marcarAnuncioLeido(...args) { return this.markAnnouncementAsRead(...args); },
-  obtenerTodosAnuncios(...args) { return this.getAllAnnouncements(...args); },
-  crearAnuncio(...args) { return this.createAnnouncement(...args); },
-  eliminarAnuncio(...args) { return this.deleteAnnouncement(...args); },
-  obtenerUsuariosAprobados(...args) { return this.getApprovedUsers(...args); },
+  markNotificationRead(...args) { return this.markNotificationAsRead(...args); },
+  markTodasRead(...args) { return this.markAllAsRead(...args); },
+  markAnnouncementRead(...args) { return this.markAnnouncementAsRead(...args); },
+  getTodosAnnouncements(...args) { return this.getAllAnnouncements(...args); },
+  getUsersAprobados(...args) { return this.getApprovedUsers(...args); },
 };
-
-// Re-export with English name
-export { tablonService as bulletinService };

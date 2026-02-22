@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { parseVivienda, combinarVivienda, NIVELES_JUEGO } from '../../../constants/config';
-import { validarPerfil, validarViviendaComponentes } from '../../../utils/validators';
+import { parseApartment, combineApartment, SKILL_LEVELS } from '../../../constants/config';
+import { validateProfile, validateApartmentComponentes } from '../../../utils/validators';
 
 let ImageManipulator;
 if (Platform.OS !== 'web') {
@@ -17,45 +17,45 @@ const isValidImageUrl = (url) => {
 
 export function useProfileEdit(user, updateProfile, showAlert) {
   const [editMode, setEditMode] = useState(false);
-  const [nombre, setNombre] = useState(user?.nombre || '');
-  const [telefono, setTelefono] = useState(user?.telefono || '');
-  const viviendaParsed = parseVivienda(user?.vivienda);
-  const [escalera, setEscalera] = useState(viviendaParsed?.escalera || '');
-  const [piso, setPiso] = useState(viviendaParsed?.piso || '');
-  const [puerta, setPuerta] = useState(viviendaParsed?.puerta || '');
-  const [nivelJuego, setNivelJuego] = useState(user?.nivelJuego || null);
-  const [fotoPerfil, setFotoPerfil] = useState(user?.fotoPerfil || null);
+  const [name, setName] = useState(user?.name || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const apartmentParsed = parseApartment(user?.apartment);
+  const [staircase, setStaircase] = useState(apartmentParsed?.stair || '');
+  const [floor, setFloor] = useState(apartmentParsed?.floor || '');
+  const [door, setDoor] = useState(apartmentParsed?.door || '');
+  const [skillLevel, setSkillLevel] = useState(user?.skillLevel || null);
+  const [profilePhoto, setProfilePhoto] = useState(user?.profilePhoto || null);
   const [saving, setSaving] = useState(false);
-  const [showNivelPicker, setShowNivelPicker] = useState(false);
+  const [showLevelPicker, setShowLevelPicker] = useState(false);
   const [imageError, setImageError] = useState(false);
 
   // Sync local state with user data
   useEffect(() => {
     if (user && !editMode) {
-      setNombre(user.nombre || '');
-      setTelefono(user.telefono || '');
-      const parsed = parseVivienda(user.vivienda);
-      setEscalera(parsed?.escalera || '');
-      setPiso(parsed?.piso || '');
-      setPuerta(parsed?.puerta || '');
-      setNivelJuego(user.nivelJuego || null);
-      const fotoValida = isValidImageUrl(user.fotoPerfil) ? user.fotoPerfil : null;
-      setFotoPerfil(fotoValida);
+      setName(user.name || '');
+      setPhone(user.phone || '');
+      const parsed = parseApartment(user.apartment);
+      setStaircase(parsed?.stair || '');
+      setFloor(parsed?.floor || '');
+      setDoor(parsed?.door || '');
+      setSkillLevel(user.skillLevel || null);
+      const validPhoto = isValidImageUrl(user.profilePhoto) ? user.profilePhoto : null;
+      setProfilePhoto(validPhoto);
       setImageError(false);
     }
   }, [user, editMode]);
 
   const cancelEdit = () => {
-    setNombre(user?.nombre || '');
-    setTelefono(user?.telefono || '');
-    const parsed = parseVivienda(user?.vivienda);
-    setEscalera(parsed?.escalera || '');
-    setPiso(parsed?.piso || '');
-    setPuerta(parsed?.puerta || '');
-    setNivelJuego(user?.nivelJuego || null);
-    setFotoPerfil(user?.fotoPerfil || null);
+    setName(user?.name || '');
+    setPhone(user?.phone || '');
+    const parsed = parseApartment(user?.apartment);
+    setStaircase(parsed?.stair || '');
+    setFloor(parsed?.floor || '');
+    setDoor(parsed?.door || '');
+    setSkillLevel(user?.skillLevel || null);
+    setProfilePhoto(user?.profilePhoto || null);
     setEditMode(false);
-    setShowNivelPicker(false);
+    setShowLevelPicker(false);
   };
 
   const handlePickImage = async () => {
@@ -89,7 +89,7 @@ export function useProfileEdit(user, updateProfile, showAlert) {
         );
         imageUri = manipResult.uri;
       }
-      setFotoPerfil(imageUri);
+      setProfilePhoto(imageUri);
       setImageError(false);
     }
   };
@@ -100,40 +100,40 @@ export function useProfileEdit(user, updateProfile, showAlert) {
       '¿Estás seguro de que quieres eliminar tu foto de perfil?',
       [
         { text: 'Cancelar', style: 'cancel', onPress: () => {} },
-        { text: 'Eliminar', style: 'destructive', onPress: () => { setFotoPerfil(null); setImageError(false); } },
+        { text: 'Eliminar', style: 'destructive', onPress: () => { setProfilePhoto(null); setImageError(false); } },
       ]
     );
   };
 
   const handleSave = async () => {
-    if (user?.esDemo) {
-      showAlert('Demo Account', 'This is a view-only demo account. You cannot make reservations or modifications.');
+    if (user?.isDemo) {
+      showAlert('Cuenta demo', 'Esta cuenta es solo de visualización. No puedes hacer reservas ni modificaciones.');
       return;
     }
 
-    let vivienda = user?.vivienda;
-    if (user?.esAdmin) {
-      const viviendaValidacion = validarViviendaComponentes(escalera, piso, puerta);
-      if (!viviendaValidacion.valido) {
-        showAlert('Error en vivienda', Object.values(viviendaValidacion.errores).join('\n'));
+    let apartment = user?.apartment;
+    if (user?.isAdmin) {
+      const apartmentValidation = validateApartmentComponentes(staircase, floor, door);
+      if (!apartmentValidation.valido) {
+        showAlert('Error en vivienda', Object.values(apartmentValidation.errores).join('\n'));
         return;
       }
-      vivienda = combinarVivienda(escalera, piso, puerta);
+      apartment = combineApartment(staircase, floor, door);
     }
 
-    const validacion = validarPerfil({ nombre, telefono, vivienda, nivelJuego });
-    if (!validacion.valido) {
-      showAlert('Errores de validación', Object.values(validacion.errores).join('\n'));
+    const validation = validateProfile({ name, phone, apartment, skillLevel });
+    if (!validation.valido) {
+      showAlert('Errores de validación', Object.values(validation.errores).join('\n'));
       return;
     }
 
     setSaving(true);
-    const result = await updateProfile({ nombre, telefono, vivienda, nivelJuego, fotoPerfil });
+    const result = await updateProfile({ name, phone, apartment, skillLevel, profilePhoto });
     setSaving(false);
 
     if (result.success) {
       setEditMode(false);
-      setShowNivelPicker(false);
+      setShowLevelPicker(false);
       showAlert('Perfil Actualizado', 'Tus cambios han sido guardados exitosamente');
     } else {
       showAlert('Error', result.error || 'No se pudo actualizar el perfil');
@@ -142,15 +142,15 @@ export function useProfileEdit(user, updateProfile, showAlert) {
 
   return {
     editMode, setEditMode,
-    nombre, setNombre,
-    telefono, setTelefono,
-    escalera, setEscalera,
-    piso, setPiso,
-    puerta, setPuerta,
-    nivelJuego, setNivelJuego,
-    fotoPerfil, setFotoPerfil,
+    name, setName,
+    phone, setPhone,
+    staircase, setStaircase,
+    floor, setFloor,
+    door, setDoor,
+    skillLevel, setSkillLevel,
+    profilePhoto, setProfilePhoto,
     saving,
-    showNivelPicker, setShowNivelPicker,
+    showLevelPicker, setShowLevelPicker,
     imageError, setImageError,
     cancelEdit,
     handlePickImage,

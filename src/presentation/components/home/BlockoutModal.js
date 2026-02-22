@@ -7,11 +7,11 @@ import { colors } from '../../../constants/colors';
  */
 export function BlockoutModal({
   visible,
-  motivo,
-  cantidadHorarios,
-  onMotivoChange,
+  reason,
+  countTimeSlots,
+  onReasonChange,
   onConfirmar,
-  onCancelar,
+  onCancel,
   disabled,
 }) {
   return (
@@ -19,26 +19,26 @@ export function BlockoutModal({
       visible={visible}
       transparent
       animationType="fade"
-      onRequestClose={onCancelar}
+      onRequestClose={onCancel}
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>🔒 Bloquear Horarios</Text>
+          <Text style={styles.modalTitle}>🔒 Bloquear franjas</Text>
           <Text style={styles.modalSubtitle}>
-            {cantidadHorarios} horario{cantidadHorarios > 1 ? 's' : ''} seleccionado{cantidadHorarios > 1 ? 's' : ''}
+            {countTimeSlots} franja{countTimeSlots > 1 ? 's' : ''} seleccionada{countTimeSlots > 1 ? 's' : ''}
           </Text>
           <TextInput
             style={styles.modalInput}
             placeholder="Motivo del bloqueo (opcional)"
             placeholderTextColor={colors.textSecondary}
-            value={motivo}
-            onChangeText={onMotivoChange}
+            value={reason}
+            onChangeText={onReasonChange}
             maxLength={100}
           />
           <View style={styles.modalButtons}>
             <TouchableOpacity
               style={[styles.modalButton, styles.modalButtonCancel]}
-              onPress={onCancelar}
+              onPress={onCancel}
             >
               <Text style={styles.modalButtonTextCancel}>Cancelar</Text>
             </TouchableOpacity>
@@ -57,7 +57,7 @@ export function BlockoutModal({
 }
 
 // Legacy alias for backwards compatibility
-export const ModalBloqueo = BlockoutModal;
+export const ModalBlockout = BlockoutModal;
 
 const styles = StyleSheet.create({
   modalOverlay: {

@@ -31,9 +31,9 @@ export class SupabaseDisplacementNotifier implements DisplacementNotifier {
     const body = `La reserva del ${date} a las ${startTime} en ${courtName} ha sido desplazada.`;
 
     await this.notifyApartment(apartment, 'displacement', title, body, {
-      fecha: date,
-      horaInicio: startTime,
-      pistaNombre: courtName,
+      date: date,
+      startTime: startTime,
+      courtName: courtName,
     });
 
     return ok(undefined);
@@ -50,9 +50,9 @@ export class SupabaseDisplacementNotifier implements DisplacementNotifier {
     const body = `Tu reserva del ${date} a las ${startTime} en ${courtName} ha sido cancelada por el administrador.`;
 
     await this.notifyApartment(apartment, 'blockout_cancellation', title, body, {
-      fecha: date,
-      horaInicio: startTime,
-      pistaNombre: courtName,
+      date: date,
+      startTime: startTime,
+      courtName: courtName,
     });
 
     return ok(undefined);

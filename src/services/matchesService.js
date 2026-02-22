@@ -63,14 +63,14 @@ async function enrichCreatorData(matches) {
 
     const usersMap = {};
     (data ?? []).forEach((u) => {
-      usersMap[u.id] = { foto: u.foto_perfil ?? null, nivel: u.nivel_juego ?? null };
+      usersMap[u.id] = { photo: u.foto_perfil ?? null, level: u.nivel_juego ?? null };
     });
 
     return matches.map((m) => ({
       ...m,
-      creatorPhoto: usersMap[m.creatorId]?.foto ?? m.creatorPhoto,
-      creatorLevel: usersMap[m.creatorId]?.nivel
-        ? skillLevelToDomain(usersMap[m.creatorId].nivel)
+      creatorPhoto: usersMap[m.creatorId]?.photo ?? m.creatorPhoto,
+      creatorLevel: usersMap[m.creatorId]?.level
+        ? skillLevelToDomain(usersMap[m.creatorId].level)
         : m.creatorLevel,
     }));
   } catch {
@@ -78,7 +78,7 @@ async function enrichCreatorData(matches) {
   }
 }
 
-export const partidasService = {
+export const matchesService = {
   // ---- Utility helpers ----
 
   async getUserPhoto(userId) {
@@ -105,7 +105,7 @@ export const partidasService = {
 
       const map = {};
       (data ?? []).forEach((u) => {
-        map[u.id] = { foto: u.foto_perfil ?? null, nivel: u.nivel_juego ?? null };
+        map[u.id] = { photo: u.foto_perfil ?? null, level: u.nivel_juego ?? null };
       });
       return map;
     } catch {
@@ -123,69 +123,72 @@ export const partidasService = {
     return { success: true, data: enriched.map(toLegacyFormat) };
   },
 
-  async getMyMatches(usuarioId) {
-    const result = await getMyMatchesUC.execute(usuarioId);
+  async getMyMatches(userId) {
+    const result = await getMyMatchesUC.execute(userId);
     if (!result.success) return toFail(result.error);
 
     const enriched = await enrichCreatorData(result.value);
     return { success: true, data: enriched.map(toLegacyFormat) };
   },
 
-  async getEnrolledMatches(usuarioId) {
-    const result = await getEnrolledMatchesUC.execute(usuarioId);
+  async getEnrolledMatches(userId) {
+    const result = await getEnrolledMatchesUC.execute(userId);
     if (!result.success) return toFail(result.error);
 
     const enriched = await enrichCreatorData(result.value);
     return { success: true, data: enriched.map(toLegacyFormat) };
   },
 
-  async getReservationsWithMatch(usuarioId) {
-    const result = await getReservationsWithMatchUC.execute(usuarioId);
+  async getReservationsWithMatch(userId) {
+    const result = await getReservationsWithMatchUC.execute(userId);
     if (!result.success) return toFail(result.error);
     return { success: true, data: result.value };
   },
 
   // ---- Match CRUD ----
 
-  async createMatch(partidaData) {
+  async createMatch(matchData) {
     const {
-      creadorId, creadorNombre, creadorVivienda,
-      reservaId, fecha, horaInicio, horaFin, pistaNombre,
-      tipo, mensaje, nivelPreferido,
-      jugadoresIniciales,
-      esClase, niveles, minParticipantes, maxParticipantes,
-      precioAlumno, precioGrupo,
-    } = partidaData;
+      creatorId, creatorName, creatorApartment,
+      reservationId, date, startTime, endTime, courtName,
+      type, message, preferredLevel,
+      initialPlayers,
+      isLesson, levels, minParticipants, maxParticipants,
+      studentPrice, groupPrice,
+    } = matchData;
 
-    const initialPlayers = (jugadoresIniciales ?? []).map((j) => ({
-      userId: j.tipo === 'urbanizacion' ? (j.usuario?.id ?? null) : null,
-      userName: j.nombre,
-      userApartment: j.tipo === 'urbanizacion' ? (j.vivienda ?? null) : null,
-      skillLevel: j.nivel ? skillLevelToDomain(j.nivel) : null,
-      isExternal: j.tipo === 'externo',
+    const normalizedType =
+      type === 'con_reserva' ? 'with_reservation' : type === 'abierta' ? 'open' : (type ?? 'open');
+
+    const initialPlayersPayload = (initialPlayers ?? []).map((j) => ({
+      userId: j.type === 'urbanizacion' ? (j.user?.id ?? null) : null,
+      userName: j.name,
+      userApartment: j.type === 'urbanizacion' ? (j.apartment ?? null) : null,
+      skillLevel: j.level ? skillLevelToDomain(j.level) : null,
+      isExternal: j.type === 'externo',
       userPhoto: null,
       status: 'confirmed',
     }));
 
     const domainData = {
-      creatorId: creadorId,
-      creatorName: creadorNombre,
-      creatorApartment: creadorVivienda,
-      reservationId: reservaId ?? null,
-      date: fecha ?? null,
-      startTime: horaInicio ?? null,
-      endTime: horaFin ?? null,
-      courtName: pistaNombre ?? null,
-      type: tipo === 'con_reserva' ? 'with_reservation' : 'open',
-      message: mensaje ?? null,
-      preferredLevel: nivelPreferido ?? null,
-      isClass: esClase ?? false,
-      levels: (niveles?.length > 0) ? niveles : null,
-      minParticipants: esClase ? (minParticipantes ?? 2) : 4,
-      maxParticipants: esClase ? (maxParticipantes ?? 8) : 4,
-      studentPrice: precioAlumno ?? null,
-      groupPrice: precioGrupo ?? null,
-      initialPlayers,
+      creatorId: creatorId,
+      creatorName: creatorName,
+      creatorApartment: creatorApartment,
+      reservationId: reservationId ?? null,
+      date: date ?? null,
+      startTime: startTime ?? null,
+      endTime: endTime ?? null,
+      courtName: courtName ?? null,
+      type: normalizedType,
+      message: message ?? null,
+      preferredLevel: preferredLevel ?? null,
+      isClass: isLesson ?? false,
+      levels: (levels?.length > 0) ? levels : null,
+      minParticipants: isLesson ? (minParticipants ?? 2) : 4,
+      maxParticipants: isLesson ? (maxParticipants ?? 8) : 4,
+      studentPrice: studentPrice ?? null,
+      groupPrice: groupPrice ?? null,
+      initialPlayers: initialPlayersPayload,
     };
 
     const result = await createMatchUC.execute(domainData);
@@ -193,161 +196,151 @@ export const partidasService = {
     return { success: true, data: toLegacyFormat(result.value) };
   },
 
-  async editMatch(partidaId, creadorId, updates) {
+  async editMatch(matchId, creatorId, updates) {
     const domainUpdates = {};
-    if (updates.mensaje !== undefined) domainUpdates.message = updates.mensaje;
-    if (updates.nivelPreferido !== undefined) domainUpdates.preferredLevel = updates.nivelPreferido;
-    if (updates.fecha !== undefined) domainUpdates.date = updates.fecha;
-    if (updates.horaInicio !== undefined) domainUpdates.startTime = updates.horaInicio;
-    if (updates.horaFin !== undefined) domainUpdates.endTime = updates.horaFin;
-    if (updates.pistaNombre !== undefined) domainUpdates.courtName = updates.pistaNombre;
-    if (updates.reservaId !== undefined) {
-      domainUpdates.reservationId = updates.reservaId;
-      domainUpdates.type = updates.reservaId ? 'with_reservation' : 'open';
+    if (updates.message !== undefined) domainUpdates.message = updates.message;
+    if (updates.preferredLevel !== undefined) domainUpdates.preferredLevel = updates.preferredLevel;
+    if (updates.date !== undefined) domainUpdates.date = updates.date;
+    if (updates.startTime !== undefined) domainUpdates.startTime = updates.startTime;
+    if (updates.endTime !== undefined) domainUpdates.endTime = updates.endTime;
+    if (updates.courtName !== undefined) domainUpdates.courtName = updates.courtName;
+    if (updates.reservationId !== undefined) {
+      domainUpdates.reservationId = updates.reservationId;
+      domainUpdates.type = updates.reservationId ? 'with_reservation' : 'open';
     }
-    if (updates.niveles !== undefined) domainUpdates.levels = updates.niveles;
+    if (updates.levels !== undefined) domainUpdates.levels = updates.levels;
+    if (updates.minParticipants !== undefined) domainUpdates.minParticipants = updates.minParticipants;
+    if (updates.maxParticipants !== undefined) domainUpdates.maxParticipants = updates.maxParticipants;
     if (updates.minParticipantes !== undefined) domainUpdates.minParticipants = updates.minParticipantes;
     if (updates.maxParticipantes !== undefined) domainUpdates.maxParticipants = updates.maxParticipantes;
-    if (updates.precioAlumno !== undefined) domainUpdates.studentPrice = updates.precioAlumno;
-    if (updates.precioGrupo !== undefined) domainUpdates.groupPrice = updates.precioGrupo;
+    if (updates.studentPrice !== undefined) domainUpdates.studentPrice = updates.studentPrice;
+    if (updates.groupPrice !== undefined) domainUpdates.groupPrice = updates.groupPrice;
 
-    const result = await editMatchUC.execute(partidaId, creadorId, domainUpdates);
+    const result = await editMatchUC.execute(matchId, creatorId, domainUpdates);
     if (!result.success) return toFail(result.error);
     return { success: true };
   },
 
-  async cancelMatch(partidaId, creadorId) {
-    const result = await cancelMatchUC.execute(partidaId, creadorId);
+  async cancelMatch(matchId, creatorId) {
+    const result = await cancelMatchUC.execute(matchId, creatorId);
     if (!result.success) return toFail(result.error);
     return { success: true };
   },
 
-  async deleteMatch(partidaId, creadorId) {
-    const result = await deleteMatchUC.execute(partidaId, creadorId);
+  async deleteMatch(matchId, creatorId) {
+    const result = await deleteMatchUC.execute(matchId, creatorId);
     if (!result.success) return toFail(result.error);
     return { success: true };
   },
 
-  async closeClass(partidaId, creadorId) {
-    const result = await closeClassUC.execute(partidaId, creadorId);
+  async closeClass(matchId, creatorId) {
+    const result = await closeClassUC.execute(matchId, creatorId);
     if (!result.success) return toFail(result.error);
     return { success: true };
   },
 
   // ---- Player operations ----
 
-  async requestToJoin(partidaId, usuario) {
+  async requestToJoin(matchId, user) {
     const playerData = {
-      userId: usuario.id,
-      userName: usuario.nombre,
-      userApartment: usuario.vivienda ?? null,
-      skillLevel: usuario.nivelJuego ? skillLevelToDomain(usuario.nivelJuego) : null,
+      userId: user.id,
+      userName: user.name,
+      userApartment: user.apartment ?? null,
+      skillLevel: user.skillLevel ? skillLevelToDomain(user.skillLevel) : null,
       isExternal: false,
     };
 
-    const result = await requestToJoinUC.execute(partidaId, playerData);
+    const result = await requestToJoinUC.execute(matchId, playerData);
     if (!result.success) return toFail(result.error);
     return { success: true };
   },
 
-  async acceptRequest(jugadorId, partidaId, creadorId) {
+  async acceptRequest(playerId, matchId, creatorId) {
     // jugadorId is usuario_id in legacy — resolve to player row id
-    const playerResult = await playerRepository.findByMatchAndUser(partidaId, jugadorId);
+    const playerResult = await playerRepository.findByMatchAndUser(matchId, playerId);
     if (!playerResult.success) return toFail(playerResult.error);
     if (!playerResult.value) return { success: false, error: 'Jugador no encontrado' };
 
-    const result = await acceptRequestUC.execute(playerResult.value.id, partidaId, creadorId);
+    const result = await acceptRequestUC.execute(playerResult.value.id, matchId, creatorId);
     if (!result.success) return toFail(result.error);
     return { success: true };
   },
 
-  async rejectRequest(jugadorId, partidaId) {
+  async rejectRequest(playerId, matchId) {
     // jugadorId is usuario_id in legacy — resolve to player row id
-    const playerResult = await playerRepository.findByMatchAndUser(partidaId, jugadorId);
+    const playerResult = await playerRepository.findByMatchAndUser(matchId, playerId);
     if (!playerResult.success) return toFail(playerResult.error);
     if (!playerResult.value) return { success: false, error: 'Jugador no encontrado' };
 
-    const matchResult = await matchRepository.findById(partidaId);
+    const matchResult = await matchRepository.findById(matchId);
     if (!matchResult.success) return toFail(matchResult.error);
     if (!matchResult.value) return { success: false, error: ERROR_MESSAGES.MATCH_NOT_FOUND };
 
     const result = await rejectRequestUC.execute(
       playerResult.value.id,
-      partidaId,
+      matchId,
       matchResult.value.creatorId,
     );
     if (!result.success) return toFail(result.error);
     return { success: true };
   },
 
-  async cancelRequest(partidaId, usuarioId) {
-    const result = await cancelRequestUC.execute(partidaId, usuarioId);
+  async cancelRequest(matchId, userId) {
+    const result = await cancelRequestUC.execute(matchId, userId);
     if (!result.success) return toFail(result.error);
     return { success: true };
   },
 
-  async leaveMatch(partidaId, usuarioId) {
-    const result = await leaveMatchUC.execute(partidaId, usuarioId);
+  async leaveMatch(matchId, userId) {
+    const result = await leaveMatchUC.execute(matchId, userId);
     if (!result.success) return toFail(result.error);
     return { success: true };
   },
 
-  async addPlayerToMatch(partidaId, creadorId, jugadorData) {
-    const playerData = {
-      userId: jugadorData.usuarioId ?? null,
-      userName: jugadorData.usuarioNombre,
-      userApartment: jugadorData.usuarioVivienda ?? null,
-      skillLevel: jugadorData.nivelJuego ? skillLevelToDomain(jugadorData.nivelJuego) : null,
-      isExternal: jugadorData.esExterno ?? false,
+  async addPlayerToMatch(matchId, creatorId, playerData) {
+    const payload = {
+      userId: playerData.userId ?? null,
+      userName: playerData.userName,
+      userApartment: playerData.userApartment ?? null,
+      skillLevel: playerData.skillLevel ? skillLevelToDomain(playerData.skillLevel) : null,
+      isExternal: playerData.isExternal ?? false,
     };
 
-    const result = await addPlayerToMatchUC.execute(partidaId, creadorId, playerData);
+    const result = await addPlayerToMatchUC.execute(matchId, creatorId, payload);
     if (!result.success) return toFail(result.error);
     return { success: true, data: playerToLegacy(result.value) };
   },
 
-  async removePlayer(jugadorId, partidaId, creadorId) {
+  async removePlayer(playerId, matchId, creatorId) {
     // jugadorId is the partidas_jugadores row ID (not usuario_id)
-    const result = await removePlayerUC.execute(jugadorId, partidaId, creadorId);
+    const result = await removePlayerUC.execute(playerId, matchId, creatorId);
     if (!result.success) return toFail(result.error);
     return { success: true };
   },
 
   // ---- Match cancellation via reservation ----
 
-  async cancelMatchByReservation(reservaId, motivo = 'reserva_cancelada') {
-    const result = await cancelMatchByReservationUC.execute(reservaId, motivo);
-    if (!result.success) return { success: true, hadPartida: false }; // Non-critical
+  async cancelMatchByReservation(reservationId, reason = 'reserva_cancelada') {
+    const result = await cancelMatchByReservationUC.execute(reservationId, reason);
+    if (!result.success) return { success: true, hadMatch: false }; // Non-critical
     return {
       success: true,
-      hadPartida: result.value.hadMatch,
-      partidaId: result.value.matchId,
+      hadMatch: result.value.hadMatch,
+      matchId: result.value.matchId,
     };
   },
 
   // ============================================================================
   // LEGACY ALIASES - For backwards compatibility
   // ============================================================================
-  obtenerFotoUsuario(...args) { return this.getUserPhoto(...args); },
-  obtenerDatosUsuarios(...args) { return this.getUsersData(...args); },
-  obtenerPartidasActivas(...args) { return this.getActiveMatches(...args); },
-  obtenerMisPartidas(...args) { return this.getMyMatches(...args); },
-  obtenerPartidasApuntado(...args) { return this.getEnrolledMatches(...args); },
-  crearPartida(...args) { return this.createMatch(...args); },
-  solicitarUnirse(...args) { return this.requestToJoin(...args); },
-  aceptarSolicitud(...args) { return this.acceptRequest(...args); },
-  rechazarSolicitud(...args) { return this.rejectRequest(...args); },
-  desapuntarsePartida(...args) { return this.leaveMatch(...args); },
-  cancelarPartida(...args) { return this.cancelMatch(...args); },
-  eliminarPartida(...args) { return this.deleteMatch(...args); },
-  obtenerReservasConPartida(...args) { return this.getReservationsWithMatch(...args); },
-  cancelarSolicitud(...args) { return this.cancelRequest(...args); },
-  editarPartida(...args) { return this.editMatch(...args); },
-  anadirJugadorAPartida(...args) { return this.addPlayerToMatch(...args); },
-  eliminarJugador(...args) { return this.removePlayer(...args); },
-  cerrarClase(...args) { return this.closeClass(...args); },
-  cancelarPartidaPorReserva(...args) { return this.cancelMatchByReservation(...args); },
+  getPhotoUser(...args) { return this.getUserPhoto(...args); },
+  getDataUsers(...args) { return this.getUsersData(...args); },
+  getMatchesActivas(...args) { return this.getActiveMatches(...args); },
+  getMisMatches(...args) { return this.getMyMatches(...args); },
+  getMatchesApuntado(...args) { return this.getEnrolledMatches(...args); },
+  requestUnirse(...args) { return this.requestToJoin(...args); },
+  desapuntarseMatch(...args) { return this.leaveMatch(...args); },
+  anadirPlayerAMatch(...args) { return this.addPlayerToMatch(...args); },
+  deletePlayer(...args) { return this.removePlayer(...args); },
+  closeLesson(...args) { return this.closeClass(...args); },
 };
-
-// Re-export with English name
-export { partidasService as matchesService };

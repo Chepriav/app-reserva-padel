@@ -17,13 +17,13 @@ export function useMatchSimpleActions({ user, actions, showAlert }) {
   };
 
   const handleRequestToJoin = (match) => {
-    if (user?.esDemo) {
-      showAlert('Demo Account', 'This is a view-only demo account. You cannot make reservations or modifications.');
+    if (user?.isDemo) {
+      showAlert('Cuenta demo', 'Esta es una cuenta demo de solo lectura. No puedes hacer reservas ni modificaciones.');
       return;
     }
     showAlert(
       'Solicitar unirse',
-      `¿Quieres enviar una solicitud para unirte a la partida de ${match.creadorNombre}?`,
+      `¿Quieres enviar una solicitud para unirte a la partida de ${match.creatorName}?`,
       [
         { text: 'Cancelar', style: 'cancel', onPress: () => {} },
         {

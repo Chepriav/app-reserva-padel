@@ -10,11 +10,11 @@ export class LegacyMatchNotifierAdapter implements MatchNotifier {
   async scheduleReminders(userId: string, match: MatchReminderInfo): Promise<Result<void>> {
     try {
       const { notificationService } = await import('../../../services/notificationService');
-      notificationService.schedulePartidaReminders?.({
+      notificationService.scheduleMatchReminders?.({
         id: match.id,
-        fecha: match.date,
-        horaInicio: match.startTime,
-        pistaNombre: match.courtName,
+        date: match.date,
+        startTime: match.startTime,
+        courtName: match.courtName,
       });
     } catch { /* fire-and-forget */ }
     return ok(undefined);
@@ -23,7 +23,7 @@ export class LegacyMatchNotifierAdapter implements MatchNotifier {
   async notifyJoinRequest(creatorId: string, requesterName: string, matchId: string, isClass: boolean): Promise<Result<void>> {
     try {
       const { notificationService } = await import('../../../services/notificationService');
-      notificationService.notifyPartidaSolicitud?.(creatorId, requesterName, { partidaId: matchId, esClase: isClass });
+      notificationService.notifyMatchRequest?.(creatorId, requesterName, { matchId: matchId, isLesson: isClass });
     } catch { /* fire-and-forget */ }
     return ok(undefined);
   }
@@ -31,7 +31,7 @@ export class LegacyMatchNotifierAdapter implements MatchNotifier {
   async notifyRequestAccepted(playerId: string, creatorName: string, matchId: string, isClass: boolean): Promise<Result<void>> {
     try {
       const { notificationService } = await import('../../../services/notificationService');
-      notificationService.notifyPartidaAceptada?.(playerId, creatorName, { partidaId: matchId, esClase: isClass });
+      notificationService.notifyMatchAceptada?.(playerId, creatorName, { matchId: matchId, isLesson: isClass });
     } catch { /* fire-and-forget */ }
     return ok(undefined);
   }
@@ -39,7 +39,7 @@ export class LegacyMatchNotifierAdapter implements MatchNotifier {
   async notifyMatchFull(playerIds: string[], creatorName: string, matchId: string, isClass: boolean): Promise<Result<void>> {
     try {
       const { notificationService } = await import('../../../services/notificationService');
-      notificationService.notifyPartidaCompleta?.(playerIds, creatorName, { partidaId: matchId, esClase: isClass });
+      notificationService.notifyMatchCompleta?.(playerIds, creatorName, { matchId: matchId, isLesson: isClass });
     } catch { /* fire-and-forget */ }
     return ok(undefined);
   }
@@ -47,7 +47,7 @@ export class LegacyMatchNotifierAdapter implements MatchNotifier {
   async notifyMatchCancelled(playerIds: string[], creatorName: string, matchId: string, isClass: boolean): Promise<Result<void>> {
     try {
       const { notificationService } = await import('../../../services/notificationService');
-      notificationService.notifyPartidaCancelada?.(playerIds, creatorName, { partidaId: matchId, esClase: isClass });
+      notificationService.notifyMatchCancelled?.(playerIds, creatorName, { matchId: matchId, isLesson: isClass });
     } catch { /* fire-and-forget */ }
     return ok(undefined);
   }
@@ -62,10 +62,10 @@ export class LegacyMatchNotifierAdapter implements MatchNotifier {
   ): Promise<Result<void>> {
     try {
       const { notificationService } = await import('../../../services/notificationService');
-      notificationService.notifyPartidaCanceladaPorReserva?.(
+      notificationService.notifyMatchCancelledByReservation?.(
         playerIds,
         creatorName,
-        { fecha: date, horaInicio: startTime, esClase: isClass },
+        { date: date, startTime: startTime, isLesson: isClass },
         reason,
       );
     } catch { /* fire-and-forget */ }

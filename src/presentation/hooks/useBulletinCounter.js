@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { tablonService } from '../../services/bulletinService';
+import { bulletinService } from '../../services/bulletinService';
 
 // Singleton to share updateCounts across components
 let globalUpdateCounts = null;
@@ -14,8 +14,8 @@ export function useBulletinCounter(userId) {
   const updateCounts = useCallback(async () => {
     if (!userId) return;
     const [announcementsResult, notifResult] = await Promise.all([
-      tablonService.contarAnunciosNoLeidos(userId),
-      tablonService.contarNotificacionesNoLeidas(userId),
+      bulletinService.countUnreadAnnouncements(userId),
+      bulletinService.countUnreadNotifications(userId),
     ]);
     if (announcementsResult.success) setAnnouncementCount(announcementsResult.count);
     if (notifResult.success) setNotificationCount(notifResult.count);

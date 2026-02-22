@@ -17,49 +17,49 @@ export function AdminHeader() {
  * Tabs de navegación del panel admin
  */
 export function AdminTabs({
-  tabActiva,
+  activeTab,
   onTabChange,
-  contadorSolicitudes,
-  contadorUsuarios,
+  requestsCount,
+  usersCount,
 }) {
   return (
     <View style={styles.tabsContainer}>
       <TouchableOpacity
-        style={[styles.tab, tabActiva === 'solicitudes' && styles.tabActive]}
-        onPress={() => onTabChange('solicitudes')}
+        style={[styles.tab, activeTab === 'requests' && styles.tabActive]}
+        onPress={() => onTabChange('requests')}
       >
         <Text
           style={[
             styles.tabText,
-            tabActiva === 'solicitudes' && styles.tabTextActive,
+            activeTab === 'requests' && styles.tabTextActive,
           ]}
         >
-          Solicitudes ({contadorSolicitudes})
+          Solicitudes ({requestsCount})
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.tab, tabActiva === 'usuarios' && styles.tabActive]}
-        onPress={() => onTabChange('usuarios')}
+        style={[styles.tab, activeTab === 'users' && styles.tabActive]}
+        onPress={() => onTabChange('users')}
       >
         <Text
           style={[
             styles.tabText,
-            tabActiva === 'usuarios' && styles.tabTextActive,
+            activeTab === 'users' && styles.tabTextActive,
           ]}
         >
-          Usuarios ({contadorUsuarios})
+          Usuarios ({usersCount})
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.tab, tabActiva === 'configuracion' && styles.tabActive]}
-        onPress={() => onTabChange('configuracion')}
+        style={[styles.tab, activeTab === 'configuration' && styles.tabActive]}
+        onPress={() => onTabChange('configuration')}
       >
         <Text
           style={[
             styles.tabText,
-            tabActiva === 'configuracion' && styles.tabTextActive,
+            activeTab === 'configuration' && styles.tabTextActive,
           ]}
         >
           Configuración

@@ -57,13 +57,13 @@ export function toDomain(row: Record<string, unknown>): UserNotification {
 export function toLegacyFormat(notification: UserNotification): Record<string, unknown> {
   return {
     id: notification.id,
-    usuarioId: notification.userId,
-    tipo: notificationTypeToDb(notification.type),
-    titulo: notification.title,
-    mensaje: notification.message,
-    datos: notification.data,
-    leida: notification.isRead,
-    expiraEn: notification.expiresAt,
+    userId: notification.userId,
+    type: notification.type,
+    title: notification.title,
+    message: notification.message,
+    data: notification.data,
+    isRead: notification.isRead,
+    expiresAt: notification.expiresAt,
     createdAt: notification.createdAt,
   };
 }

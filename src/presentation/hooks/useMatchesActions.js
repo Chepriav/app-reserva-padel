@@ -1,49 +1,49 @@
 import { useState } from 'react';
-import { partidasService } from '../../services/matchesService';
+import { matchesService } from '../../services/matchesService';
 
 export function useMatchesActions(userId, onSuccess) {
   const [actionLoading, setActionLoading] = useState(false);
 
   const createMatch = async (matchData) => {
     setActionLoading(true);
-    const result = await partidasService.crearPartida(matchData);
+    const result = await matchesService.createMatch(matchData);
     setActionLoading(false);
     if (result.success) onSuccess?.();
     return result;
   };
 
   const cancelMatch = async (matchId) => {
-    const result = await partidasService.cancelarPartida(matchId, userId);
+    const result = await matchesService.cancelMatch(matchId, userId);
     if (result.success) onSuccess?.();
     return result;
   };
 
   const requestToJoin = async (matchId, user) => {
-    const result = await partidasService.solicitarUnirse(matchId, user);
+    const result = await matchesService.requestToJoin(matchId, user);
     if (result.success) onSuccess?.();
     return result;
   };
 
   const acceptRequest = async (playerId, matchId) => {
-    const result = await partidasService.aceptarSolicitud(playerId, matchId, userId);
+    const result = await matchesService.acceptRequest(playerId, matchId, userId);
     if (result.success) onSuccess?.();
     return result;
   };
 
   const rejectRequest = async (playerId, matchId) => {
-    const result = await partidasService.rechazarSolicitud(playerId, matchId);
+    const result = await matchesService.rejectRequest(playerId, matchId);
     if (result.success) onSuccess?.();
     return result;
   };
 
   const cancelRequest = async (matchId) => {
-    const result = await partidasService.cancelarSolicitud(matchId, userId);
+    const result = await matchesService.cancelRequest(matchId, userId);
     if (result.success) onSuccess?.();
     return result;
   };
 
   const leaveMatch = async (matchId) => {
-    const result = await partidasService.desapuntarsePartida(matchId, userId);
+    const result = await matchesService.leaveMatch(matchId, userId);
     if (result.success) {
       await new Promise((resolve) => setTimeout(resolve, 300));
       onSuccess?.();
@@ -53,26 +53,26 @@ export function useMatchesActions(userId, onSuccess) {
 
   const editMatch = async (matchId, updates) => {
     setActionLoading(true);
-    const result = await partidasService.editarPartida(matchId, userId, updates);
+    const result = await matchesService.editMatch(matchId, userId, updates);
     setActionLoading(false);
     if (result.success) onSuccess?.();
     return result;
   };
 
   const removePlayer = async (playerId, matchId) => {
-    const result = await partidasService.eliminarJugador(playerId, matchId, userId);
+    const result = await matchesService.removePlayer(playerId, matchId, userId);
     if (result.success) onSuccess?.();
     return result;
   };
 
   const addPlayerToMatch = async (matchId, playerData) => {
-    const result = await partidasService.anadirJugadorAPartida(matchId, userId, playerData);
+    const result = await matchesService.addPlayerToMatch(matchId, userId, playerData);
     if (result.success) onSuccess?.();
     return result;
   };
 
   const closeClass = async (matchId) => {
-    const result = await partidasService.cerrarClase(matchId, userId);
+    const result = await matchesService.closeClass(matchId, userId);
     if (result.success) onSuccess?.();
     return result;
   };

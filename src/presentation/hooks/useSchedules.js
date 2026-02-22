@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { esFechaValida } from '../../utils/dateHelpers';
+import { isDateValida } from '../../utils/dateHelpers';
 
 /**
  * Hook to manage schedule loading (day and week views)
@@ -9,8 +9,8 @@ export function useSchedules({
   selectedDate,
   currentView,
   getAvailability,
-  reservasVersion,
-  mostrarAlerta,
+  reservationsVersion,
+  showAlerta,
 }) {
   const [schedules, setSchedules] = useState([]);
   const [weeklySchedules, setWeeklySchedules] = useState({});
@@ -32,7 +32,7 @@ export function useSchedules({
       if (result.success) {
         setSchedules(result.data);
       } else {
-        mostrarAlerta(
+        showAlerta(
           'Error al cargar horarios',
           result.error || 'No se pudieron cargar los horarios.'
         );
@@ -40,13 +40,13 @@ export function useSchedules({
       }
     } catch (error) {
       setLoadingSchedules(false);
-      mostrarAlerta(
+      showAlerta(
         'Error de conexión',
         'No se pudieron cargar los horarios. Verifica tu conexión a internet.'
       );
       setSchedules([]);
     }
-  }, [selectedCourt, selectedDate, getAvailability, mostrarAlerta]);
+  }, [selectedCourt, selectedDate, getAvailability, showAlerta]);
 
   // Load week schedules
   const loadWeekSchedules = useCallback(async () => {
@@ -55,38 +55,38 @@ export function useSchedules({
     setLoadingSchedules(true);
 
     try {
-      const horariosTemp = {};
+      const timeSlotsTemp = {};
 
-      const [año, mes, dia] = selectedDate.split('-').map(Number);
-      const fechaActual = new Date(Date.UTC(año, mes - 1, dia));
+      const [año, mes, day] = selectedDate.split('-').map(Number);
+      const dateActual = new Date(Date.UTC(año, mes - 1, day));
 
-      const diaSemana = fechaActual.getUTCDay();
-      const diasHastaLunes = diaSemana === 0 ? 6 : diaSemana - 1;
+      const dayWeek = dateActual.getUTCDay();
+      const daysUntilMonday = dayWeek === 0 ? 6 : dayWeek - 1;
 
-      const lunes = new Date(fechaActual);
-      lunes.setUTCDate(fechaActual.getUTCDate() - diasHastaLunes);
+      const monday = new Date(dateActual);
+      monday.setUTCDate(dateActual.getUTCDate() - daysUntilMonday);
 
       for (let i = 0; i < 7; i++) {
-        const fecha = new Date(lunes);
-        fecha.setUTCDate(lunes.getUTCDate() + i);
-        const fechaStr = fecha.toISOString().split('T')[0];
+        const date = new Date(monday);
+        date.setUTCDate(monday.getUTCDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
 
-        if (esFechaValida(fechaStr)) {
-          const result = await getAvailability(selectedCourt.id, fechaStr);
+        if (isDateValida(dateStr)) {
+          const result = await getAvailability(selectedCourt.id, dateStr);
           if (result.success) {
-            horariosTemp[fechaStr] = result.data;
+            timeSlotsTemp[dateStr] = result.data;
           }
         }
       }
 
-      setWeeklySchedules(horariosTemp);
+      setWeeklySchedules(timeSlotsTemp);
       setLoadingSchedules(false);
     } catch (error) {
       setLoadingSchedules(false);
-      mostrarAlerta('Error', 'No se pudieron cargar los horarios de la semana');
+      showAlerta('Error', 'No se pudieron cargar los horarios de la semana');
       setWeeklySchedules({});
     }
-  }, [selectedCourt, selectedDate, getAvailability, mostrarAlerta]);
+  }, [selectedCourt, selectedDate, getAvailability, showAlerta]);
 
   // Reload schedules based on current view
   const reloadSchedules = useCallback(() => {
@@ -106,7 +106,7 @@ export function useSchedules({
         loadWeekSchedules();
       }
     }
-  }, [selectedCourt, selectedDate, currentView, reservasVersion]);
+  }, [selectedCourt, selectedDate, currentView, reservationsVersion]);
 
   return {
     schedules,

@@ -5,32 +5,32 @@ import { colors } from '../../../constants/colors';
 /**
  * List of courts for selection
  */
-export function CourtSelector({ pistas, pistaSeleccionada, onPistaSelect }) {
-  if (!pistas || pistas.length <= 1) return null;
+export function CourtSelector({ courts, courtSelected, onCourtSelect }) {
+  if (!courts || courts.length <= 1) return null;
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Pistas Disponibles</Text>
-      {pistas.map((pista) => (
+      <Text style={styles.sectionTitle}>Pistas disponibles</Text>
+      {courts.map((court) => (
         <TouchableOpacity
-          key={pista.id}
+          key={court.id}
           style={[
             styles.courtCard,
-            pistaSeleccionada?.id === pista.id && styles.courtCardSelected,
+            courtSelected?.id === court.id && styles.courtCardSelected,
           ]}
-          onPress={() => onPistaSelect(pista)}
+          onPress={() => onCourtSelect(court)}
         >
-          <Text style={styles.courtName}>{pista.nombre}</Text>
-          <Text style={styles.courtDescription}>{pista.descripcion}</Text>
+          <Text style={styles.courtName}>{court.name}</Text>
+          <Text style={styles.courtDescription}>{court.description}</Text>
           <View style={styles.courtFeatures}>
-            {pista.techada && (
+            {court.techada && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>Techada</Text>
               </View>
             )}
-            {pista.conLuz && (
+            {court.withLuz && (
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>Con Luz</Text>
+                <Text style={styles.badgeText}>Con luz</Text>
               </View>
             )}
           </View>
@@ -39,9 +39,6 @@ export function CourtSelector({ pistas, pistaSeleccionada, onPistaSelect }) {
     </View>
   );
 }
-
-// Legacy alias for backwards compatibility
-export const PistaSelector = CourtSelector;
 
 const styles = StyleSheet.create({
   section: {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { partidasService } from '../../services/matchesService';
+import { matchesService } from '../../services/matchesService';
 
 const DEFAULT_STATE = {
   type: 'abierta',
@@ -24,7 +24,7 @@ export function useCreateMatchModal(userId) {
   const open = async () => {
     setPlayers([]);
     setModalState(DEFAULT_STATE);
-    const result = await partidasService.obtenerReservasConPartida(userId);
+    const result = await matchesService.getReservationsWithMatch(userId);
     if (result.success) setReservationsWithMatch(result.data);
     setVisible(true);
   };

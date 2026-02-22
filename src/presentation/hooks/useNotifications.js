@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { tablonService } from '../../services/bulletinService';
+import { bulletinService } from '../../services/bulletinService';
 
 /**
  * Hook to manage user notifications (inbox tab)
@@ -12,7 +12,7 @@ export function useNotifications(userId, onCountChange) {
   const loadNotifications = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
-    const result = await tablonService.obtenerNotificaciones(userId);
+    const result = await bulletinService.getNotifications(userId);
     if (result.success) setNotifications(result.data);
     setLoading(false);
   }, [userId]);
@@ -28,8 +28,8 @@ export function useNotifications(userId, onCountChange) {
   };
 
   const deleteNotification = async (notificationId) => {
-    const wasUnread = notifications.find((n) => n.id === notificationId && !n.leida);
-    const result = await tablonService.eliminarNotificacion(notificationId);
+    const wasUnread = notifications.find((n) => n.id === notificationId && !n.read);
+    const result = await bulletinService.deleteNotification(notificationId);
     if (result.success) {
       setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
       if (wasUnread) onCountChange?.();
@@ -38,10 +38,10 @@ export function useNotifications(userId, onCountChange) {
   };
 
   const markAsRead = async (notificationId) => {
-    const result = await tablonService.marcarNotificacionLeida(notificationId);
+    const result = await bulletinService.markNotificationRead(notificationId);
     if (result.success) {
       setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, leida: true } : n))
+        prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
       );
       onCountChange?.();
     }
@@ -49,15 +49,15 @@ export function useNotifications(userId, onCountChange) {
   };
 
   const markAllAsRead = async () => {
-    const result = await tablonService.marcarTodasLeidas(userId);
+    const result = await bulletinService.markTodasRead(userId);
     if (result.success) {
-      setNotifications((prev) => prev.map((n) => ({ ...n, leida: true })));
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       onCountChange?.();
     }
     return result;
   };
 
-  const countUnread = () => notifications.filter((n) => !n.leida).length;
+  const countUnread = () => notifications.filter((n) => !n.read).length;
 
   return {
     notifications, loading, refreshing,

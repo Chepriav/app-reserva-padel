@@ -43,7 +43,7 @@ export function ImportUsersModal({ visible, onClose, onComplete, onImport }) {
         <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Importar Usuarios desde CSV</Text>
+            <Text style={styles.headerTitle}>Importar usuarios desde CSV</Text>
             {!importing && (
               <TouchableOpacity onPress={handleCancel}>
                 <Ionicons name="close" size={24} color={colors.textSecondary} />
@@ -59,7 +59,7 @@ export function ImportUsersModal({ visible, onClose, onComplete, onImport }) {
                 <Ionicons name="cloud-upload-outline" size={64} color={colors.primary} />
                 <Text style={styles.phaseTitle}>Selecciona un archivo CSV</Text>
                 <Text style={styles.phaseDescription}>
-                  El archivo debe contener las columnas: nombre, codigo, email
+                  El archivo debe contener las columnas: name, codigo, email
                 </Text>
 
                 {Platform.OS === 'web' && (
@@ -76,7 +76,7 @@ export function ImportUsersModal({ visible, onClose, onComplete, onImport }) {
                       onPress={() => document.getElementById('csv-file-input').click()}
                     >
                       <Ionicons name="folder-open-outline" size={20} color="#fff" />
-                      <Text style={styles.selectButtonText}>Seleccionar Archivo</Text>
+                      <Text style={styles.selectButtonText}>Seleccionar archivo</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -84,7 +84,7 @@ export function ImportUsersModal({ visible, onClose, onComplete, onImport }) {
                 <View style={styles.exampleBox}>
                   <Text style={styles.exampleTitle}>Formato esperado:</Text>
                   <View style={styles.exampleCode}>
-                    <Text style={styles.exampleCodeText}>nombre,codigo,email</Text>
+                    <Text style={styles.exampleCodeText}>name,codigo,email</Text>
                     <Text style={styles.exampleCodeText}>Juan Pérez,1-3-B,juan@example.com</Text>
                     <Text style={styles.exampleCodeText}>María López,2-4-C,maria@example.com</Text>
                   </View>
@@ -219,7 +219,7 @@ export function ImportUsersModal({ visible, onClose, onComplete, onImport }) {
 
                 {currentUser && (
                   <Text style={styles.currentUserText}>
-                    Procesando: {currentUser.nombre} ({currentUser.email})
+                    Procesando: {currentUser.name} ({currentUser.email})
                   </Text>
                 )}
 

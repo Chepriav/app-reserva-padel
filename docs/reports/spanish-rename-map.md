@@ -1,0 +1,1144 @@
+# Spanish Identifier Rename Map (Step 2)
+
+This is a proposal. DB field names (snake_case, Supabase strings) are excluded.
+Ambiguous terms are marked and require your decision.
+
+## Ambiguous Terms (need decision)
+- `bloque` -> `block` or `slot`
+- `bloqueo` -> `blockout` or `block`
+- `bloques` -> `blocks` or `slots`
+- `clase` -> `class` or `lesson`
+- `horario` -> `schedule` or `timeSlot`
+- `horarios` -> `schedules` or `timeSlots`
+- `partida` -> `match` or `game`
+- `partidas` -> `matches` or `games`
+- `semana` -> `week` or `weekday`
+
+## Proposed Renames by File
+
+- `src/constants/colors.js`
+  - `anuncioAviso` -> `announcementNotice`
+  - `anuncioInfo` -> `announcementInfo`
+  - `anuncioMantenimiento` -> `announcementMaintenance`
+  - `anuncioUrgente` -> `announcementUrgent`
+  - `bloqueado` -> `blocked`
+  - `clase` -> `<class|lesson>` (AMBIGUOUS)
+  - `claseBackground` -> `<class|lesson>Background` (AMBIGUOUS)
+  - `claseBadge` -> `<class|lesson>Badge` (AMBIGUOUS)
+  - `notificacionLeida` -> `notificationRead`
+  - `reservaDesplazable` -> `displaceableReservation`
+  - `reservaGarantizada` -> `guaranteedReservation`
+  - `reservaPasada` -> `pastReservation`
+  - `reservaProvisional` -> `provisionalReservation`
+- `src/constants/config.js`
+  - `CLASE_CONFIG` -> `CLASS_CONFIG`
+  - `DURACION_BLOQUE` -> `DURATION_<block|slot>` (AMBIGUOUS)
+  - `HORARIOS_CONFIG` -> `<schedules|timeSlots>_CONFIG` (AMBIGUOUS)
+  - `LIMITES_RESERVA` -> `RESERVATION_LIMITS`
+  - `MAX_ALUMNOS` -> `MAX_STUDENTS`
+  - `MIN_ALUMNOS` -> `MIN_STUDENTS`
+  - `NIVELES_JUEGO` -> `SKILL_LEVELS`
+  - `PRIORIDAD_LABELS` -> `PRIORITY_LABELS`
+  - `VIVIENDA_CONFIG` -> `APARTMENT_CONFIG`
+  - `combinarVivienda` -> `combineApartment`
+  - `duracionBloque` -> `slotDuration`
+  - `esViviendaValida` -> `isApartmentValid`
+  - `formatearVivienda` -> `formatApartment`
+  - `horaApertura` -> `openingTime`
+  - `horaCierre` -> `closingTime`
+  - `horasAnticipacionMinima` -> `minAdvanceHours`
+  - `horasCancelacionMinima` -> `minCancelHours`
+  - `maxReservasActivas` -> `maxActiveReservations`
+  - `parseVivienda` -> `parseApartment`
+- `src/domain/useCases/CheckSlotInBreakTime.ts`
+  - `horaFin` -> `endTime`
+  - `horaInicio` -> `startTime`
+- `src/infrastructure/supabase/helpers/userCleanupHelper.ts`
+  - `reservaIds` -> `reservationIds`
+  - `reservasData` -> `reservationsData`
+- `src/infrastructure/supabase/mappers/announcementMapper.ts`
+  - `mensaje` -> `message`
+- `src/infrastructure/supabase/mappers/availabilityMapper.ts`
+  - `bloqueado` -> `blocked`
+  - `bloqueoId` -> `blockoutId`
+  - `horaFin` -> `endTime`
+  - `horaInicio` -> `startTime`
+  - `motivoBloqueo` -> `blockoutReason`
+  - `reservaExistente` -> `existingReservation`
+- `src/infrastructure/supabase/mappers/blockoutMapper.ts`
+  - `horaFin` -> `endTime`
+  - `horaInicio` -> `startTime`
+  - `pistaId` -> `courtId`
+- `src/infrastructure/supabase/mappers/displacementNotificationMapper.ts`
+  - `desplazadoPorVivienda` -> `displacedByApartment`
+  - `fechaReserva` -> `reservationDate`
+  - `horaFin` -> `endTime`
+  - `horaInicio` -> `startTime`
+  - `pistaNombre` -> `courtName`
+- `src/infrastructure/supabase/mappers/matchMapper.ts`
+  - `cancelada` -> `cancelled`
+  - `creadorNivel` -> `creatorLevel`
+  - `creadorVivienda` -> `creatorApartment`
+  - `esClase` -> `isClass`
+  - `horaFin` -> `endTime`
+  - `horaInicio` -> `startTime`
+  - `mensaje` -> `message`
+  - `nivelJuego` -> `skillLevel`
+  - `nivelPreferido` -> `preferredLevel`
+  - `niveles` -> `levels`
+  - `partidaId` -> `<match|game>Id` (AMBIGUOUS)
+  - `pistaNombre` -> `courtName`
+  - `precioAlumno` -> `studentPrice`
+  - `precioGrupo` -> `groupPrice`
+  - `rechazado` -> `rejected`
+  - `reservaId` -> `reservationId`
+  - `usuarioFoto` -> `userPhoto`
+  - `usuarioId` -> `userId`
+  - `usuarioNombre` -> `userName`
+  - `usuarioVivienda` -> `userApartment`
+- `src/infrastructure/supabase/mappers/reservationMapper.ts`
+  - `cancelada` -> `cancelled`
+  - `horaFin` -> `endTime`
+  - `horaInicio` -> `startTime`
+  - `pistaId` -> `courtId`
+  - `pistaNombre` -> `courtName`
+  - `usuarioId` -> `userId`
+  - `usuarioNombre` -> `userName`
+- `src/infrastructure/supabase/mappers/scheduleConfigMapper.ts`
+  - `duracionBloque` -> `slotDuration`
+  - `findeHoraApertura` -> `weekendOpeningTime`
+  - `findeHoraCierre` -> `weekendClosingTime`
+  - `findeMotivoPausa` -> `weekendBreakReason`
+  - `findePausaDiasSemana` -> `weekendBreakWeekdays`
+  - `findePausaFin` -> `weekendBreakEnd`
+  - `findePausaInicio` -> `weekendBreakStart`
+  - `horaApertura` -> `openingTime`
+  - `horaCierre` -> `closingTime`
+  - `motivoPausa` -> `breakReason`
+  - `pausaDiasSemana` -> `breakWeekdays`
+  - `pausaFin` -> `breakEnd`
+  - `pausaInicio` -> `breakStart`
+  - `semanaHoraApertura` -> `weekdayOpeningTime`
+  - `semanaHoraCierre` -> `weekdayClosingTime`
+  - `usarHorariosDiferenciados` -> `useDifferentiatedSchedules`
+- `src/infrastructure/supabase/mappers/userMapper.ts`
+  - `aprobado` -> `approved`
+  - `esAdmin` -> `isAdmin`
+  - `fotoPerfil` -> `profilePhoto`
+  - `nivelJuego` -> `skillLevel`
+  - `rechazado` -> `rejected`
+  - `viviendaSolicitada` -> `requestedApartment`
+- `src/infrastructure/supabase/mappers/userNotificationMapper.ts`
+  - `mensaje` -> `message`
+  - `usuarioId` -> `userId`
+- `src/infrastructure/supabase/repositories/ExpoLocalScheduler.ts`
+  - `horaFormateada` -> `timeFormateada`
+  - `partidaId` -> `<match|game>Id` (AMBIGUOUS)
+- `src/infrastructure/supabase/repositories/LegacyDisplacementNotifierAdapter.ts`
+  - `horaFin` -> `endTime`
+  - `horaInicio` -> `startTime`
+  - `notifyViviendaBlockoutCancellation` -> `notifyApartmentBlockoutCancellation`
+  - `notifyViviendaDisplacement` -> `notifyApartmentDisplacement`
+  - `pistaNombre` -> `courtName`
+- `src/infrastructure/supabase/repositories/LegacyMatchCancellationAdapter.ts`
+  - `cancelarPartidaPorReserva` -> `cancel<match|game>ByReservation` (AMBIGUOUS)
+  - `partidasService` -> `<matches|games>Service` (AMBIGUOUS)
+- `src/infrastructure/supabase/repositories/LegacyMatchNotifierAdapter.ts`
+  - `esClase` -> `isClass`
+  - `horaInicio` -> `startTime`
+  - `notifyPartidaAceptada` -> `notify<match|game>Aceptada` (AMBIGUOUS)
+  - `notifyPartidaCancelada` -> `notify<match|game>Cancelled` (AMBIGUOUS)
+  - `notifyPartidaCanceladaPorReserva` -> `notify<match|game>CancelledByReservation` (AMBIGUOUS)
+  - `notifyPartidaCompleta` -> `notify<match|game>Completa` (AMBIGUOUS)
+  - `notifyPartidaSolicitud` -> `notify<match|game>Request` (AMBIGUOUS)
+  - `partidaId` -> `<match|game>Id` (AMBIGUOUS)
+  - `pistaNombre` -> `courtName`
+  - `schedulePartidaReminders` -> `schedule<match|game>Reminders` (AMBIGUOUS)
+- `src/infrastructure/supabase/repositories/SupabaseAnnouncementRepository.ts`
+  - `anuncioIds` -> `announcementIds`
+  - `mensaje` -> `message`
+- `src/infrastructure/supabase/repositories/SupabaseDisplacementNotifier.ts`
+  - `horaInicio` -> `startTime`
+  - `pistaNombre` -> `courtName`
+- `src/infrastructure/supabase/repositories/SupabaseMatchRepository.ts`
+  - `mensaje` -> `message`
+  - `niveles` -> `levels`
+- `src/infrastructure/supabase/repositories/SupabaseUserNotificationRepository.ts`
+  - `mensaje` -> `message`
+- `src/presentation/components/ApartmentSelector.js`
+  - `VIVIENDA_CONFIG` -> `APARTMENT_CONFIG`
+  - `ViviendaSelector` -> `ApartmentSelector`
+- `src/presentation/components/admin/AdminContent.js`
+  - `SolicitudCard` -> `RequestCard`
+  - `SolicitudesContent` -> `RequestsContent`
+  - `UsuarioCard` -> `UserCard`
+  - `Usuarios` -> `Users`
+  - `UsuariosContent` -> `UsersContent`
+  - `onAprobar` -> `onApprove`
+  - `onAprobarCambio` -> `onApproveChange`
+  - `onEditVivienda` -> `onEditApartment`
+  - `onRechazar` -> `onReject`
+  - `onRechazarCambio` -> `onRejectChange`
+  - `solicitudesCambio` -> `requestsChange`
+  - `usuario` -> `user`
+  - `usuarios` -> `users`
+  - `usuariosHeader` -> `usersHeader`
+  - `usuariosPendientes` -> `usersPending`
+  - `usuariosTitle` -> `usersTitle`
+- `src/presentation/components/admin/AdminTabs.js`
+  - `Solicitudes` -> `Requests`
+  - `Usuarios` -> `Users`
+  - `contadorSolicitudes` -> `contadorRequests`
+  - `contadorUsuarios` -> `contadorUsers`
+- `src/presentation/components/admin/AnnouncementAdminCard.js`
+  - `AnuncioAdminCard` -> `AnnouncementAdminCard`
+  - `anuncio` -> `announcement`
+  - `anuncioAviso` -> `announcementNotice`
+  - `anuncioInfo` -> `announcementInfo`
+  - `anuncioMantenimiento` -> `announcementMaintenance`
+  - `anuncioUrgente` -> `announcementUrgent`
+  - `fechaStr` -> `dateStr`
+  - `formatearFecha` -> `formatDate`
+  - `mensaje` -> `message`
+- `src/presentation/components/admin/ApartmentChangeCard.js`
+  - `Aprobar` -> `Approve`
+  - `Cambio` -> `Change`
+  - `CambioViviendaCard` -> `ChangeApartmentCard`
+  - `Rechazar` -> `Reject`
+  - `botonAprobar` -> `buttonApprove`
+  - `botonAprobarText` -> `buttonApproveText`
+  - `botonRechazar` -> `buttonReject`
+  - `botonRechazarText` -> `buttonRejectText`
+  - `botonesContainer` -> `buttonsContainer`
+  - `cambioArrow` -> `changeArrow`
+  - `cambioBadge` -> `changeBadge`
+  - `cambioNueva` -> `changeNew`
+  - `cambioValue` -> `changeValue`
+  - `cambioViviendaContainer` -> `changeApartmentContainer`
+  - `formatearVivienda` -> `formatApartment`
+  - `onAprobar` -> `onApprove`
+  - `onRechazar` -> `onReject`
+  - `usuario` -> `user`
+  - `viviendaSolicitada` -> `requestedApartment`
+- `src/presentation/components/admin/CreateAnnouncementModal.js`
+  - `CrearAnuncioModal` -> `CreateAnnouncementModal`
+  - `Mensaje` -> `Message`
+  - `TIPOS_ANUNCIO` -> `TIPOS_ANNOUNCEMENT`
+  - `anuncioAviso` -> `announcementNotice`
+  - `anuncioInfo` -> `announcementInfo`
+  - `anuncioMantenimiento` -> `announcementMaintenance`
+  - `anuncioUrgente` -> `announcementUrgent`
+  - `loadingUsuarios` -> `loadingUsers`
+  - `mensaje` -> `message`
+  - `setMensaje` -> `setMessage`
+  - `setUsuariosSeleccionados` -> `setUsersSeleccionados`
+  - `usuarios` -> `users`
+  - `usuariosIds` -> `usersIds`
+  - `usuariosSeleccionados` -> `usersSeleccionados`
+- `src/presentation/components/admin/EditApartmentModal.js`
+  - `EditViviendaModal` -> `EditApartmentModal`
+  - `Usuario` -> `User`
+  - `Vivienda` -> `Apartment`
+  - `usuario` -> `user`
+- `src/presentation/components/admin/ImportResultsModal.js`
+  - `usuarios` -> `users`
+- `src/presentation/components/admin/ImportUsersButton.js`
+  - `Usuarios` -> `Users`
+- `src/presentation/components/admin/ImportUsersModal.js`
+  - `Usuarios` -> `Users`
+  - `usuarios` -> `users`
+- `src/presentation/components/admin/RecipientsSelector.js`
+  - `renderUsuario` -> `renderUser`
+  - `toggleUsuario` -> `toggleUser`
+  - `usuarioInfo` -> `userInfo`
+  - `usuarioItem` -> `userItem`
+  - `usuarioItemSelected` -> `userItemSelected`
+  - `usuarioNombre` -> `userName`
+  - `usuarioVivienda` -> `userApartment`
+  - `usuarios` -> `users`
+  - `usuariosFiltrados` -> `usersFiltrados`
+- `src/presentation/components/admin/ScheduleConfigSection.js`
+  - `Domingo` -> `Sunday`
+  - `Hora` -> `Time`
+  - `Horario` -> `<schedule|timeSlot>` (AMBIGUOUS)
+  - `Lunes` -> `Monday`
+  - `Pausa` -> `Break`
+  - `Viernes` -> `Friday`
+  - `bloques` -> `<blocks|slots>` (AMBIGUOUS)
+  - `findeHoraApertura` -> `weekendOpeningTime`
+  - `findeHoraCierre` -> `weekendClosingTime`
+  - `findePausaFin` -> `weekendBreakEnd`
+  - `findePausaInicio` -> `weekendBreakStart`
+  - `horaApertura` -> `openingTime`
+  - `horaCierre` -> `closingTime`
+  - `horario` -> `<schedule|timeSlot>` (AMBIGUOUS)
+  - `horarios` -> `<schedules|timeSlots>` (AMBIGUOUS)
+  - `pausa` -> `break`
+  - `pausaFin` -> `breakEnd`
+  - `pausaInicio` -> `breakStart`
+  - `reserva` -> `reservation`
+  - `semanaHoraApertura` -> `weekdayOpeningTime`
+  - `semanaHoraCierre` -> `weekdayClosingTime`
+  - `usarHorariosDiferenciados` -> `useDifferentiatedSchedules`
+- `src/presentation/components/admin/SolicitudCard.js`
+  - `Aprobar` -> `Approve`
+  - `Rechazar` -> `Reject`
+  - `Solicitud` -> `Request`
+  - `SolicitudCard` -> `RequestCard`
+  - `Vivienda` -> `Apartment`
+  - `botonAprobar` -> `buttonApprove`
+  - `botonAprobarText` -> `buttonApproveText`
+  - `botonRechazar` -> `buttonReject`
+  - `botonRechazarText` -> `buttonRejectText`
+  - `botonesContainer` -> `buttonsContainer`
+  - `formatearFechaLegible` -> `formatDateReadable`
+  - `onAprobar` -> `onApprove`
+  - `onRechazar` -> `onReject`
+  - `usuario` -> `user`
+- `src/presentation/components/admin/UsuarioCard.js`
+  - `Administrador` -> `Admin`
+  - `Usuario` -> `User`
+  - `UsuarioCard` -> `UserCard`
+  - `Vivienda` -> `Apartment`
+  - `editViviendaButton` -> `editApartmentButton`
+  - `editViviendaButtonText` -> `editApartmentButtonText`
+  - `esAdmin` -> `isAdmin`
+  - `esMiCuenta` -> `isMyAccount`
+  - `onEditVivienda` -> `onEditApartment`
+  - `tuCuenta` -> `tuAccount`
+  - `usuario` -> `user`
+- `src/presentation/components/admin/index.js`
+  - `SolicitudCard` -> `RequestCard`
+  - `SolicitudesContent` -> `RequestsContent`
+  - `UsuarioCard` -> `UserCard`
+  - `UsuariosContent` -> `UsersContent`
+- `src/presentation/components/home/BlockoutModal.js`
+  - `Bloquear` -> `Block`
+  - `Horarios` -> `<schedules|timeSlots>` (AMBIGUOUS)
+  - `ModalBloqueo` -> `Modal<blockout|block>` (AMBIGUOUS)
+  - `cantidadHorarios` -> `count<schedules|timeSlots>` (AMBIGUOUS)
+  - `horario` -> `<schedule|timeSlot>` (AMBIGUOUS)
+- `src/presentation/components/home/CourtSelector.js`
+  - `PistaSelector` -> `CourtSelector`
+  - `Pistas` -> `Courts`
+  - `onPistaSelect` -> `onCourtSelect`
+  - `pista` -> `court`
+  - `pistaSeleccionada` -> `courtSeleccionada`
+- `src/presentation/components/home/DateSelector.js`
+  - `FechaSelector` -> `DateSelector`
+  - `fechaSeleccionada` -> `dateSeleccionada`
+  - `onCambiarFecha` -> `onChangeDate`
+- `src/presentation/components/home/FloatingButtons.js`
+  - `Bloquear` -> `Block`
+  - `BotonReservar` -> `ButtonReservar`
+  - `BotonesBloqueo` -> `Buttons<blockout|block>` (AMBIGUOUS)
+  - `Desbloquear` -> `Unblock`
+  - `bloque` -> `<block|slot>` (AMBIGUOUS)
+  - `cantidadBloquear` -> `countBlock`
+  - `cantidadBloques` -> `count<blocks|slots>` (AMBIGUOUS)
+  - `cantidadDesbloquear` -> `countUnblock`
+  - `horario` -> `<schedule|timeSlot>` (AMBIGUOUS)
+  - `onBloquear` -> `onBlock`
+  - `onDesbloquear` -> `onUnblock`
+- `src/presentation/components/home/HomeHeader.js`
+  - `Bloquear` -> `Block`
+  - `bloqueado` -> `blocked`
+  - `esAdmin` -> `isAdmin`
+  - `headerModoBloqueo` -> `headerModo<blockout|block>` (AMBIGUOUS)
+  - `modoBloqueo` -> `blockMode`
+  - `modoBloqueoContainer` -> `modo<blockout|block>Container` (AMBIGUOUS)
+  - `modoBloqueoLabel` -> `modo<blockout|block>Label` (AMBIGUOUS)
+  - `onModoBloqueoChange` -> `onModo<blockout|block>Change` (AMBIGUOUS)
+- `src/presentation/components/home/Legend.js`
+  - `Reservado` -> `Reserved`
+  - `reserva` -> `reservation`
+- `src/presentation/components/home/ScheduleGrid.js`
+  - `HorariosContainer` -> `<schedules|timeSlots>Container` (AMBIGUOUS)
+  - `HorariosGridDia` -> `<schedules|timeSlots>GridDay` (AMBIGUOUS)
+  - `HorariosGridSemana` -> `<schedules|timeSlots>Grid<week|weekday>` (AMBIGUOUS)
+  - `bloqueado` -> `blocked`
+  - `bloquesABloquear` -> `blocksToBlock`
+  - `bloquesADesbloquear` -> `blocksToUnblock`
+  - `bloquesSeleccionados` -> `selectedBlocks`
+  - `esAdmin` -> `isAdmin`
+  - `esMiVivienda` -> `isMyApartment`
+  - `estaBloqueado` -> `isBlocked`
+  - `estaSeleccionadoParaBloquear` -> `isSelectedForBlock`
+  - `estaSeleccionadoParaDesbloquear` -> `isSelectedForUnblock`
+  - `fechaSeleccionada` -> `dateSeleccionada`
+  - `fechas` -> `dates`
+  - `horaFin` -> `endTime`
+  - `horaInicio` -> `startTime`
+  - `horario` -> `<schedule|timeSlot>` (AMBIGUOUS)
+  - `horarios` -> `<schedules|timeSlots>` (AMBIGUOUS)
+  - `horariosDia` -> `<schedules|timeSlots>Day` (AMBIGUOUS)
+  - `horariosSemanales` -> `<schedules|timeSlots>Semanales` (AMBIGUOUS)
+  - `modoBloqueo` -> `blockMode`
+  - `onHorarioPress` -> `on<schedule|timeSlot>Press` (AMBIGUOUS)
+  - `reservaExistente` -> `existingReservation`
+  - `userVivienda` -> `userApartment`
+- `src/presentation/components/home/SelectionInfo.js`
+  - `HorariosHeader` -> `<schedules|timeSlots>Header` (AMBIGUOUS)
+  - `cantidadBloques` -> `count<blocks|slots>` (AMBIGUOUS)
+- `src/presentation/components/home/TimeSlotChip.js`
+  - `HorarioChip` -> `<schedule|timeSlot>Chip` (AMBIGUOUS)
+  - `bloqueado` -> `blocked`
+  - `esMiVivienda` -> `isMyApartment`
+  - `estaBloqueado` -> `isBlocked`
+  - `estaSeleccionadoParaBloquear` -> `isSelectedForBlock`
+  - `estaSeleccionadoParaDesbloquear` -> `isSelectedForUnblock`
+  - `horaFin` -> `endTime`
+  - `horaInicio` -> `startTime`
+  - `horario` -> `<schedule|timeSlot>` (AMBIGUOUS)
+  - `modoBloqueo` -> `blockMode`
+  - `mostrarIconoBloqueado` -> `showIconoBlocked`
+  - `reservaExistente` -> `existingReservation`
+  - `userVivienda` -> `userApartment`
+- `src/presentation/components/home/ViewSelector.js`
+  - `VistaSelector` -> `ViewSelector`
+- `src/presentation/components/home/index.js`
+  - `BotonReservar` -> `ButtonReservar`
+  - `BotonesBloqueo` -> `Buttons<blockout|block>` (AMBIGUOUS)
+  - `FechaSelector` -> `DateSelector`
+  - `HorarioChip` -> `<schedule|timeSlot>Chip` (AMBIGUOUS)
+  - `HorariosContainer` -> `<schedules|timeSlots>Container` (AMBIGUOUS)
+  - `HorariosGridDia` -> `<schedules|timeSlots>GridDay` (AMBIGUOUS)
+  - `HorariosGridSemana` -> `<schedules|timeSlots>Grid<week|weekday>` (AMBIGUOUS)
+  - `HorariosHeader` -> `<schedules|timeSlots>Header` (AMBIGUOUS)
+  - `ModalBloqueo` -> `Modal<blockout|block>` (AMBIGUOUS)
+  - `PistaSelector` -> `CourtSelector`
+  - `VistaSelector` -> `ViewSelector`
+- `src/presentation/components/partidas/AddPlayerModal.js`
+  - `NIVELES_JUEGO` -> `SKILL_LEVELS`
+  - `Nivel` -> `Level`
+  - `Vivienda` -> `Apartment`
+  - `fotoPerfil` -> `profilePhoto`
+  - `nivelJuego` -> `skillLevel`
+  - `usuario` -> `user`
+  - `usuarios` -> `users`
+- `src/presentation/components/partidas/CreateMatchModal.js`
+  - `CrearPartidaModal` -> `Create<match|game>Modal` (AMBIGUOUS)
+  - `Mensaje` -> `Message`
+- `src/presentation/components/partidas/MatchCard.js`
+  - `Alumnos` -> `Students`
+  - `CLASE` -> `<class|lesson>` (AMBIGUOUS)
+  - `Fecha` -> `Date`
+  - `NIVELES_JUEGO` -> `SKILL_LEVELS`
+  - `Nivel` -> `Level`
+  - `PartidaCard` -> `<match|game>Card` (AMBIGUOUS)
+  - `Vivienda` -> `Apartment`
+  - `alumno` -> `student`
+  - `creadorNivel` -> `creatorLevel`
+  - `creadorVivienda` -> `creatorApartment`
+  - `esClase` -> `isClass`
+  - `horaFin` -> `endTime`
+  - `horaInicio` -> `startTime`
+  - `mensaje` -> `message`
+  - `nivel` -> `level`
+  - `nivelPreferido` -> `preferredLevel`
+  - `niveles` -> `levels`
+  - `precioAlumno` -> `studentPrice`
+  - `precioGrupo` -> `groupPrice`
+  - `usuarioId` -> `userId`
+- `src/presentation/components/partidas/ParticipantsList.js`
+  - `NIVELES_JUEGO` -> `SKILL_LEVELS`
+  - `Vivienda` -> `Apartment`
+  - `nivel` -> `level`
+  - `nivelJuego` -> `skillLevel`
+  - `usuarioFoto` -> `userPhoto`
+  - `usuarioNombre` -> `userName`
+  - `usuarioVivienda` -> `userApartment`
+- `src/presentation/components/partidas/PendingRequests.js`
+  - `NIVELES_JUEGO` -> `SKILL_LEVELS`
+  - `Solicitudes` -> `Requests`
+  - `SolicitudesPendientes` -> `RequestsPending`
+  - `Vivienda` -> `Apartment`
+  - `nivelJuego` -> `skillLevel`
+  - `usuarioFoto` -> `userPhoto`
+  - `usuarioId` -> `userId`
+  - `usuarioNombre` -> `userName`
+  - `usuarioVivienda` -> `userApartment`
+- `src/presentation/components/partidas/PlayersEditor.js`
+  - `NIVELES_JUEGO` -> `SKILL_LEVELS`
+  - `esClase` -> `isClass`
+  - `nivel` -> `level`
+  - `usuario` -> `user`
+- `src/presentation/components/partidas/form/LevelSelector.js`
+  - `NIVELES_JUEGO` -> `SKILL_LEVELS`
+  - `Nivel` -> `Level`
+  - `NivelSelector` -> `LevelSelector`
+- `src/presentation/components/partidas/form/LevelsMultiSelector.js`
+  - `NIVELES_JUEGO` -> `SKILL_LEVELS`
+  - `Niveles` -> `Levels`
+  - `NivelesMultiSelector` -> `LevelsMultiSelector`
+  - `clase` -> `<class|lesson>` (AMBIGUOUS)
+- `src/presentation/components/partidas/form/ModeSelector.js`
+  - `Clase` -> `<class|lesson>` (AMBIGUOUS)
+  - `Partida` -> `<match|game>` (AMBIGUOUS)
+- `src/presentation/components/partidas/form/ParticipantsSelector.js`
+  - `CLASE_CONFIG` -> `CLASS_CONFIG`
+  - `alumnos` -> `students`
+- `src/presentation/components/partidas/form/PriceInput.js`
+  - `Precio` -> `Price`
+  - `PrecioInput` -> `PriceInput`
+  - `alumno` -> `student`
+  - `precioAlumno` -> `studentPrice`
+  - `precioGrupo` -> `groupPrice`
+- `src/presentation/components/partidas/form/ReservationSelector.js`
+  - `ReservaSelector` -> `ReservationSelector`
+  - `horaInicio` -> `startTime`
+  - `pistaNombre` -> `courtName`
+  - `reserva` -> `reservation`
+- `src/presentation/components/partidas/form/TypeSelector.js`
+  - `Fecha` -> `Date`
+  - `reserva` -> `reservation`
+- `src/presentation/components/partidas/form/index.js`
+  - `NivelSelector` -> `LevelSelector`
+  - `NivelesMultiSelector` -> `LevelsMultiSelector`
+  - `PrecioInput` -> `PriceInput`
+  - `ReservaSelector` -> `ReservationSelector`
+- `src/presentation/components/profile/ApartmentChangeModal.js`
+  - `Cambio` -> `Change`
+  - `Solicitud` -> `Request`
+  - `Vivienda` -> `Apartment`
+  - `administrador` -> `admin`
+  - `setSolicitudModal` -> `setRequestModal`
+  - `solicitud` -> `request`
+  - `solicitudModal` -> `requestModal`
+- `src/presentation/components/profile/ProfileApartmentUsers.js`
+  - `NIVELES_JUEGO` -> `SKILL_LEVELS`
+  - `Vivienda` -> `Apartment`
+  - `esViviendaValida` -> `isApartmentValid`
+  - `formatearVivienda` -> `formatApartment`
+  - `fotoPerfil` -> `profilePhoto`
+  - `loadingUsuarios` -> `loadingUsers`
+  - `nivel` -> `level`
+  - `nivelJuego` -> `skillLevel`
+  - `noUsuariosText` -> `noUsersText`
+  - `usuario` -> `user`
+  - `usuarios` -> `users`
+  - `usuariosVivienda` -> `usersApartment`
+- `src/presentation/components/profile/ProfileHeader.js`
+  - `Perfil` -> `Profile`
+  - `fotoPerfil` -> `profilePhoto`
+- `src/presentation/components/profile/ProfilePersonalInfo.js`
+  - `Administrador` -> `Admin`
+  - `Cambio` -> `Change`
+  - `NIVELES_JUEGO` -> `SKILL_LEVELS`
+  - `Nivel` -> `Level`
+  - `Rol` -> `Role`
+  - `Solicitud` -> `Request`
+  - `Vivienda` -> `Apartment`
+  - `cambio` -> `change`
+  - `cancelarSolicitudButton` -> `cancelRequestButton`
+  - `cancelarSolicitudText` -> `cancelRequestText`
+  - `cancelingSolicitud` -> `cancelingRequest`
+  - `esAdmin` -> `isAdmin`
+  - `esViviendaValida` -> `isApartmentValid`
+  - `formatearVivienda` -> `formatApartment`
+  - `nivel` -> `level`
+  - `nivelJuego` -> `skillLevel`
+  - `nivelOption` -> `levelOption`
+  - `nivelOptionSelected` -> `levelOptionSelected`
+  - `nivelOptionText` -> `levelOptionText`
+  - `nivelOptionTextSelected` -> `levelOptionTextSelected`
+  - `nivelPickerContainer` -> `levelPickerContainer`
+  - `nivelSelector` -> `levelSelector`
+  - `nivelSelectorArrow` -> `levelSelectorArrow`
+  - `nivelSelectorText` -> `levelSelectorText`
+  - `onCancelarSolicitud` -> `onCancelRequest`
+  - `onSolicitarCambio` -> `onRequestChange`
+  - `setNivelJuego` -> `setLevelGame`
+  - `setShowNivelPicker` -> `setShowLevelPicker`
+  - `showNivelPicker` -> `showLevelPicker`
+  - `solicitarCambioButton` -> `requestChangeButton`
+  - `solicitarCambioText` -> `requestChangeText`
+  - `solicitudBadge` -> `requestBadge`
+  - `solicitudInfo` -> `requestInfo`
+  - `solicitudPendiente` -> `requestPending`
+  - `solicitudText` -> `requestText`
+  - `viviendaLabelRow` -> `apartmentLabelRow`
+  - `viviendaLocked` -> `apartmentLocked`
+  - `viviendaSelectorContainer` -> `apartmentSelectorContainer`
+  - `viviendaSolicitada` -> `requestedApartment`
+- `src/presentation/components/tablon/AnnouncementCard.js`
+  - `anuncio` -> `announcement`
+  - `anuncioAviso` -> `announcementNotice`
+  - `anuncioInfo` -> `announcementInfo`
+  - `anuncioMantenimiento` -> `announcementMaintenance`
+  - `anuncioUrgente` -> `announcementUrgent`
+  - `fechaStr` -> `dateStr`
+  - `formatearFecha` -> `formatDate`
+  - `mensaje` -> `message`
+  - `notificacionLeida` -> `notificationRead`
+- `src/presentation/components/tablon/AnnouncementModal.js`
+  - `Entendido` -> `Acknowledged`
+  - `anuncio` -> `announcement`
+  - `anuncioAviso` -> `announcementNotice`
+  - `anuncioInfo` -> `announcementInfo`
+  - `anuncioMantenimiento` -> `announcementMaintenance`
+  - `anuncioUrgente` -> `announcementUrgent`
+  - `fechaStr` -> `dateStr`
+  - `formatearFechaCompleta` -> `formatDateCompleta`
+  - `mensaje` -> `message`
+- `src/presentation/components/tablon/EmptyState.js`
+  - `anuncios` -> `announcements`
+  - `notificaciones` -> `notifications`
+- `src/presentation/components/tablon/NotificationCard.js`
+  - `anuncioAviso` -> `announcementNotice`
+  - `anuncioInfo` -> `announcementInfo`
+  - `diffHoras` -> `diffHours`
+  - `fechaStr` -> `dateStr`
+  - `formatearFechaRelativa` -> `formatDateRelativa`
+  - `mensaje` -> `message`
+  - `notificacion` -> `notification`
+  - `notificacionLeida` -> `notificationRead`
+- `src/presentation/context/AuthContext.js`
+  - `marcarNotificacionesLeidas` -> `markNotificationsRead`
+  - `notificacionesPendientes` -> `notificationsPending`
+- `src/presentation/context/ReservationsContext.js`
+  - `cancelarReserva` -> `cancelReservation`
+  - `crearReserva` -> `createReservation`
+  - `horaInicio` -> `startTime`
+  - `obtenerDisponibilidad` -> `getAvailability`
+  - `obtenerPistas` -> `getCourts`
+  - `obtenerReservasPorFecha` -> `getReservationsByDate`
+  - `obtenerReservasPorVivienda` -> `getReservationsByApartment`
+  - `reservasConversion` -> `reservationsConversion`
+  - `reservasService` -> `reservationsService`
+  - `usuarioId` -> `userId`
+  - `usuarioNombre` -> `userName`
+- `src/presentation/context/useAuthNotifications.js`
+  - `aprobado` -> `approved`
+  - `cargarNotificaciones` -> `loadNotifications`
+  - `marcarNotificacionesLeidas` -> `markNotificationsRead`
+  - `notificacionesPendientes` -> `notificationsPending`
+  - `obtenerNotificacionesPendientes` -> `getNotificationsPending`
+  - `reservasService` -> `reservationsService`
+  - `setNotificacionesPendientes` -> `setNotificationsPending`
+- `src/presentation/hooks/profile/useApartmentChange.js`
+  - `cancelarSolicitudVivienda` -> `cancelRequestApartment`
+  - `cancelingSolicitud` -> `cancelingRequest`
+  - `closeSolicitudModal` -> `closeRequestModal`
+  - `combinarVivienda` -> `combineApartment`
+  - `formatearVivienda` -> `formatApartment`
+  - `handleCancelarSolicitud` -> `handleCancelRequest`
+  - `handleEnviarSolicitud` -> `handleEnviarRequest`
+  - `nuevaVivienda` -> `newApartment`
+  - `openSolicitudModal` -> `openRequestModal`
+  - `setCancelingSolicitud` -> `setCancelingRequest`
+  - `setSolicitudModal` -> `setRequestModal`
+  - `solicitarCambioVivienda` -> `requestChangeApartment`
+  - `solicitudModal` -> `requestModal`
+  - `validarViviendaComponentes` -> `validateApartmentComponentes`
+  - `viviendaSolicitada` -> `requestedApartment`
+- `src/presentation/hooks/profile/useProfileEdit.js`
+  - `NIVELES_JUEGO` -> `SKILL_LEVELS`
+  - `combinarVivienda` -> `combineApartment`
+  - `esAdmin` -> `isAdmin`
+  - `fotoPerfil` -> `profilePhoto`
+  - `nivelJuego` -> `skillLevel`
+  - `parseVivienda` -> `parseApartment`
+  - `setFotoPerfil` -> `setPhotoProfile`
+  - `setNivelJuego` -> `setLevelGame`
+  - `setShowNivelPicker` -> `setShowLevelPicker`
+  - `showNivelPicker` -> `showLevelPicker`
+  - `validarPerfil` -> `validateProfile`
+  - `validarViviendaComponentes` -> `validateApartmentComponentes`
+  - `viviendaParsed` -> `apartmentParsed`
+  - `viviendaValidacion` -> `apartmentValidacion`
+- `src/presentation/hooks/useAddPlayerModal.js`
+  - `nivel` -> `level`
+  - `nivelJuego` -> `skillLevel`
+  - `usuario` -> `user`
+- `src/presentation/hooks/useAdminActions.js`
+  - `aprobarCambioVivienda` -> `approveChangeApartment`
+  - `aprobarUsuario` -> `approveUser`
+  - `combinarVivienda` -> `combineApartment`
+  - `esAdmin` -> `isAdmin`
+  - `formatearVivienda` -> `formatApartment`
+  - `notifyViviendaChange` -> `notifyApartmentChange`
+  - `nuevaVivienda` -> `newApartment`
+  - `nuevoRol` -> `newRole`
+  - `rechazarCambioVivienda` -> `rejectChangeApartment`
+  - `rechazarUsuario` -> `rejectUser`
+  - `usuario` -> `user`
+  - `validarViviendaComponentes` -> `validateApartmentComponentes`
+  - `viviendaSolicitada` -> `requestedApartment`
+- `src/presentation/hooks/useAdminData.js`
+  - `cargarAnunciosCallback` -> `loadAnnouncementsCallback`
+  - `cargarUsuariosCallback` -> `loadUsersCallback`
+  - `getSolicitudesCambioVivienda` -> `getRequestsChangeApartment`
+  - `getTodosUsuarios` -> `getTodosUsers`
+  - `getUsuariosPendientes` -> `getUsersPending`
+  - `usuariosResult` -> `usersResult`
+- `src/presentation/hooks/useAnnouncements.js`
+  - `crearAnuncio` -> `createAnnouncement`
+  - `eliminarAnuncio` -> `deleteAnnouncement`
+  - `marcarAnuncioLeido` -> `markAnnouncementRead`
+  - `mensaje` -> `message`
+  - `notifyNuevoAnuncio` -> `notifyNewAnnouncement`
+  - `obtenerAnunciosParaUsuario` -> `getAnnouncementsForUser`
+  - `obtenerTodosAnuncios` -> `getTodosAnnouncements`
+  - `obtenerUsuariosAprobados` -> `getUsersAprobados`
+  - `usuariosIds` -> `usersIds`
+- `src/presentation/hooks/useBloqueos.js`
+  - `bloque` -> `<block|slot>` (AMBIGUOUS)
+  - `bloqueoId` -> `blockoutId`
+  - `crearBloqueo` -> `create<blockout|block>` (AMBIGUOUS)
+  - `eliminarBloqueo` -> `delete<blockout|block>` (AMBIGUOUS)
+  - `horaFin` -> `endTime`
+  - `horaInicio` -> `startTime`
+  - `horario` -> `<schedule|timeSlot>` (AMBIGUOUS)
+  - `mensaje` -> `message`
+  - `motivoBloqueo` -> `blockoutReason`
+  - `reservasService` -> `reservationsService`
+- `src/presentation/hooks/useBulletinCounter.js`
+  - `contarAnunciosNoLeidos` -> `countAnnouncementsNoLeidos`
+  - `contarNotificacionesNoLeidas` -> `countNotificationsNoRead`
+- `src/presentation/hooks/useCreateMatchModal.js`
+  - `obtenerReservasConPartida` -> `getReservationsWith<match|game>` (AMBIGUOUS)
+  - `partidasService` -> `<matches|games>Service` (AMBIGUOUS)
+- `src/presentation/hooks/useEditApartmentModal.js`
+  - `parseVivienda` -> `parseApartment`
+  - `usuario` -> `user`
+- `src/presentation/hooks/useHomeActions.js`
+  - `bloqueTerminado` -> `<block|slot>Finished` (AMBIGUOUS)
+  - `bloqueado` -> `blocked`
+  - `bloquesDesplazables` -> `<blocks|slots>Desplazables` (AMBIGUOUS)
+  - `bloquesSeleccionados` -> `selectedBlocks`
+  - `cambiarFecha` -> `changeDate`
+  - `confirmarReserva` -> `confirmarReservation`
+  - `crearReserva` -> `createReservation`
+  - `datosReserva` -> `datosReservation`
+  - `diasHastaLunes` -> `daysUntilMonday`
+  - `diasHastaLunesHoy` -> `daysUntilMondayToday`
+  - `duracionMinutos` -> `durationMinutos`
+  - `esAdmin` -> `isAdmin`
+  - `esFechaValida` -> `esDateValida`
+  - `esMiVivienda` -> `isMyApartment`
+  - `estaBloqueado` -> `isBlocked`
+  - `fechaSeleccionada` -> `dateSeleccionada`
+  - `formatearFechaLegible` -> `formatDateReadable`
+  - `getDatosReserva` -> `getDatosReservation`
+  - `handleHorarioPress` -> `handle<schedule|timeSlot>Press` (AMBIGUOUS)
+  - `horaFin` -> `endTime`
+  - `horaInicio` -> `startTime`
+  - `horario` -> `<schedule|timeSlot>` (AMBIGUOUS)
+  - `horasDesplazadas` -> `hoursDesplazadas`
+  - `lunesDeEstaSemanaMundial` -> `mondayOfEsta<week|weekday>Mundial` (AMBIGUOUS)
+  - `lunesSeleccionado` -> `mondaySeleccionado`
+  - `lunesSiguienteSemana` -> `mondayNext<week|weekday>` (AMBIGUOUS)
+  - `maxFecha` -> `maxDate`
+  - `mensaje` -> `message`
+  - `mensajeExito` -> `messageExito`
+  - `nuevaFecha` -> `newDate`
+  - `nuevaFechaObj` -> `newDateObj`
+  - `nuevaFechaStr` -> `newDateStr`
+  - `pistaId` -> `courtId`
+  - `pistaSeleccionada` -> `courtSeleccionada`
+  - `recargarHorarios` -> `recargar<schedules|timeSlots>` (AMBIGUOUS)
+  - `reservaExistente` -> `existingReservation`
+  - `setFechaSeleccionada` -> `setDateSeleccionada`
+  - `toggleBloqueSeleccionado` -> `toggle<block|slot>Seleccionado` (AMBIGUOUS)
+  - `viviendaDesplazada` -> `apartmentDisplaced`
+  - `viviendasDesplazadas` -> `apartmentsDesplazadas`
+- `src/presentation/hooks/useMatchHandlers.js`
+  - `creadorVivienda` -> `creatorApartment`
+  - `esClase` -> `isClass`
+  - `horaFin` -> `endTime`
+  - `horaInicio` -> `startTime`
+  - `mensaje` -> `message`
+  - `nivel` -> `level`
+  - `nivelJuego` -> `skillLevel`
+  - `nivelPreferido` -> `preferredLevel`
+  - `niveles` -> `levels`
+  - `pistaNombre` -> `courtName`
+  - `precioAlumno` -> `studentPrice`
+  - `precioGrupo` -> `groupPrice`
+  - `reservaId` -> `reservationId`
+  - `usuario` -> `user`
+  - `usuarioId` -> `userId`
+  - `usuarioNombre` -> `userName`
+  - `usuarioVivienda` -> `userApartment`
+- `src/presentation/hooks/useMatches.js`
+  - `obtenerMisPartidas` -> `getMis<matches|games>` (AMBIGUOUS)
+  - `obtenerPartidasActivas` -> `get<matches|games>Activas` (AMBIGUOUS)
+  - `obtenerPartidasApuntado` -> `get<matches|games>Apuntado` (AMBIGUOUS)
+  - `partidasService` -> `<matches|games>Service` (AMBIGUOUS)
+- `src/presentation/hooks/useMatchesActions.js`
+  - `aceptarSolicitud` -> `acceptRequest`
+  - `anadirJugadorAPartida` -> `anadirJugadorA<match|game>` (AMBIGUOUS)
+  - `cancelarPartida` -> `cancel<match|game>` (AMBIGUOUS)
+  - `cancelarSolicitud` -> `cancelRequest`
+  - `cerrarClase` -> `close<class|lesson>` (AMBIGUOUS)
+  - `crearPartida` -> `create<match|game>` (AMBIGUOUS)
+  - `desapuntarsePartida` -> `desapuntarse<match|game>` (AMBIGUOUS)
+  - `editarPartida` -> `edit<match|game>` (AMBIGUOUS)
+  - `partidasService` -> `<matches|games>Service` (AMBIGUOUS)
+  - `rechazarSolicitud` -> `rejectRequest`
+- `src/presentation/hooks/useNotifications.js`
+  - `eliminarNotificacion` -> `deleteNotification`
+  - `marcarNotificacionLeida` -> `markNotificationRead`
+  - `obtenerNotificaciones` -> `getNotifications`
+- `src/presentation/hooks/useScheduleConfig.js`
+  - `duracionBloque` -> `slotDuration`
+  - `findeHoraApertura` -> `weekendOpeningTime`
+  - `findeHoraCierre` -> `weekendClosingTime`
+  - `findeMotivoPausa` -> `weekendBreakReason`
+  - `findePausaDiasSemana` -> `weekendBreakWeekdays`
+  - `findePausaFin` -> `weekendBreakEnd`
+  - `findePausaInicio` -> `weekendBreakStart`
+  - `horaApertura` -> `openingTime`
+  - `horaCierre` -> `closingTime`
+  - `motivoPausa` -> `breakReason`
+  - `pausaDiasSemana` -> `breakWeekdays`
+  - `pausaFin` -> `breakEnd`
+  - `pausaInicio` -> `breakStart`
+  - `semanaHoraApertura` -> `weekdayOpeningTime`
+  - `semanaHoraCierre` -> `weekdayClosingTime`
+  - `usarHorariosDiferenciados` -> `useDifferentiatedSchedules`
+- `src/presentation/hooks/useSchedules.js`
+  - `diasHastaLunes` -> `daysUntilMonday`
+  - `esFechaValida` -> `esDateValida`
+  - `fechaActual` -> `dateActual`
+  - `fechaStr` -> `dateStr`
+  - `horariosTemp` -> `<schedules|timeSlots>Temp` (AMBIGUOUS)
+  - `lunes` -> `monday`
+  - `reservasVersion` -> `reservationsVersion`
+- `src/presentation/hooks/useSlotSelection.js`
+  - `bloquesDesplazables` -> `<blocks|slots>Desplazables` (AMBIGUOUS)
+  - `bloquesOrdenados` -> `<blocks|slots>Ordenados` (AMBIGUOUS)
+  - `duracionMinutos` -> `durationMinutos`
+  - `fechaReserva` -> `reservationDate`
+  - `horaFin` -> `endTime`
+  - `horaInicio` -> `startTime`
+  - `horario` -> `<schedule|timeSlot>` (AMBIGUOUS)
+  - `nuevoBloque` -> `new<block|slot>` (AMBIGUOUS)
+  - `primeraFecha` -> `primeraDate`
+  - `reservaExistente` -> `existingReservation`
+  - `viviendaDesplazada` -> `apartmentDisplaced`
+- `src/presentation/hooks/useUsuarios.js`
+  - `getTodosUsuarios` -> `getTodosUsers`
+- `src/presentation/navigation/TabNavigator.js`
+  - `esAdmin` -> `isAdmin`
+- `src/presentation/screens/AdminScreen.js`
+  - `SolicitudesContent` -> `RequestsContent`
+  - `UsuariosContent` -> `UsersContent`
+  - `contadorSolicitudes` -> `contadorRequests`
+  - `contadorUsuarios` -> `contadorUsers`
+  - `onAprobar` -> `onApprove`
+  - `onAprobarCambio` -> `onApproveChange`
+  - `onEditVivienda` -> `onEditApartment`
+  - `onRechazar` -> `onReject`
+  - `onRechazarCambio` -> `onRejectChange`
+  - `onSaveVivienda` -> `onSaveApartment`
+  - `solicitudesCambio` -> `requestsChange`
+  - `usuario` -> `user`
+  - `usuarios` -> `users`
+  - `usuariosPendientes` -> `usersPending`
+- `src/presentation/screens/BulletinScreen.js`
+  - `Anuncios` -> `Announcements`
+  - `Notificaciones` -> `Notifications`
+  - `anuncio` -> `announcement`
+  - `esAdmin` -> `isAdmin`
+  - `mensaje` -> `message`
+  - `notificacion` -> `notification`
+  - `renderAnuncio` -> `renderAnnouncement`
+  - `renderNotificacion` -> `renderNotification`
+  - `setUsuarios` -> `setUsers`
+  - `usuarios` -> `users`
+- `src/presentation/screens/HomeScreen.js`
+  - `BotonReservar` -> `ButtonReservar`
+  - `BotonesBloqueo` -> `Buttons<blockout|block>` (AMBIGUOUS)
+  - `FechaSelector` -> `DateSelector`
+  - `HorariosContainer` -> `<schedules|timeSlots>Container` (AMBIGUOUS)
+  - `HorariosHeader` -> `<schedules|timeSlots>Header` (AMBIGUOUS)
+  - `ModalBloqueo` -> `Modal<blockout|block>` (AMBIGUOUS)
+  - `PistaSelector` -> `CourtSelector`
+  - `VistaSelector` -> `ViewSelector`
+  - `bloquesABloquear` -> `blocksToBlock`
+  - `bloquesADesbloquear` -> `blocksToUnblock`
+  - `bloquesSeleccionados` -> `selectedBlocks`
+  - `cambiarFecha` -> `changeDate`
+  - `cantidadBloquear` -> `countBlock`
+  - `cantidadBloques` -> `count<blocks|slots>` (AMBIGUOUS)
+  - `cantidadDesbloquear` -> `countUnblock`
+  - `cantidadHorarios` -> `count<schedules|timeSlots>` (AMBIGUOUS)
+  - `confirmarReserva` -> `confirmarReservation`
+  - `crearReserva` -> `createReservation`
+  - `esAdmin` -> `isAdmin`
+  - `fechaSeleccionada` -> `dateSeleccionada`
+  - `formatearFechaLegible` -> `formatDateReadable`
+  - `getDatosReserva` -> `getDatosReservation`
+  - `handleHorarioPress` -> `handle<schedule|timeSlot>Press` (AMBIGUOUS)
+  - `horarios` -> `<schedules|timeSlots>` (AMBIGUOUS)
+  - `horariosSemanales` -> `<schedules|timeSlots>Semanales` (AMBIGUOUS)
+  - `loadingHorarios` -> `loading<schedules|timeSlots>` (AMBIGUOUS)
+  - `marcarNotificacionesLeidas` -> `markNotificationsRead`
+  - `modoBloqueo` -> `blockMode`
+  - `notificacionMostrada` -> `notificationMostrada`
+  - `notificacionesPendientes` -> `notificationsPending`
+  - `obtenerDisponibilidad` -> `getAvailability`
+  - `obtenerFechaHoy` -> `getDateToday`
+  - `onBloquear` -> `onBlock`
+  - `onCambiarFecha` -> `onChangeDate`
+  - `onDesbloquear` -> `onUnblock`
+  - `onHorarioPress` -> `on<schedule|timeSlot>Press` (AMBIGUOUS)
+  - `onModoBloqueoChange` -> `onModo<blockout|block>Change` (AMBIGUOUS)
+  - `onPistaSelect` -> `onCourtSelect`
+  - `pistaSeleccionada` -> `courtSeleccionada`
+  - `recargarHorarios` -> `recargar<schedules|timeSlots>` (AMBIGUOUS)
+  - `reservasVersion` -> `reservationsVersion`
+  - `setFechaSeleccionada` -> `setDateSeleccionada`
+  - `setNotificacionMostrada` -> `setNotificationMostrada`
+  - `setPistaSeleccionada` -> `setCourtSeleccionada`
+  - `toggleBloqueSeleccionado` -> `toggle<block|slot>Seleccionado` (AMBIGUOUS)
+  - `userVivienda` -> `userApartment`
+- `src/presentation/screens/LoginScreen.js`
+  - `Reserva` -> `Reservation`
+  - `Usuarios` -> `Users`
+  - `cuenta` -> `account`
+- `src/presentation/screens/MatchesScreen.js`
+  - `botonCrear` -> `buttonCreate`
+  - `botonCrearText` -> `buttonCreateText`
+  - `usuario` -> `user`
+- `src/presentation/screens/ProfileScreen.js`
+  - `Desarrollado` -> `Developed`
+  - `Notificaciones` -> `Notifications`
+  - `PerfilScreen` -> `ProfileScreen`
+  - `cancelingSolicitud` -> `cancelingRequest`
+  - `closeSolicitudModal` -> `closeRequestModal`
+  - `cuenta` -> `account`
+  - `fotoPerfil` -> `profilePhoto`
+  - `getUsuariosMismaVivienda` -> `getUsersMismaApartment`
+  - `handleCancelarSolicitud` -> `handleCancelRequest`
+  - `handleEnviarSolicitud` -> `handleEnviarRequest`
+  - `loadingUsuarios` -> `loadingUsers`
+  - `nivelJuego` -> `skillLevel`
+  - `onCancelarSolicitud` -> `onCancelRequest`
+  - `onSolicitarCambio` -> `onRequestChange`
+  - `openSolicitudModal` -> `openRequestModal`
+  - `setLoadingUsuarios` -> `setLoadingUsers`
+  - `setNivelJuego` -> `setLevelGame`
+  - `setShowNivelPicker` -> `setShowLevelPicker`
+  - `setSolicitudModal` -> `setRequestModal`
+  - `setUsuariosVivienda` -> `setUsersApartment`
+  - `showNivelPicker` -> `showLevelPicker`
+  - `solicitudModal` -> `requestModal`
+  - `usuariosVivienda` -> `usersApartment`
+- `src/presentation/screens/RegisterScreen.js`
+  - `Vivienda` -> `Apartment`
+  - `administrador` -> `admin`
+  - `aprobada` -> `approved`
+  - `combinarVivienda` -> `combineApartment`
+  - `cuenta` -> `account`
+  - `solicitud` -> `request`
+  - `validarViviendaComponentes` -> `validateApartmentComponentes`
+  - `viviendaValidacion` -> `apartmentValidacion`
+- `src/presentation/screens/ReservationsScreen.js`
+  - `Reserva` -> `Reservation`
+  - `Reservado` -> `Reserved`
+  - `ReservasScreen` -> `ReservationsScreen`
+  - `cancelarReserva` -> `cancelReservation`
+  - `esDeOtroUsuario` -> `esOfOtroUser`
+  - `estadoCancelada` -> `estadoCancelled`
+  - `formatearFechaLegible` -> `formatDateReadable`
+  - `formatearHora` -> `formatTime`
+  - `getReservasPasadas` -> `getReservationsPast`
+  - `getReservasProximas` -> `getReservationsUpcoming`
+  - `horaFin` -> `endTime`
+  - `horaInicio` -> `startTime`
+  - `horario` -> `<schedule|timeSlot>` (AMBIGUOUS)
+  - `horas` -> `hours`
+  - `horasHasta` -> `hoursUntil`
+  - `horasRestantes` -> `hoursRemaining`
+  - `pistaNombre` -> `courtName`
+  - `prioridadBadge` -> `priorityBadge`
+  - `prioridadGarantizada` -> `guaranteedPriority`
+  - `prioridadProvisional` -> `provisionalPriority`
+  - `prioridadText` -> `priorityText`
+  - `renderReserva` -> `renderReservation`
+  - `reserva` -> `reservation`
+  - `reservaCard` -> `reservationCard`
+  - `reservaHeader` -> `reservationHeader`
+  - `reservaInfo` -> `reservationInfo`
+  - `reservadoPor` -> `reservedBy`
+  - `reservasPasadas` -> `reservationsPast`
+  - `reservasProximas` -> `reservationsUpcoming`
+  - `usuarioId` -> `userId`
+  - `usuarioNombre` -> `userName`
+- `src/presentation/screens/ReservationsScreenStyles.js`
+  - `estadoCancelada` -> `estadoCancelled`
+  - `horario` -> `<schedule|timeSlot>` (AMBIGUOUS)
+  - `pistaNombre` -> `courtName`
+  - `prioridadBadge` -> `priorityBadge`
+  - `prioridadGarantizada` -> `guaranteedPriority`
+  - `prioridadProvisional` -> `provisionalPriority`
+  - `prioridadText` -> `priorityText`
+  - `reservaCard` -> `reservationCard`
+  - `reservaGarantizada` -> `guaranteedReservation`
+  - `reservaHeader` -> `reservationHeader`
+  - `reservaInfo` -> `reservationInfo`
+  - `reservaPasada` -> `pastReservation`
+  - `reservaProvisional` -> `provisionalReservation`
+  - `reservadoPor` -> `reservedBy`
+- `src/presentation/screens/ResetPasswordScreen.js`
+  - `pantalla` -> `screen`
+- `src/services/authService.supabase.js`
+  - `aprobarCambioVivienda` -> `approveChangeApartment`
+  - `aprobarUsuario` -> `approveUser`
+  - `cancelarSolicitudVivienda` -> `cancelRequestApartment`
+  - `esAdmin` -> `isAdmin`
+  - `fotoPerfil` -> `profilePhoto`
+  - `getSolicitudesCambioVivienda` -> `getRequestsChangeApartment`
+  - `getTodosUsuarios` -> `getTodosUsers`
+  - `getUsuariosMismaVivienda` -> `getUsersMismaApartment`
+  - `getUsuariosPendientes` -> `getUsersPending`
+  - `nivelJuego` -> `skillLevel`
+  - `nuevaVivienda` -> `newApartment`
+  - `rechazarCambioVivienda` -> `rejectChangeApartment`
+  - `rechazarUsuario` -> `rejectUser`
+  - `solicitarCambioVivienda` -> `requestChangeApartment`
+- `src/services/bulletinService.js`
+  - `anuncioId` -> `announcementId`
+  - `contarAnunciosNoLeidos` -> `countAnnouncementsNoLeidos`
+  - `contarNotificacionesNoLeidas` -> `countNotificationsNoRead`
+  - `crearAnuncio` -> `createAnnouncement`
+  - `crearNotificacion` -> `createNotification`
+  - `eliminarAnuncio` -> `deleteAnnouncement`
+  - `eliminarNotificacion` -> `deleteNotification`
+  - `marcarAnuncioLeido` -> `markAnnouncementRead`
+  - `marcarNotificacionLeida` -> `markNotificationRead`
+  - `mensaje` -> `message`
+  - `notificacionId` -> `notificationId`
+  - `obtenerAnunciosParaUsuario` -> `getAnnouncementsForUser`
+  - `obtenerNotificaciones` -> `getNotifications`
+  - `obtenerTodosAnuncios` -> `getTodosAnnouncements`
+  - `obtenerUsuariosAprobados` -> `getUsersAprobados`
+  - `usuarioId` -> `userId`
+  - `usuariosIds` -> `usersIds`
+- `src/services/matchesService.js`
+  - `aceptarSolicitud` -> `acceptRequest`
+  - `anadirJugadorAPartida` -> `anadirJugadorA<match|game>` (AMBIGUOUS)
+  - `cancelarPartida` -> `cancel<match|game>` (AMBIGUOUS)
+  - `cancelarPartidaPorReserva` -> `cancel<match|game>ByReservation` (AMBIGUOUS)
+  - `cancelarSolicitud` -> `cancelRequest`
+  - `cerrarClase` -> `close<class|lesson>` (AMBIGUOUS)
+  - `creadorVivienda` -> `creatorApartment`
+  - `crearPartida` -> `create<match|game>` (AMBIGUOUS)
+  - `desapuntarsePartida` -> `desapuntarse<match|game>` (AMBIGUOUS)
+  - `editarPartida` -> `edit<match|game>` (AMBIGUOUS)
+  - `eliminarPartida` -> `delete<match|game>` (AMBIGUOUS)
+  - `esClase` -> `isClass`
+  - `hadPartida` -> `had<match|game>` (AMBIGUOUS)
+  - `horaFin` -> `endTime`
+  - `horaInicio` -> `startTime`
+  - `mensaje` -> `message`
+  - `nivel` -> `level`
+  - `nivelJuego` -> `skillLevel`
+  - `nivelPreferido` -> `preferredLevel`
+  - `niveles` -> `levels`
+  - `obtenerDatosUsuarios` -> `getDatosUsers`
+  - `obtenerFotoUsuario` -> `getPhotoUser`
+  - `obtenerMisPartidas` -> `getMis<matches|games>` (AMBIGUOUS)
+  - `obtenerPartidasActivas` -> `get<matches|games>Activas` (AMBIGUOUS)
+  - `obtenerPartidasApuntado` -> `get<matches|games>Apuntado` (AMBIGUOUS)
+  - `obtenerReservasConPartida` -> `getReservationsWith<match|game>` (AMBIGUOUS)
+  - `partidaData` -> `<match|game>Data` (AMBIGUOUS)
+  - `partidaId` -> `<match|game>Id` (AMBIGUOUS)
+  - `partidasService` -> `<matches|games>Service` (AMBIGUOUS)
+  - `pistaNombre` -> `courtName`
+  - `precioAlumno` -> `studentPrice`
+  - `precioGrupo` -> `groupPrice`
+  - `rechazarSolicitud` -> `rejectRequest`
+  - `reservaId` -> `reservationId`
+  - `usuario` -> `user`
+  - `usuarioId` -> `userId`
+  - `usuarioNombre` -> `userName`
+  - `usuarioVivienda` -> `userApartment`
+- `src/services/notificationService.js`
+  - `anuncioId` -> `announcementId`
+  - `aprobado` -> `approved`
+  - `fechaNotificacion` -> `dateNotification`
+  - `fechaReserva` -> `reservationDate`
+  - `mensaje` -> `message`
+  - `notifyNuevoAnuncio` -> `notifyNewAnnouncement`
+  - `notifyViviendaChange` -> `notifyApartmentChange`
+  - `reserva` -> `reservation`
+  - `reservaId` -> `reservationId`
+  - `usuariosIds` -> `usersIds`
+  - `viviendaNueva` -> `apartmentNew`
+- `src/services/reservationsService.supabase.js`
+  - `bloqueoId` -> `blockoutId`
+  - `cancelarReserva` -> `cancelReservation`
+  - `crearBloqueo` -> `create<blockout|block>` (AMBIGUOUS)
+  - `crearReserva` -> `createReservation`
+  - `crearReservaConRPC` -> `createReservationWithRPC`
+  - `desplazarReserva` -> `displaceReservation`
+  - `desplazarReservaYCrear` -> `displaceReservationYCreate`
+  - `eliminarBloqueo` -> `delete<blockout|block>` (AMBIGUOUS)
+  - `horaFin` -> `endTime`
+  - `horaInicio` -> `startTime`
+  - `marcarNotificacionesLeidas` -> `markNotificationsRead`
+  - `nuevaReservaData` -> `newReservationData`
+  - `obtenerBloqueos` -> `getBloqueos`
+  - `obtenerDisponibilidad` -> `getAvailability`
+  - `obtenerNotificacionesPendientes` -> `getNotificationsPending`
+  - `obtenerPistas` -> `getCourts`
+  - `obtenerPrioridadParaNuevaReserva` -> `getPriorityForNewReservation`
+  - `obtenerReservasActivasVivienda` -> `getReservationsActivasApartment`
+  - `obtenerReservasPorFecha` -> `getReservationsByDate`
+  - `obtenerReservasPorVivienda` -> `getReservationsByApartment`
+  - `obtenerReservasUsuario` -> `getReservationsUser`
+  - `obtenerTodasReservas` -> `getTodasReservations`
+  - `pistaId` -> `courtId`
+  - `pistaNombre` -> `courtName`
+  - `recalcularConversionesVivienda` -> `recalcularConversionesApartment`
+  - `reservaADesplazar` -> `reservationADisplace`
+  - `reservaData` -> `reservationData`
+  - `reservaId` -> `reservationId`
+  - `reservasCanceladas` -> `reservationsCanceladas`
+  - `reservasConfirmadas` -> `reservationsConfirmadas`
+  - `reservasHoy` -> `reservationsToday`
+  - `reservasSemana` -> `reservations<week|weekday>` (AMBIGUOUS)
+  - `reservasService` -> `reservationsService`
+  - `totalReservas` -> `totalReservations`
+  - `usuarioId` -> `userId`
+  - `usuarioNombre` -> `userName`
+  - `viviendaDesplazadora` -> `apartmentDesplazadora`
+  - `viviendaUsuario` -> `apartmentUser`
+- `src/utils/dateHelpers.js`
+  - `bloqueTerminado` -> `<block|slot>Finished` (AMBIGUOUS)
+  - `duracionBloque` -> `slotDuration`
+  - `esFechaValida` -> `esDateValida`
+  - `findeHoraApertura` -> `weekendOpeningTime`
+  - `findeHoraCierre` -> `weekendClosingTime`
+  - `findePausaDiasSemana` -> `weekendBreakWeekdays`
+  - `findePausaFin` -> `weekendBreakEnd`
+  - `findePausaInicio` -> `weekendBreakStart`
+  - `formatearFecha` -> `formatDate`
+  - `formatearFechaLegible` -> `formatDateReadable`
+  - `formatearHora` -> `formatTime`
+  - `generarHorariosDisponibles` -> `generar<schedules|timeSlots>Disponibles` (AMBIGUOUS)
+  - `horaApertura` -> `openingTime`
+  - `horaCierre` -> `closingTime`
+  - `horaFin` -> `endTime`
+  - `horaInicio` -> `startTime`
+  - `horasHasta` -> `hoursUntil`
+  - `obtenerFechaHoy` -> `getDateToday`
+  - `pausaDiasSemana` -> `breakWeekdays`
+  - `pausaFin` -> `breakEnd`
+  - `pausaInicio` -> `breakStart`
+  - `semanaHoraApertura` -> `weekdayOpeningTime`
+  - `semanaHoraCierre` -> `weekdayClosingTime`
+  - `usarHorariosDiferenciados` -> `useDifferentiatedSchedules`
+- `src/utils/validators.js`
+  - `LIMITES_RESERVA` -> `RESERVATION_LIMITS`
+  - `VIVIENDA_CONFIG` -> `APARTMENT_CONFIG`
+  - `esViviendaValida` -> `isApartmentValid`
+  - `horaInicio` -> `startTime`
+  - `horasHasta` -> `hoursUntil`
+  - `nivelJuego` -> `skillLevel`
+  - `validarPerfil` -> `validateProfile`
+  - `validarViviendaComponentes` -> `validateApartmentComponentes`

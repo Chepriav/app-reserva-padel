@@ -49,52 +49,52 @@ describe('reservationMapper', () => {
   });
 
   describe('toLegacyFormat', () => {
-    it('maps domain entity to legacy Spanish camelCase', () => {
+    it('maps domain entity to English camelCase (matches domain entity)', () => {
       const r = toDomain(dbRow);
       const legacy = toLegacyFormat(r);
-      expect(legacy.pistaId).toBe('court-1');
-      expect(legacy.pistaNombre).toBe('Pista 1');
-      expect(legacy.vivienda).toBe('1-3-B');
-      expect(legacy.estado).toBe('confirmada');
-      expect(legacy.prioridad).toBe('primera');
+      expect(legacy.courtId).toBe('court-1');
+      expect(legacy.courtName).toBe('Pista 1');
+      expect(legacy.apartment).toBe('1-3-B');
+      expect(legacy.status).toBe('confirmed');
+      expect(legacy.priority).toBe('guaranteed');
     });
   });
 
   describe('roundtrip DB → domain → legacy', () => {
     it('preserves all data', () => {
       const legacy = toLegacyFormat(toDomain(dbRow));
-      expect(legacy.pistaId).toBe(dbRow.pista_id);
-      expect(legacy.pistaNombre).toBe(dbRow.pista_nombre);
-      expect(legacy.vivienda).toBe(dbRow.vivienda);
-      expect(legacy.fecha).toBe(dbRow.fecha);
-      expect(legacy.horaInicio).toBe(dbRow.hora_inicio);
-      expect(legacy.horaFin).toBe(dbRow.hora_fin);
-      expect(legacy.estado).toBe(dbRow.estado);
-      expect(legacy.prioridad).toBe(dbRow.prioridad);
+      expect(legacy.courtId).toBe(dbRow.pista_id);
+      expect(legacy.courtName).toBe(dbRow.pista_nombre);
+      expect(legacy.apartment).toBe(dbRow.vivienda);
+      expect(legacy.date).toBe(dbRow.fecha);
+      expect(legacy.startTime).toBe(dbRow.hora_inicio);
+      expect(legacy.endTime).toBe(dbRow.hora_fin);
+      expect(legacy.status).toBe('confirmed');
+      expect(legacy.priority).toBe('guaranteed');
     });
   });
 
   describe('fromLegacyCreateData', () => {
-    it('maps legacy create data to domain CreateReservationData', () => {
-      const legacy = {
-        pistaId: 'court-1',
-        usuarioId: 'user-1',
-        usuarioNombre: 'Test User',
-        vivienda: '1-3-B',
-        fecha: '2025-12-01',
-        horaInicio: '10:00',
-        horaFin: '11:00',
-        jugadores: [],
-        forzarDesplazamiento: false,
+    it('maps English create data to domain CreateReservationData', () => {
+      const data = {
+        courtId: 'court-1',
+        userId: 'user-1',
+        userName: 'Test User',
+        apartment: '1-3-B',
+        date: '2025-12-01',
+        startTime: '10:00',
+        endTime: '11:00',
+        players: [],
+        forceDisplacement: false,
       };
-      const data = fromLegacyCreateData(legacy);
-      expect(data.courtId).toBe('court-1');
-      expect(data.userId).toBe('user-1');
-      expect(data.apartment).toBe('1-3-B');
-      expect(data.date).toBe('2025-12-01');
-      expect(data.startTime).toBe('10:00');
-      expect(data.endTime).toBe('11:00');
-      expect(data.forceDisplacement).toBe(false);
+      const result = fromLegacyCreateData(data);
+      expect(result.courtId).toBe('court-1');
+      expect(result.userId).toBe('user-1');
+      expect(result.apartment).toBe('1-3-B');
+      expect(result.date).toBe('2025-12-01');
+      expect(result.startTime).toBe('10:00');
+      expect(result.endTime).toBe('11:00');
+      expect(result.forceDisplacement).toBe(false);
     });
   });
 

@@ -48,8 +48,8 @@ async function importSingleUser(user) {
   const response = await supabase.functions.invoke('create-user', {
     body: {
       email: user.email,
-      nombre: user.nombre,
-      vivienda: user.vivienda,
+      name: user.name,
+      apartment: user.apartment,
       redirectTo,
     },
   });

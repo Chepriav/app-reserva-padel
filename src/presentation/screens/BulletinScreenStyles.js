@@ -9,11 +9,11 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 20, paddingVertical: 16, backgroundColor: colors.primary,
   },
   title: { fontSize: 24, fontWeight: '700', color: '#fff' },
-  marcarTodasButton: {
+  markTodasButton: {
     paddingHorizontal: 12, paddingVertical: 6,
     backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 15,
   },
-  marcarTodasText: { fontSize: 13, color: '#fff', fontWeight: '500' },
+  markTodasText: { fontSize: 13, color: '#fff', fontWeight: '500' },
   tabs: {
     flexDirection: 'row', backgroundColor: colors.primary,
     paddingHorizontal: 16, paddingBottom: 12, gap: 8,

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Platform } from 'react-native';
 import { notificationService } from '../../services/notificationService';
-import { reservasService } from '../../services/reservationsService.supabase';
+import { reservationsService } from '../../services/reservationsService.supabase';
 import { navigateFromNotification } from '../navigation/AppNavigator';
 
 /**
@@ -9,14 +9,14 @@ import { navigateFromNotification } from '../navigation/AppNavigator';
  * Extracted from AuthContext to keep it under the 300-line limit.
  */
 export function useAuthNotifications({ isAuthenticated, user, setNotificationMessage }) {
-  const [notificacionesPendientes, setNotificacionesPendientes] = useState([]);
+  const [notificationsPending, setNotificationsPending] = useState([]);
 
   const handleNotificationNavigation = (notificationType, notificationData = {}) => {
     let message = null;
 
     switch (notificationType) {
       case 'vivienda_change':
-        message = notificationData.aprobado
+        message = notificationData.approved
           ? { type: 'success', title: 'Cambio de vivienda aprobado', text: 'Tu solicitud de cambio de vivienda ha sido aprobada.' }
           : { type: 'error', title: 'Cambio de vivienda rechazado', text: 'Tu solicitud de cambio de vivienda ha sido rechazada.' };
         setNotificationMessage(message);
@@ -70,23 +70,23 @@ export function useAuthNotifications({ isAuthenticated, user, setNotificationMes
     }
   };
 
-  const cargarNotificaciones = async () => {
+  const loadNotifications = async () => {
     if (!user) return;
     try {
-      const result = await reservasService.obtenerNotificacionesPendientes(user.id);
+      const result = await reservationsService.getNotificationsPending(user.id);
       if (result.success) {
-        setNotificacionesPendientes(result.data);
+        setNotificationsPending(result.data);
       }
     } catch (error) {
       console.error('Error cargando notificaciones:', error);
     }
   };
 
-  const marcarNotificacionesLeidas = async () => {
+  const markNotificationsRead = async () => {
     if (!user) return;
     try {
-      await reservasService.marcarNotificacionesLeidas(user.id);
-      setNotificacionesPendientes([]);
+      await reservationsService.markNotificationsRead(user.id);
+      setNotificationsPending([]);
     } catch (error) {
       console.error('Error marcando notificaciones:', error);
     }
@@ -97,7 +97,7 @@ export function useAuthNotifications({ isAuthenticated, user, setNotificationMes
     let notificationCleanup = null;
 
     if (isAuthenticated && user) {
-      cargarNotificaciones();
+      loadNotifications();
 
       notificationService.registerForPushNotifications(user.id);
 
@@ -112,7 +112,7 @@ export function useAuthNotifications({ isAuthenticated, user, setNotificationMes
         }
       );
     } else {
-      setNotificacionesPendientes([]);
+      setNotificationsPending([]);
     }
 
     return () => {
@@ -141,5 +141,5 @@ export function useAuthNotifications({ isAuthenticated, user, setNotificationMes
     };
   }, []);
 
-  return { notificacionesPendientes, marcarNotificacionesLeidas };
+  return { notificationsPending, markNotificationsRead };
 }

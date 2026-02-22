@@ -38,18 +38,12 @@ export const colors = {
 
   // Legacy aliases for backwards compatibility
   // TODO: Remove these once all consumers are updated
-  reservaGarantizada: '#2f855a',
-  reservaProvisional: '#d69e2e',
-  reservaDesplazable: '#cbd5e0',
-  reservaPasada: '#68a77c',
-  clase: '#1976d2',
-  claseBadge: '#1976d2',
-  claseBackground: '#e3f2fd',
-  anuncioInfo: '#1976d2',
-  anuncioAviso: '#f57c00',
-  anuncioUrgente: '#d32f2f',
-  anuncioMantenimiento: '#616161',
-  notificacionLeida: '#f0f0f0',
+  displaceableReservation: '#cbd5e0',
+  lesson: '#1976d2',
+  lessonBadge: '#1976d2',
+  lessonBackground: '#e3f2fd',
+  announcementNotice: '#f57c00',
+  notificationRead: '#f0f0f0',
   badgeRojo: '#e53e3e',
-  bloqueado: '#e53e3e',
+  blocked: '#e53e3e',
 };

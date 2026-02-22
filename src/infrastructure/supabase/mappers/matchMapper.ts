@@ -1,6 +1,6 @@
 import type { Match, Player, CreateMatchData, MatchStatus, MatchType, PlayerStatus } from '@domain/entities/Match';
 import type { SkillLevel } from '@domain/entities/User';
-import { skillLevelToDomain, skillLevelToDb } from './userMapper';
+import { skillLevelToDomain } from './userMapper';
 
 // ---- Enum translations ----
 
@@ -129,27 +129,27 @@ export function toDbInsert(data: CreateMatchData): Record<string, unknown> {
 export function toLegacyFormat(match: Match): Record<string, unknown> {
   return {
     id: match.id,
-    creadorId: match.creatorId,
-    creadorNombre: match.creatorName,
-    creadorVivienda: match.creatorApartment,
-    creadorFoto: match.creatorPhoto,
-    creadorNivel: match.creatorLevel ? skillLevelToDb(match.creatorLevel) : null,
-    reservaId: match.reservationId,
-    fecha: match.date,
-    horaInicio: match.startTime,
-    horaFin: match.endTime,
-    pistaNombre: match.courtName,
-    tipo: matchTypeToDb(match.type),
-    mensaje: match.message,
-    nivelPreferido: match.preferredLevel,
-    estado: matchStatusToDb(match.status),
-    esClase: match.isClass,
-    niveles: match.levels,
-    minParticipantes: match.minParticipants,
-    maxParticipantes: match.maxParticipants,
-    precioAlumno: match.studentPrice,
-    precioGrupo: match.groupPrice,
-    jugadores: match.players.map(playerToLegacy),
+    creatorId: match.creatorId,
+    creatorName: match.creatorName,
+    creatorApartment: match.creatorApartment,
+    creatorPhoto: match.creatorPhoto,
+    creatorLevel: match.creatorLevel,
+    reservationId: match.reservationId,
+    date: match.date,
+    startTime: match.startTime,
+    endTime: match.endTime,
+    courtName: match.courtName,
+    type: match.type,
+    message: match.message,
+    preferredLevel: match.preferredLevel,
+    status: match.status,
+    isLesson: match.isClass,
+    levels: match.levels,
+    minParticipants: match.minParticipants,
+    maxParticipants: match.maxParticipants,
+    studentPrice: match.studentPrice,
+    groupPrice: match.groupPrice,
+    players: match.players.map(playerToLegacy),
     createdAt: match.createdAt,
     updatedAt: match.updatedAt,
   };
@@ -158,14 +158,14 @@ export function toLegacyFormat(match: Match): Record<string, unknown> {
 export function playerToLegacy(player: Player): Record<string, unknown> {
   return {
     id: player.id,
-    partidaId: player.matchId,
-    usuarioId: player.userId,
-    usuarioNombre: player.userName,
-    usuarioVivienda: player.userApartment,
-    usuarioFoto: player.userPhoto,
-    nivelJuego: player.skillLevel ? skillLevelToDb(player.skillLevel) : null,
-    esExterno: player.isExternal,
-    estado: playerStatusToDb(player.status),
+    matchId: player.matchId,
+    userId: player.userId,
+    userName: player.userName,
+    userApartment: player.userApartment,
+    userPhoto: player.userPhoto,
+    skillLevel: player.skillLevel,
+    isExternal: player.isExternal,
+    status: player.status,
     createdAt: player.createdAt,
   };
 }

@@ -3,40 +3,40 @@ import { View, Text, Modal, TouchableOpacity, ActivityIndicator, StyleSheet } fr
 import { colors } from '../../../constants/colors';
 import { ApartmentSelector } from '../ApartmentSelector';
 
-export function ApartmentChangeModal({ solicitudModal, setSolicitudModal, onClose, onSubmit }) {
+export function ApartmentChangeModal({ requestModal, setRequestModal, onClose, onSubmit }) {
   return (
-    <Modal visible={solicitudModal.visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={requestModal.visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.content}>
-          <Text style={styles.title}>Solicitar Cambio de Vivienda</Text>
+          <Text style={styles.title}>Solicitar cambio de vivienda</Text>
           <Text style={styles.subtitle}>
             Selecciona tu nueva vivienda. Un administrador revisará tu solicitud.
           </Text>
 
           <View style={styles.selectorContainer}>
             <ApartmentSelector
-              escalera={solicitudModal.escalera}
-              piso={solicitudModal.piso}
-              puerta={solicitudModal.puerta}
-              onChangeEscalera={(v) => setSolicitudModal((prev) => ({ ...prev, escalera: v }))}
-              onChangePiso={(v) => setSolicitudModal((prev) => ({ ...prev, piso: v }))}
-              onChangePuerta={(v) => setSolicitudModal((prev) => ({ ...prev, puerta: v }))}
+              staircase={requestModal.staircase}
+              floor={requestModal.floor}
+              door={requestModal.door}
+              onChangeStaircase={(v) => setRequestModal((prev) => ({ ...prev, staircase: v }))}
+              onChangeFloor={(v) => setRequestModal((prev) => ({ ...prev, floor: v }))}
+              onChangeDoor={(v) => setRequestModal((prev) => ({ ...prev, door: v }))}
             />
           </View>
 
           <View style={styles.buttons}>
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={solicitudModal.saving}>
+            <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={requestModal.saving}>
               <Text style={styles.cancelButtonText}>Cancelar</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.saveButton, solicitudModal.saving && styles.buttonDisabled]}
+              style={[styles.saveButton, requestModal.saving && styles.buttonDisabled]}
               onPress={onSubmit}
-              disabled={solicitudModal.saving}
+              disabled={requestModal.saving}
             >
-              {solicitudModal.saving ? (
+              {requestModal.saving ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.saveButtonText}>Enviar Solicitud</Text>
+                <Text style={styles.saveButtonText}>Enviar solicitud</Text>
               )}
             </TouchableOpacity>
           </View>

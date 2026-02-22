@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Image, Platform, StyleSheet } from 'react-native';
 import { colors } from '../../../constants/colors';
 
-export function ProfileHeader({ user, editMode, fotoPerfil, imageError, onImageError, onPickImage, onDeleteImage, onEditPress }) {
-  const initials = user?.nombre
+export function ProfileHeader({ user, editMode, profilePhoto, imageError, onImageError, onPickImage, onDeleteImage, onEditPress }) {
+  const initials = user?.name
     ?.split(' ')
     .map((n) => n[0])
     .join('')
@@ -17,8 +17,8 @@ export function ProfileHeader({ user, editMode, fotoPerfil, imageError, onImageE
         onPress={editMode ? onPickImage : undefined}
         disabled={!editMode}
       >
-        {fotoPerfil && !imageError ? (
-          <Image source={{ uri: fotoPerfil }} style={styles.avatarImage} onError={onImageError} />
+        {profilePhoto && !imageError ? (
+          <Image source={{ uri: profilePhoto }} style={styles.avatarImage} onError={onImageError} />
         ) : (
           <Text style={styles.avatarText}>{initials}</Text>
         )}
@@ -32,9 +32,9 @@ export function ProfileHeader({ user, editMode, fotoPerfil, imageError, onImageE
       {editMode && (
         <View style={styles.photoButtons}>
           <TouchableOpacity style={styles.photoButton} onPress={onPickImage}>
-            <Text style={styles.photoButtonText}>{fotoPerfil ? 'Cambiar Foto' : 'Añadir Foto'}</Text>
+            <Text style={styles.photoButtonText}>{profilePhoto ? 'Cambiar Foto' : 'Añadir Foto'}</Text>
           </TouchableOpacity>
-          {fotoPerfil && (
+          {profilePhoto && (
             <TouchableOpacity style={[styles.photoButton, styles.deletePhotoButton]} onPress={onDeleteImage}>
               <Text style={styles.deletePhotoButtonText}>Eliminar</Text>
             </TouchableOpacity>
@@ -42,12 +42,12 @@ export function ProfileHeader({ user, editMode, fotoPerfil, imageError, onImageE
         </View>
       )}
 
-      <Text style={styles.nombre}>{user?.nombre}</Text>
+      <Text style={styles.name}>{user?.name}</Text>
       <Text style={styles.email}>{user?.email}</Text>
 
       {!editMode && (
         <TouchableOpacity style={styles.editButton} onPress={onEditPress}>
-          <Text style={styles.editButtonText}>✏️ Editar Perfil</Text>
+          <Text style={styles.editButtonText}>✏️ Editar perfil</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
   photoButtonText: { color: '#fff', fontSize: 12, fontWeight: '500' },
   deletePhotoButton: { backgroundColor: 'rgba(255, 0, 0, 0.3)' },
   deletePhotoButtonText: { color: '#fff', fontSize: 12, fontWeight: '500' },
-  nombre: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginBottom: 4 },
+  name: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginBottom: 4 },
   email: { fontSize: 16, color: '#fff', opacity: 0.9 },
   editButton: {
     marginTop: 12, backgroundColor: 'rgba(255, 255, 255, 0.2)',

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { parseVivienda } from '../../constants/config';
+import { parseApartment } from '../../constants/config';
 
 /**
  * Hook to manage the edit apartment modal
@@ -7,18 +7,18 @@ import { parseVivienda } from '../../constants/config';
 export function useEditApartmentModal() {
   const [modalState, setModalState] = useState({
     visible: false,
-    usuario: null,
+    user: null,
     staircase: '',
     floor: '',
     door: '',
     saving: false,
   });
 
-  const open = useCallback((usuario) => {
-    const parsed = parseVivienda(usuario.vivienda);
+  const open = useCallback((user) => {
+    const parsed = parseApartment(user.apartment);
     setModalState({
       visible: true,
-      usuario,
+      user,
       staircase: parsed.escalera,
       floor: parsed.piso,
       door: parsed.puerta,
@@ -29,7 +29,7 @@ export function useEditApartmentModal() {
   const close = useCallback(() => {
     setModalState({
       visible: false,
-      usuario: null,
+      user: null,
       staircase: '',
       floor: '',
       door: '',

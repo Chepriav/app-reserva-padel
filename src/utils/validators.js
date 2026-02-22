@@ -1,5 +1,5 @@
-import { RESERVATION_LIMITS, isValidApartment, APARTMENT_CONFIG, LIMITES_RESERVA, esViviendaValida, VIVIENDA_CONFIG } from '../constants/config';
-import { hoursUntil, horasHasta } from './dateHelpers';
+import { RESERVATION_LIMITS, isValidApartment, APARTMENT_CONFIG } from '../constants/config';
+import { hoursUntil } from './dateHelpers';
 
 // Validate email format
 export const validateEmail = (email) => {
@@ -50,7 +50,7 @@ export const validateApartmentComponents = (stair, floor, door) => {
 // This function only performs basic frontend validations
 export const canMakeReservation = (user, newReservation, currentReservations) => {
   // Verify the date/time is in the future
-  const hoursInAdvance = hoursUntil(newReservation.fecha, newReservation.horaInicio);
+  const hoursInAdvance = hoursUntil(newReservation.date, newReservation.startTime);
 
   if (hoursInAdvance < 0) {
     return {
@@ -64,9 +64,9 @@ export const canMakeReservation = (user, newReservation, currentReservations) =>
   const now = new Date();
   const apartmentActiveReservations = currentReservations.filter((r) => {
     // Filter by apartment, confirmed status, and future date
-    const sameApartment = r.vivienda === user.vivienda;
-    const isConfirmed = r.estado === 'confirmada';
-    const reservationDate = new Date(r.fecha + 'T' + r.horaInicio);
+    const sameApartment = r.apartment === user.apartment;
+    const isConfirmed = r.status === 'confirmed';
+    const reservationDate = new Date(r.date + 'T' + r.startTime);
     const isFuture = reservationDate > now;
     return sameApartment && isConfirmed && isFuture;
   });
@@ -82,8 +82,8 @@ export const canMakeReservation = (user, newReservation, currentReservations) =>
   // 3. Check if apartment doesn't have another reservation at the same time
   const conflict = apartmentActiveReservations.find(
     (r) =>
-      r.fecha === newReservation.fecha &&
-      r.horaInicio === newReservation.horaInicio
+      r.date === newReservation.date &&
+      r.startTime === newReservation.startTime
   );
   if (conflict) {
     return {
@@ -106,21 +106,26 @@ export const canCancelReservation = (reservation) => {
 export const validateRegistration = (data) => {
   const errors = {};
 
-  if (!data.nombre || data.nombre.trim().length < 2) {
-    errors.nombre = 'El nombre debe tener al menos 2 caracteres';
+  if (!data.name || data.name.trim().length < 2) {
+    errors.name = 'El nombre debe tener al menos 2 caracteres';
   }
 
   if (!validateEmail(data.email)) {
     errors.email = 'Email no válido';
   }
 
-  if (!validatePhone(data.telefono)) {
-    errors.telefono = 'Teléfono no válido';
+  const phone = data.phone ?? data.telefono;
+  if (!validatePhone(phone)) {
+    if (data.telefono !== undefined && data.phone === undefined) {
+      errors.telefono = 'Teléfono no válido';
+    } else {
+      errors.phone = 'Teléfono no válido';
+    }
   }
 
   // Validate structured apartment
-  if (!data.vivienda || !isValidApartment(data.vivienda)) {
-    errors.vivienda = 'Debes seleccionar tu vivienda completa';
+  if (!data.apartment || !isValidApartment(data.apartment)) {
+    errors.apartment = 'Debes seleccionar tu vivienda completa';
   }
 
   if (!data.password || data.password.length < 6) {
@@ -139,23 +144,28 @@ export const validateRegistration = (data) => {
 export const validateProfile = (data) => {
   const errors = {};
 
-  if (!data.nombre || data.nombre.trim().length < 2) {
-    errors.nombre = 'El nombre debe tener al menos 2 caracteres';
+  if (!data.name || data.name.trim().length < 2) {
+    errors.name = 'El nombre debe tener al menos 2 caracteres';
   }
 
-  if (!validatePhone(data.telefono)) {
-    errors.telefono = 'Teléfono no válido';
+  const phone = data.phone ?? data.telefono;
+  if (!validatePhone(phone)) {
+    if (data.telefono !== undefined && data.phone === undefined) {
+      errors.telefono = 'Teléfono no válido';
+    } else {
+      errors.phone = 'Teléfono no válido';
+    }
   }
 
   // Validate structured apartment
-  if (!data.vivienda || !isValidApartment(data.vivienda)) {
-    errors.vivienda = 'Debes seleccionar tu vivienda completa';
+  if (!data.apartment || !isValidApartment(data.apartment)) {
+    errors.apartment = 'Debes seleccionar tu vivienda completa';
   }
 
   // nivelJuego is optional, but if provided must be valid
   const validLevels = ['principiante', 'intermedio', 'avanzado', 'profesional'];
-  if (data.nivelJuego && !validLevels.includes(data.nivelJuego)) {
-    errors.nivelJuego = 'Nivel de juego no válido';
+  if (data.skillLevel && !validLevels.includes(data.skillLevel)) {
+    errors.skillLevel = 'Nivel de juego no válido';
   }
 
   return {
@@ -168,10 +178,8 @@ export const validateProfile = (data) => {
 
 // Legacy exports for backwards compatibility
 // TODO: Remove these aliases once all consumers are updated
-export const validarEmail = validateEmail;
-export const validarTelefono = validatePhone;
-export const validarViviendaComponentes = validateApartmentComponents;
+export const validateTelefono = validatePhone;
+export const validateApartmentComponentes = validateApartmentComponents;
 export const puedeReservar = canMakeReservation;
-export const puedeCancelar = canCancelReservation;
-export const validarRegistro = validateRegistration;
-export const validarPerfil = validateProfile;
+export const puedeCancel = canCancelReservation;
+export const validateRegistro = validateRegistration;

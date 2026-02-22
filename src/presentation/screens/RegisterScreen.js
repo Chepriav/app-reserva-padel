@@ -10,18 +10,18 @@ import {
 } from 'react-native';
 import { authService } from '../../services/authService.supabase';
 import { styles } from './RegisterScreenStyles';
-import { validarRegistro, validarViviendaComponentes } from '../../utils/validators';
-import { combinarVivienda } from '../../constants/config';
+import { validateRegistro as validateRegistration, validateApartmentComponentes as validateApartmentComponents } from '../../utils/validators';
+import { combineApartment } from '../../constants/config';
 import { CustomAlert } from '../components/CustomAlert';
 import { ApartmentSelector } from '../components/ApartmentSelector';
 
-export default function RegistroScreen({ navigation }) {
-  const [nombre, setNombre] = useState('');
+export default function RegisterScreen({ navigation }) {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [telefono, setTelefono] = useState('');
-  const [escalera, setEscalera] = useState('');
-  const [piso, setPiso] = useState('');
-  const [puerta, setPuerta] = useState('');
+  const [phone, setPhone] = useState('');
+  const [staircase, setStaircase] = useState('');
+  const [floor, setFloor] = useState('');
+  const [door, setDoor] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,7 +34,7 @@ export default function RegistroScreen({ navigation }) {
     buttons: [],
   });
 
-  const handleRegistro = async () => {
+  const handleRegister = async () => {
     // Validar que las contraseñas coincidan
     if (password !== confirmPassword) {
       setAlertConfig({
@@ -47,36 +47,36 @@ export default function RegistroScreen({ navigation }) {
     }
 
     // Validar vivienda
-    const viviendaValidacion = validarViviendaComponentes(escalera, piso, puerta);
-    if (!viviendaValidacion.valido) {
-      const errores = Object.values(viviendaValidacion.errores).join('\n');
+    const apartmentValidation = validateApartmentComponents(staircase, floor, door);
+    if (!apartmentValidation.valido) {
+      const errors = Object.values(apartmentValidation.errores).join('\n');
       setAlertConfig({
         visible: true,
         title: 'Error en vivienda',
-        message: errores,
+        message: errors,
         buttons: [{ text: 'OK', onPress: () => {} }],
       });
       return;
     }
 
     // Combinar vivienda
-    const vivienda = combinarVivienda(escalera, piso, puerta);
+    const apartment = combineApartment(staircase, floor, door);
 
     // Validar datos
-    const validacion = validarRegistro({
-      nombre,
+    const validation = validateRegistration({
+      name,
       email,
-      telefono,
-      vivienda,
+      phone,
+      apartment,
       password,
     });
 
-    if (!validacion.valido) {
-      const errores = Object.values(validacion.errores).join('\n');
+    if (!validation.valido) {
+      const errors = Object.values(validation.errores).join('\n');
       setAlertConfig({
         visible: true,
         title: 'Errores de validación',
-        message: errores,
+        message: errors,
         buttons: [{ text: 'OK', onPress: () => {} }],
       });
       return;
@@ -84,10 +84,10 @@ export default function RegistroScreen({ navigation }) {
 
     setLoading(true);
     const result = await authService.register({
-      nombre,
+      name,
       email,
-      telefono,
-      vivienda,
+      phone,
+      apartment,
       password,
     });
     setLoading(false);
@@ -123,7 +123,7 @@ export default function RegistroScreen({ navigation }) {
         showsVerticalScrollIndicator={true}
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Registro de Vecino</Text>
+          <Text style={styles.title}>Registro de vecino</Text>
           <Text style={styles.subtitle}>
             Completa tus datos para solicitar acceso
           </Text>
@@ -131,12 +131,12 @@ export default function RegistroScreen({ navigation }) {
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Nombre Completo *</Text>
+            <Text style={styles.label}>Nombre completo *</Text>
             <TextInput
               style={styles.input}
               placeholder="Juan Pérez"
-              value={nombre}
-              onChangeText={setNombre}
+              value={name}
+              onChangeText={setName}
               autoCapitalize="words"
             />
           </View>
@@ -159,8 +159,8 @@ export default function RegistroScreen({ navigation }) {
             <TextInput
               style={styles.input}
               placeholder="666777888"
-              value={telefono}
-              onChangeText={setTelefono}
+              value={phone}
+              onChangeText={setPhone}
               keyboardType="phone-pad"
             />
           </View>
@@ -168,12 +168,12 @@ export default function RegistroScreen({ navigation }) {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Vivienda *</Text>
             <ApartmentSelector
-              escalera={escalera}
-              piso={piso}
-              puerta={puerta}
-              onChangeEscalera={setEscalera}
-              onChangePiso={setPiso}
-              onChangePuerta={setPuerta}
+              staircase={staircase}
+              floor={floor}
+              door={door}
+              onChangeStaircase={setStaircase}
+              onChangeFloor={setFloor}
+              onChangeDoor={setDoor}
             />
           </View>
 
@@ -203,13 +203,13 @@ export default function RegistroScreen({ navigation }) {
 
           <TouchableOpacity
             style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleRegistro}
+            onPress={handleRegister}
             disabled={loading}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>Solicitar Registro</Text>
+              <Text style={styles.buttonText}>Solicitar registro</Text>
             )}
           </TouchableOpacity>
 
@@ -218,7 +218,7 @@ export default function RegistroScreen({ navigation }) {
             onPress={() => navigation.goBack()}
           >
             <Text style={styles.backButtonText}>
-              Ya tengo cuenta - Iniciar Sesión
+              Ya tengo cuenta - Iniciar sesión
             </Text>
           </TouchableOpacity>
 
@@ -251,4 +251,3 @@ export default function RegistroScreen({ navigation }) {
     </View>
   );
 }
-
