@@ -34,21 +34,37 @@ import { supabase } from './supabaseConfig';
  * Error messages translated to Spanish (for UI)
  */
 const ERROR_MESSAGES = {
+  // Login
   'Invalid login credentials': 'Email o contraseña incorrectos',
-  'User already registered': 'Este email ya está registrado',
+  // Registration
+  'User already registered': 'Este email ya está registrado. Si olvidaste tu contraseña, usa la opción "¿Olvidaste tu contraseña?"',
+  'Email already in use': 'Este email ya está registrado',
   'Password should be at least 6 characters': 'La contraseña debe tener al menos 6 caracteres',
-  'Unable to validate email address: invalid format': 'Email no válido',
-  'Email rate limit exceeded': 'Demasiados intentos. Intenta más tarde',
+  'Unable to validate email address: invalid format': 'El formato del email no es válido',
+  // Rate limiting
+  'Email rate limit exceeded': 'Demasiados intentos. Espera unos minutos antes de volver a intentarlo',
+  'For security purposes, you can only request this after': 'Por seguridad, espera unos segundos antes de volver a intentarlo',
+  // Admin approval
   'Registration request was rejected': 'Tu solicitud de registro fue rechazada. Contacta con el administrador',
   'Account is pending admin approval': 'Tu cuenta está pendiente de aprobación por un administrador',
-  default: 'Ha ocurrido un error. Intenta de nuevo',
+  default: 'Ha ocurrido un error inesperado. Inténtalo de nuevo',
 };
 
 const getErrorMessage = (error, defaultMessage) => {
   if (!error) return defaultMessage || ERROR_MESSAGES.default;
 
   const errorMsg = error.message || error;
-  return ERROR_MESSAGES[errorMsg] || defaultMessage || ERROR_MESSAGES.default;
+
+  // Exact match
+  if (ERROR_MESSAGES[errorMsg]) return ERROR_MESSAGES[errorMsg];
+
+  // Partial match for errors with dynamic content (e.g. rate limit with seconds)
+  const partialKey = Object.keys(ERROR_MESSAGES).find(
+    (key) => key !== 'default' && errorMsg.includes(key),
+  );
+  if (partialKey) return ERROR_MESSAGES[partialKey];
+
+  return defaultMessage || ERROR_MESSAGES.default;
 };
 
 const parseRecoveryParams = (url) => {
@@ -116,7 +132,9 @@ export const authService = {
     const domainData = fromLegacyRegisterData(userData);
     const result = await registerUser.execute(domainData);
     if (!result.success) {
-      return { success: false, error: getErrorMessage(result.error, 'Error al registrarse') };
+      // Pass the raw error message as fallback so unknown Supabase errors are visible
+      const rawMsg = result.error?.message || null;
+      return { success: false, error: getErrorMessage(result.error, rawMsg || 'Error al registrarse') };
     }
     return {
       success: true,
