@@ -8,13 +8,15 @@ import { registerServiceWorker, setUpdateCallback, applyUpdate } from './src/ser
 import { colors } from './src/constants/colors';
 import { authService } from './src/services/authService.supabase';
 
-// Check for recovery URL immediately on load (before React renders)
+// Check for recovery URL immediately on load (before React renders).
+// Only treat as recovery if the path explicitly includes 'reset-password'.
+// Plain ?code= without that path is an email confirmation link, not a password reset.
 const getInitialRecoveryState = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     const url = window.location.href;
     const hasCode = url.includes('?code=') || url.includes('&code=');
     const isResetPath = url.includes('reset-password');
-    if (hasCode || isResetPath) {
+    if (hasCode && isResetPath) {
       setRecoveryFlow(true);
       return true;
     }
@@ -28,6 +30,7 @@ export default function App() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [pendingRecoveryNavigation, setPendingRecoveryNavigation] = useState(false);
   const [initialRecoveryFlow, setInitialRecoveryFlow] = useState(initialRecoveryState);
+  const [emailConfirmed, setEmailConfirmed] = useState(false);
 
   useEffect(() => {
     // Registrar Service Worker solo en web
@@ -44,11 +47,11 @@ export default function App() {
     const handleRecoveryUrl = async (url) => {
       if (!url) return;
 
-      // Check if URL has recovery code parameter
-      const hasRecoveryCode = url.includes('?code=') || url.includes('&code=');
+      const hasCode = url.includes('?code=') || url.includes('&code=');
       const isResetPath = url.includes('reset-password');
 
-      if (hasRecoveryCode || isResetPath) {
+      if (hasCode && isResetPath) {
+        // Password reset / recovery flow → show ResetPasswordScreen
         setRecoveryFlow(true);
         setInitialRecoveryFlow(true);
 
@@ -60,6 +63,21 @@ export default function App() {
             ? window.location.origin + '/reset-password'
             : window.location.origin + '/';
           window.history.replaceState({}, document.title, cleanUrl);
+        }
+      } else if (hasCode) {
+        // Email confirmation link (registration) — NOT a password reset.
+        // Exchange the code to confirm the email, then sign out immediately
+        // (user must wait for admin approval and already has a password).
+        const result = await authService.handleEmailConfirmation(url);
+
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.history.replaceState({}, document.title, window.location.origin + '/');
+        }
+
+        if (result.handled && !result.error) {
+          setEmailConfirmed(true);
+          // Auto-hide the confirmation banner after 8 seconds
+          setTimeout(() => setEmailConfirmed(false), 8000);
         }
       }
     };
@@ -99,6 +117,17 @@ export default function App() {
     <AuthProvider>
       <ReservationsProvider>
         <View style={styles.container}>
+          {/* Banner de email confirmado */}
+          {emailConfirmed && (
+            <View style={styles.confirmBanner}>
+              <Text style={styles.confirmText}>
+                ✓ Email confirmado. Tu cuenta está pendiente de aprobación del administrador.
+              </Text>
+              <TouchableOpacity onPress={() => setEmailConfirmed(false)}>
+                <Text style={styles.confirmClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          )}
           {/* Banner de actualización */}
           {updateAvailable && (
             <View style={styles.updateBanner}>
@@ -119,6 +148,27 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  confirmBanner: {
+    backgroundColor: colors.secondary,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  confirmText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
+  },
+  confirmClose: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+    paddingLeft: 12,
   },
   updateBanner: {
     backgroundColor: colors.primary,

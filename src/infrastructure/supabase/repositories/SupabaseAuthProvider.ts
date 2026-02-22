@@ -20,7 +20,15 @@ export class SupabaseAuthProvider implements AuthProvider {
 
   async signUp(email: string, password: string): Promise<Result<{ userId: string }>> {
     try {
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      // Provide an explicit emailRedirectTo so the confirmation link goes to the
+      // homepage (NOT /reset-password). This prevents the email-confirm code from
+      // being mistaken for a password-reset code in App.js URL detection.
+      const emailRedirectTo = this.getEmailConfirmRedirect();
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: emailRedirectTo ? { emailRedirectTo } : undefined,
+      });
       if (error) {
         return fail(new AuthenticationError(error.message, error));
       }
@@ -136,6 +144,20 @@ export class SupabaseAuthProvider implements AuthProvider {
     } catch (err) {
       return fail(new AuthenticationError('Set session failed', err));
     }
+  }
+
+  private getEmailConfirmRedirect(): string | null {
+    if (
+      Platform.OS === 'web' &&
+      typeof window !== 'undefined' &&
+      window.location?.origin
+    ) {
+      // Use the homepage as the confirmation redirect — NOT /reset-password.
+      // App.js will detect ?code= without 'reset-password' in the path and
+      // treat it as an email confirmation (not a password recovery).
+      return `${window.location.origin}/`;
+    }
+    return null;
   }
 
   private getPasswordResetRedirect(): string | null {

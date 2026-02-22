@@ -238,6 +238,23 @@ export const authService = {
     return { handled: true, error: 'Missing recovery tokens' };
   },
 
+  async handleEmailConfirmation(url) {
+    const { code } = parseRecoveryParams(url);
+    if (!code) return { handled: false };
+
+    try {
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      if (error) return { handled: true, error: error.message };
+
+      // Sign out immediately — the user must wait for admin approval.
+      // They already set their password during registration.
+      await supabase.auth.signOut();
+      return { handled: true };
+    } catch (err) {
+      return { handled: true, error: err.message || 'Error al confirmar email' };
+    }
+  },
+
   async updatePassword(newPassword) {
     const result = await updatePasswordUseCase.execute(newPassword);
     if (!result.success) {
