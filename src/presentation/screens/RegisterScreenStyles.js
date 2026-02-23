@@ -28,6 +28,22 @@ export const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.border, borderRadius: 8,
     padding: 12, fontSize: 16, backgroundColor: colors.surface,
   },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    backgroundColor: colors.surface,
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 12,
+    fontSize: 16,
+  },
+  eyeButton: {
+    padding: 12,
+  },
   button: { backgroundColor: colors.primary, borderRadius: 8, padding: 16, alignItems: 'center', marginTop: 8 },
   buttonDisabled: { backgroundColor: colors.disabled },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },

@@ -16,6 +16,16 @@ const getInitialRecoveryState = () => {
     const url = window.location.href;
     const hasCode = url.includes('?code=') || url.includes('&code=');
     const isResetPath = url.includes('reset-password');
+    const isEmailConfirmedPath = url.includes('/email-confirmed');
+
+    if (isEmailConfirmedPath) {
+      // Email confirmation landing — always clear any stuck recovery flag so the
+      // app shows the normal Login screen with the confirmation banner instead of
+      // accidentally routing to ResetPasswordScreen.
+      setRecoveryFlow(false);
+      return false;
+    }
+
     if (hasCode && isResetPath) {
       setRecoveryFlow(true);
       return true;
@@ -52,7 +62,9 @@ export default function App() {
       // Supabase can redirect email confirmation either as:
       //   PKCE flow:    ?code=XXXX  (query param)
       //   Implicit flow: #access_token=...&type=signup  (hash fragment)
+      //   emailRedirectTo: redirect to /email-confirmed path
       const isSignupHash = url.includes('type=signup');
+      const isEmailConfirmedPath = url.includes('/email-confirmed');
 
       if (hasCode && isResetPath) {
         // Password reset / recovery flow → show ResetPasswordScreen
@@ -68,7 +80,7 @@ export default function App() {
             : window.location.origin + '/';
           window.history.replaceState({}, document.title, cleanUrl);
         }
-      } else if (hasCode || isSignupHash) {
+      } else if (hasCode || isSignupHash || isEmailConfirmedPath) {
         // Email confirmation link (registration) — NOT a password reset.
         // Supabase confirms the email server-side before redirecting here,
         // so we always show success. We only sign out any stale session.

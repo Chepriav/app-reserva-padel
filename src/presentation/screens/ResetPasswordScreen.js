@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -24,6 +24,7 @@ export default function ResetPasswordScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [sessionValid, setSessionValid] = useState(false);
+  const finishedRef = useRef(false);
   const [alertConfig, setAlertConfig] = useState({
     visible: false,
     title: '',
@@ -37,7 +38,13 @@ export default function ResetPasswordScreen({ navigation }) {
     let timeoutId = null;
 
     const finishWithResult = (valid) => {
-      if (!isMounted) return;
+      if (!isMounted || finishedRef.current) return;
+      finishedRef.current = true;
+      if (!valid) {
+        // Invalid or expired link — clear the recovery flag so the next app
+        // load goes back to the normal Login screen instead of looping here.
+        setRecoveryFlow(false);
+      }
       setSessionValid(valid);
       setCheckingSession(false);
     };
@@ -69,12 +76,14 @@ export default function ResetPasswordScreen({ navigation }) {
 
         authListener = subscription;
 
-        // Timeout after 5 seconds - if no session by then, link is invalid
+        // Timeout after 12 seconds - if no session by then, link is invalid.
+        // Uses finishedRef (not state) to avoid stale closure: the ref is mutated
+        // so the guard inside finishWithResult sees the correct value.
         timeoutId = setTimeout(() => {
-          if (isMounted && checkingSession) {
+          if (isMounted) {
             finishWithResult(false);
           }
-        }, 5000);
+        }, 12000);
 
       } catch {
         finishWithResult(false);
@@ -183,7 +192,10 @@ export default function ResetPasswordScreen({ navigation }) {
         </Text>
         <TouchableOpacity
           style={styles.invalidButton}
-          onPress={() => navigation.navigate(isAuthenticated ? 'Main' : 'Login')}
+          onPress={() => {
+            setRecoveryFlow(false);
+            navigation.navigate(isAuthenticated ? 'Main' : 'Login');
+          }}
         >
           <Text style={styles.invalidButtonText}>Volver al inicio</Text>
         </TouchableOpacity>

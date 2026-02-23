@@ -20,10 +20,22 @@ export class SupabaseAuthProvider implements AuthProvider {
 
   async signUp(email: string, password: string): Promise<Result<{ userId: string }>> {
     try {
-      // No emailRedirectTo here — we rely on the Site URL configured in the
-      // Supabase Dashboard. App.js distinguishes confirmation from reset-password
-      // links by checking the URL path (type=signup vs /reset-password).
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      // emailRedirectTo points to /email-confirmed so App.js can detect the
+      // landing and show the confirmation banner. The URL must be whitelisted
+      // in Supabase Dashboard → Authentication → URL Configuration → Redirect URLs.
+      const emailRedirectTo = this.getEmailConfirmedRedirect();
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        ...(emailRedirectTo && { options: { emailRedirectTo } }),
+      });
+      // Clear the PKCE code verifier stored by signUp(). With flowType:'pkce' and
+      // emailRedirectTo set, Supabase writes a code-verifier to localStorage.
+      // If left in place, a subsequent resetPasswordForEmail() would overwrite it
+      // and the reset link would fail with "invalid code". Safe to clear because
+      // handleEmailConfirmation() never calls exchangeCodeForSession — it only
+      // calls signOut() to clear any stale session.
+      this.clearPKCEVerifier();
       if (error) {
         return fail(new AuthenticationError(error.message, error));
       }
@@ -139,6 +151,25 @@ export class SupabaseAuthProvider implements AuthProvider {
     } catch (err) {
       return fail(new AuthenticationError('Set session failed', err));
     }
+  }
+
+  private getEmailConfirmedRedirect(): string | null {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.origin) {
+      return `${window.location.origin}/email-confirmed`;
+    }
+    return null;
+  }
+
+  private clearPKCEVerifier(): void {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.localStorage) return;
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('sb-') && key.endsWith('-code-verifier')) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
   }
 
   private getPasswordResetRedirect(): string | null {
