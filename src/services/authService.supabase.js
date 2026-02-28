@@ -51,8 +51,18 @@ const ERROR_MESSAGES = {
   default: 'Ha ocurrido un error inesperado. Inténtalo de nuevo',
 };
 
+const ERROR_BY_CODE = {
+  USER_NOT_FOUND:
+    'No se encontró tu perfil de usuario. Puede que tu cuenta no esté configurada correctamente. Contacta con el administrador',
+  INFRASTRUCTURE_ERROR:
+    'Error de conexión al verificar tu cuenta. Comprueba tu conexión a internet e inténtalo de nuevo',
+};
+
 const getErrorMessage = (error, defaultMessage) => {
   if (!error) return defaultMessage || ERROR_MESSAGES.default;
+
+  // Code-based match (domain errors)
+  if (error.code && ERROR_BY_CODE[error.code]) return ERROR_BY_CODE[error.code];
 
   const errorMsg = error.message || error;
 
@@ -108,7 +118,12 @@ export const authService = {
   async login(email, password) {
     const result = await loginUser.execute(email, password);
     if (!result.success) {
-      return { success: false, error: getErrorMessage(result.error) };
+      const needsEmailConfirmation = result.error?.message === 'Email not confirmed';
+      return {
+        success: false,
+        error: getErrorMessage(result.error),
+        ...(needsEmailConfirmation && { needsEmailConfirmation: true }),
+      };
     }
     return { success: true, data: toLegacyFormat(result.value) };
   },
@@ -221,6 +236,52 @@ export const authService = {
       success: true,
       message: 'Se ha enviado un correo para restablecer tu contraseña',
     };
+  },
+
+  async resendConfirmationEmail(email) {
+    try {
+      // Mirror the emailRedirectTo used in signUp so the confirmation link
+      // lands on /email-confirmed and the banner is shown correctly.
+      const emailRedirectTo =
+        typeof window !== 'undefined' && window.location?.origin
+          ? `${window.location.origin}/email-confirmed`
+          : null;
+
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        ...(emailRedirectTo && { options: { emailRedirectTo } }),
+      });
+
+      // Clear the PKCE code verifier stored by resend() — same reason as in
+      // signUp(): if left in place it would overwrite the verifier written by
+      // a later resetPasswordForEmail() call, breaking the reset-password link.
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const keysToRemove = [];
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const key = window.localStorage.key(i);
+          if (key && key.startsWith('sb-') && key.endsWith('-code-verifier')) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach((key) => window.localStorage.removeItem(key));
+      }
+
+      if (error) {
+        return {
+          success: false,
+          error: getErrorMessage(error, 'Error al reenviar el email de confirmación'),
+        };
+      }
+
+      return {
+        success: true,
+        message:
+          'Email de confirmación reenviado. Revisa tu bandeja de entrada y la carpeta de spam.',
+      };
+    } catch {
+      return { success: false, error: 'Error al reenviar el email de confirmación' };
+    }
   },
 
   async handlePasswordRecoveryUrl(url) {

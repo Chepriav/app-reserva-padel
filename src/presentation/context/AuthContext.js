@@ -137,9 +137,21 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(true);
         return { success: true };
       }
-      return { success: false, error: response.error };
+      return {
+        success: false,
+        error: response.error,
+        needsEmailConfirmation: response.needsEmailConfirmation ?? false,
+      };
     } catch (error) {
       return { success: false, error: 'Error al iniciar sesión' };
+    }
+  };
+
+  const resendConfirmationEmail = async (email) => {
+    try {
+      return await authService.resendConfirmationEmail(email);
+    } catch {
+      return { success: false, error: 'Error al reenviar el email de confirmación' };
     }
   };
 
@@ -234,6 +246,7 @@ export const AuthProvider = ({ children }) => {
     register,
     updateProfile,
     resetPassword,
+    resendConfirmationEmail,
     refreshUser,
     notificationsPending,
     markNotificationsRead,

@@ -15,7 +15,7 @@ import { CustomAlert } from '../components/CustomAlert';
 import { styles } from './LoginScreenStyles';
 
 export default function LoginScreen({ navigation }) {
-  const { login, resetPassword } = useAuth();
+  const { login, resetPassword, resendConfirmationEmail } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -48,13 +48,37 @@ export default function LoginScreen({ navigation }) {
     setLoading(false);
 
     if (!result.success) {
-      setAlertConfig({
-        visible: true,
-        title: 'Error',
-        message: result.error,
-        buttons: [{ text: 'OK', onPress: () => {} }],
-      });
+      if (result.needsEmailConfirmation) {
+        setAlertConfig({
+          visible: true,
+          title: 'Email no verificado',
+          message: result.error,
+          buttons: [
+            { text: 'Reenviar email', onPress: handleResendConfirmation },
+            { text: 'Cancelar', onPress: () => {} },
+          ],
+        });
+      } else {
+        setAlertConfig({
+          visible: true,
+          title: 'Error',
+          message: result.error,
+          buttons: [{ text: 'OK', onPress: () => {} }],
+        });
+      }
     }
+  };
+
+  const handleResendConfirmation = async () => {
+    setLoading(true);
+    const result = await resendConfirmationEmail(email);
+    setLoading(false);
+    setAlertConfig({
+      visible: true,
+      title: result.success ? 'Email enviado' : 'Error',
+      message: result.success ? result.message : result.error,
+      buttons: [{ text: 'OK', onPress: () => {} }],
+    });
   };
 
   const handleResetPassword = async () => {
