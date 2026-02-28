@@ -2,12 +2,15 @@
 
 ## authService.supabase.js
 
+Facade que delega en use cases del dominio. Expone la API legacy para contextos y pantallas.
+
 ### Autenticación
-- `login(email, password)` - Inicia sesión
-- `register(userData)` - Registra usuario (estado: pendiente)
+- `login(email, password)` → `{ success, data?, error?, needsEmailConfirmation? }` — devuelve `needsEmailConfirmation: true` si el email no está verificado, para mostrar el botón "Reenviar email" en la UI
+- `register(userData)` - Registra usuario (estado pendiente, requiere aprobación admin)
 - `logout()` - Cierra sesión
 - `getCurrentUser()` - Obtiene usuario actual
-- `resetPassword(email)` - Envía email de recuperación
+- `resetPassword(email)` - Envía email de recuperación de contraseña
+- `resendConfirmationEmail(email)` - Reenvía email de confirmación; usa el mismo `emailRedirectTo` (`/email-confirmed`) que el registro y limpia el PKCE verifier para no romper el flujo de reset password
 
 ### Perfil
 - `updateProfile(userId, updates)` - Actualiza perfil
@@ -130,9 +133,17 @@
 ### useAuth() - AuthContext
 ```javascript
 const {
-  user,                      // Usuario actual
+  user,                      // Usuario actual (formato legacy)
   isAuthenticated,           // Boolean
-  login, logout, register, updateProfile, resetPassword,
+  loading,                   // Boolean — carga inicial de sesión
+  login,                     // (email, password) → { success, error?, needsEmailConfirmation? }
+  logout,
+  register,
+  updateProfile,
+  resetPassword,             // (email) → { success, message?, error? }
+  resendConfirmationEmail,   // (email) → { success, message?, error? }
+  refreshUser,               // Recarga datos del usuario desde Supabase
+  notificationsPending,      // Boolean — hay notificaciones no leídas
 } = useAuth();
 ```
 
