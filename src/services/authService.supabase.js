@@ -36,6 +36,7 @@ import { supabase } from './supabaseConfig';
 const ERROR_MESSAGES = {
   // Login
   'Invalid login credentials': 'Email o contraseña incorrectos',
+  'Email not confirmed': 'Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja de entrada (y la carpeta de spam) y haz clic en el enlace de confirmación que te enviamos al registrarte',
   // Registration
   'User already registered': 'Este email ya está registrado. Si olvidaste tu contraseña, usa la opción "¿Olvidaste tu contraseña?"',
   'Email already in use': 'Este email ya está registrado',
