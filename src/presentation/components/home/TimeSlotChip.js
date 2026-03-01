@@ -55,6 +55,19 @@ export function TimeSlotChip({
   // Show displaceable icon
   const showIconoDisplaceable = !isPast && !isBlocked && isOtherProvisional;
 
+  // Show apartment below time only for reserved (non-selection) slots
+  const apartment = timeSlot.existingReservation?.apartment;
+  const showApartment = !!apartment && !estaSelected && !isSelectedForBlock && !isSelectedForUnblock;
+
+  const textColorStyles = [
+    isPast && styles.slotChipTextPast,
+    !isPast && isBlocked && !isSelectedForUnblock && styles.slotChipTextBlocked,
+    !isPast && !isBlocked && (isMyGuaranteed || isMyProvisional) && styles.slotChipTextWhite,
+    !isPast && !isBlocked && (isOtherGuaranteed || isOtherProvisional) && styles.slotChipTextDark,
+    estaSelected && styles.slotChipTextSelected,
+    (isSelectedForBlock || isSelectedForUnblock) && styles.slotChipTextSelected,
+  ];
+
   return (
     <TouchableOpacity
       style={[
@@ -72,19 +85,18 @@ export function TimeSlotChip({
       onPress={onPress}
       disabled={disabled}
     >
-      <Text
-        style={[
-          styles.slotChipText,
-          isPast && styles.slotChipTextPast,
-          !isPast && isBlocked && !isSelectedForUnblock && styles.slotChipTextBlocked,
-          !isPast && !isBlocked && (isMyGuaranteed || isMyProvisional) && styles.slotChipTextWhite,
-          !isPast && !isBlocked && (isOtherGuaranteed || isOtherProvisional) && styles.slotChipTextDark,
-          estaSelected && styles.slotChipTextSelected,
-          (isSelectedForBlock || isSelectedForUnblock) && styles.slotChipTextSelected,
-        ]}
-      >
+      <Text style={[styles.slotChipText, ...textColorStyles]}>
         {timeSlot.startTime}
       </Text>
+      {showApartment && (
+        <Text
+          style={[styles.slotChipApartment, ...textColorStyles]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
+          {apartment}
+        </Text>
+      )}
 
       {showIconoBlocked && (
         <View style={styles.blockedIcon}>
@@ -122,7 +134,7 @@ export function TimeSlotChip({
 const styles = StyleSheet.create({
   slotChip: {
     backgroundColor: colors.primary,
-    paddingVertical: 8,
+    paddingVertical: 4,
     borderRadius: 8,
     width: 64,
     alignItems: 'center',
@@ -133,6 +145,12 @@ const styles = StyleSheet.create({
   slotChipText: {
     fontSize: 14,
     fontWeight: '600',
+    color: '#fff',
+  },
+  slotChipApartment: {
+    fontSize: 9,
+    fontWeight: '500',
+    marginTop: 1,
     color: '#fff',
   },
   // Past states
