@@ -167,6 +167,7 @@ R: Puedes usar ambos, pero instalada tendrás mejor experiencia (pantalla comple
      - **Verde oscuro**: Tu reserva (G)
      - **Rojo**: Bloqueado por admin
      - **Gris**: No disponible
+   - Los bloques con reserva muestran la **vivienda** debajo de la hora (ej. `5-5-H`) para saber de quién es sin necesidad de tocar
 
 4. **Selecciona bloques**
    - Toca los bloques consecutivos que quieras reservar
@@ -519,5 +520,5 @@ Si tienes problemas que no se resuelven con esta guía:
 
 ---
 
-**Versión de la guía**: 1.0
-**Última actualización**: Enero 2026
+**Versión de la guía**: 1.1
+**Última actualización**: Marzo 2026

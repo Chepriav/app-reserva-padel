@@ -40,6 +40,14 @@ Una vivienda puede desplazar la reserva P de otra vivienda si:
 | Desplazable | Gris `#e0e0e0` | Otra vivienda, puedo desplazar |
 | Ocupada | Gris oscuro | No disponible |
 
+### Chips de horario (`TimeSlotChip`)
+
+Cada bloque del calendario tiene altura fija constante (`minHeight: 44`). Cuando hay una reserva, muestra dos líneas:
+- **Línea superior**: hora de inicio (ej. `09:00`)
+- **Línea inferior**: código de vivienda (ej. `5-5-H`)
+
+La vivienda **no se muestra** cuando el bloque está en estado de selección (`estaSelected`, `isSelectedForBlock`, `isSelectedForUnblock`). Los bloques libres muestran solo la hora, centrada verticalmente.
+
 ## Flujo de Reserva
 
 1. Usuario selecciona bloques de 30 min (máx 3 = 1.5h)
