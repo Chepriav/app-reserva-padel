@@ -216,12 +216,16 @@ export const ReservationsProvider = ({ children }) => {
 
   const getPastReservations = () => {
     const now = new Date();
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
     return reservations.filter(
       (r) =>
-        r.status === 'completed' ||
-        r.status === 'cancelled' ||
-        (r.status === 'confirmed' &&
-          new Date(r.date + 'T' + r.startTime) <= now)
+        (r.status === 'completed' ||
+          r.status === 'cancelled' ||
+          (r.status === 'confirmed' &&
+            new Date(r.date + 'T' + r.startTime) <= now)) &&
+        new Date(r.date) >= thirtyDaysAgo
     );
   };
 

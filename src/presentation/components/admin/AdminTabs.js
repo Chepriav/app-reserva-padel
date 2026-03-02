@@ -5,10 +5,22 @@ import { colors } from '../../../constants/colors';
 /**
  * Header del panel de administración
  */
-export function AdminHeader() {
+export function AdminHeader({ onShowLog, isLogView = false }) {
   return (
     <View style={styles.header}>
-      <Text style={styles.title}>Panel de Administración</Text>
+      {isLogView && (
+        <TouchableOpacity style={styles.backBtn} onPress={onShowLog}>
+          <Text style={styles.logBtnText}>← Volver</Text>
+        </TouchableOpacity>
+      )}
+      <Text style={[styles.title, isLogView && styles.titleLog]}>
+        {isLogView ? 'Registros' : 'Panel de Administración'}
+      </Text>
+      {!isLogView && onShowLog && (
+        <TouchableOpacity style={styles.logBtn} onPress={onShowLog}>
+          <Text style={styles.logBtnText}>Registros</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -74,11 +86,34 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     padding: 20,
     paddingTop: Platform.OS === 'web' ? 20 : 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
+    flex: 1,
+  },
+  titleLog: {
+    fontSize: 20,
+  },
+  backBtn: {
+    marginRight: 12,
+  },
+  logBtn: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
+  },
+  logBtnText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
   },
   tabsContainer: {
     flexDirection: 'row',

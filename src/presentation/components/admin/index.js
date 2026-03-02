@@ -15,3 +15,5 @@ export {
 export { ImportUsersButton } from './ImportUsersButton';
 export { ImportUsersModal } from './ImportUsersModal';
 export { ImportResultsModal } from './ImportResultsModal';
+export { ReservationLogCard } from './ReservationLogCard';
+export { LogContent } from './LogContent';

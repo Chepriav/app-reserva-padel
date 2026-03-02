@@ -8,6 +8,7 @@ import {
   useAlert,
 } from '../hooks';
 import { useUserImport } from '../hooks/useUserImport';
+import { useReservationsLog } from '../hooks/useReservationsLog';
 import { colors } from '../../constants/colors';
 import { CustomAlert } from '../components/CustomAlert';
 import {
@@ -20,11 +21,24 @@ import {
   ScheduleConfigSection,
   ImportUsersModal,
   ImportResultsModal,
+  LogContent,
 } from '../components/admin';
 
 export default function AdminScreen() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('requests');
+  const [showLog, setShowLog] = useState(false);
+
+  // Hook de registros (lazy: solo carga cuando se abre la vista)
+  const {
+    reservations: logReservations,
+    loading: logLoading,
+    filterApartment,
+    filterStatus,
+    setFilterApartment,
+    setFilterStatus,
+    total: logTotal,
+  } = useReservationsLog(showLog);
 
   // Import modals state
   const [showImportModal, setShowImportModal] = useState(false);
@@ -155,9 +169,26 @@ export default function AdminScreen() {
     }
   };
 
+  if (showLog) {
+    return (
+      <View style={styles.container}>
+        <AdminHeader onShowLog={() => setShowLog(false)} isLogView />
+        <LogContent
+          reservations={logReservations}
+          loading={logLoading}
+          filterApartment={filterApartment}
+          filterStatus={filterStatus}
+          onFilterApartment={setFilterApartment}
+          onFilterStatus={setFilterStatus}
+          total={logTotal}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <AdminHeader />
+      <AdminHeader onShowLog={() => setShowLog(true)} />
 
       <AdminTabs
         activeTab={activeTab}
