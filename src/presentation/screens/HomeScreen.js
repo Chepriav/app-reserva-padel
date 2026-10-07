@@ -153,6 +153,7 @@ export default function HomeScreen({ navigation }) {
           dateSelected={dateSelected}
           viewActual={viewActual}
           onCambiarDate={cambiarDate}
+          onSelectDate={setDateSelected}
         />
 
         <CourtSelector

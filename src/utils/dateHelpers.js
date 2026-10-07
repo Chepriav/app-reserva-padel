@@ -216,6 +216,33 @@ export const isDateValid = (date) => {
   return dateObj >= today && dateObj <= maxDate;
 };
 
+// List of bookable dates (today + 7 days ahead) in YYYY-MM-DD, matching isDateValid
+export const getBookableDays = (from = new Date()) => {
+  const days = [];
+  for (let i = 0; i <= 7; i++) {
+    const d = new Date(from.getFullYear(), from.getMonth(), from.getDate() + i);
+    days.push(formatDate(d));
+  }
+  return days;
+};
+
+// Short labels for a day pill: { top: 'Hoy' | 'Mañana' | 'jue', day: '8', month: 'oct' }
+export const getDayPillLabel = (dateStr, today = getTodayDate()) => {
+  const date = new Date(dateStr + 'T00:00:00');
+  const tomorrow = new Date(today + 'T00:00:00');
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  let top = date.toLocaleDateString('es-ES', { weekday: 'short' }).replace('.', '');
+  if (dateStr === today) top = 'Hoy';
+  else if (dateStr === formatDate(tomorrow)) top = 'Mañana';
+
+  return {
+    top,
+    day: String(date.getDate()),
+    month: date.toLocaleDateString('es-ES', { month: 'short' }).replace('.', ''),
+  };
+};
+
 // Legacy exports for backwards compatibility
 // TODO: Remove these aliases once all consumers are updated
 export const formatDateReadable = formatReadableDate;
