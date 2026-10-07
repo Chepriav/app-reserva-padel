@@ -1,8 +1,8 @@
 // Supabase Edge Function para enviar Web Push Notifications
 // Esto permite enviar notificaciones incluso cuando el usuario no tiene la app abierta
 //
-// NOTA: Esta función no verifica JWT porque usa SERVICE_ROLE_KEY internamente
-// y solo acepta requests con el apikey header válido (anon key)
+// Requiere el JWT de un usuario autenticado y aprobado en el header Authorization.
+// La anon key sola ya no basta (es pública y viaja en el bundle web).
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -35,7 +35,31 @@ serve(async (req) => {
   }
 
   try {
-    // Authentication is handled by Supabase gateway (apikey header validated before reaching this function)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Verify the caller is an authenticated, approved user (not just the public anon key)
+    const jwt = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+    const { data: { user: caller } } = await supabase.auth.getUser(jwt);
+    if (!caller) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { data: callerProfile } = await supabase
+      .from('users')
+      .select('estado_aprobacion')
+      .eq('id', caller.id)
+      .maybeSingle();
+    if (callerProfile?.estado_aprobacion !== 'aprobado') {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Configurar VAPID keys desde variables de entorno
     const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
@@ -57,11 +81,6 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Crear cliente Supabase
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Obtener suscripciones del usuario
     const { data: subscriptions, error } = await supabase
@@ -125,7 +144,6 @@ serve(async (req) => {
         success: true,
         sent: successful,
         total: subscriptions.length,
-        results: results.map((r) => (r.status === 'fulfilled' ? r.value : { success: false })),
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

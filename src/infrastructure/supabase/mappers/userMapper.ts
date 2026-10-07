@@ -30,6 +30,8 @@ export interface LegacyUser {
   id: string;
   name: string;
   email: string;
+  phone: string;
+  /** @deprecated kept for backward compat; UI reads `phone` */
   telefono: string;
   apartment: string;
   requestedApartment: string | null;
@@ -81,6 +83,8 @@ export function approvalStatusToDb(domainValue: ApprovalStatus): string {
 
 export function skillLevelToDomain(dbValue: string | null): SkillLevel | null {
   if (!dbValue) return null;
+  // Accept values already in domain form so double conversion never wipes the level
+  if (dbValue in SKILL_LEVEL_TO_DB) return dbValue as SkillLevel;
   return SKILL_LEVEL_TO_DOMAIN[dbValue] ?? null;
 }
 
@@ -158,10 +162,11 @@ export function toLegacyFormat(user: User): LegacyUser {
     id: user.id,
     name: user.name,
     email: user.email,
+    phone: user.phone,
     telefono: user.phone,
     apartment: user.apartment,
     requestedApartment: user.requestedApartment,
-    skillLevel: user.skillLevel,
+    skillLevel: skillLevelToDb(user.skillLevel),
     profilePhoto: user.profilePhoto,
     isAdmin: user.isAdmin,
     isManager: user.isManager,

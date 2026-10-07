@@ -10,7 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { colors } from '../../../constants/colors';
-import { SKILL_LEVELS } from '../../../constants/config';
+import { SKILL_LEVELS, getSkillLevelLabel } from '../../../constants/config';
 import { styles } from './AddPlayerModalStyles';
 
 /**
@@ -161,9 +161,7 @@ function SearchUser({ search, onSearchChange, users, loading, onSelect }) {
 }
 
 function UserOption({ user, onSelect }) {
-  const levelLabel = user.skillLevel
-    ? SKILL_LEVELS.find(n => n.value === user.skillLevel)?.label || user.skillLevel
-    : null;
+  const levelLabel = getSkillLevelLabel(user.skillLevel);
 
   return (
     <TouchableOpacity

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors } from '../../../constants/colors';
-import { SKILL_LEVELS } from '../../../constants/config';
+import { getSkillLevelLabel } from '../../../constants/config';
 
 /**
  * List of pending requests for the match creator
@@ -27,9 +27,7 @@ export default function PendingRequests({ requests, onAccept, onReject }) {
 }
 
 function RequestRow({ request, onAccept, onReject }) {
-  const levelLabel = request.skillLevel
-    ? SKILL_LEVELS.find(n => n.value === request.skillLevel)?.label || request.skillLevel
-    : null;
+  const levelLabel = getSkillLevelLabel(request.skillLevel);
 
   return (
     <View style={styles.row}>

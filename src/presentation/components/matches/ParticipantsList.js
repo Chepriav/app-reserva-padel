@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { colors } from '../../../constants/colors';
-import { SKILL_LEVELS } from '../../../constants/config';
+import { getSkillLevelLabel } from '../../../constants/config';
 
 /**
  * List of match participants
@@ -36,9 +36,7 @@ export default function ParticipantsList({ creator, players = [] }) {
 }
 
 function ParticipantRow({ name, apartment, photo, level, isExternal = false }) {
-  const levelLabel = level
-    ? SKILL_LEVELS.find(n => n.value === level)?.label || level
-    : null;
+  const levelLabel = getSkillLevelLabel(level);
 
   return (
     <View style={styles.row}>

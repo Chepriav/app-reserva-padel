@@ -2,6 +2,7 @@ import { ok } from '@shared/types/Result';
 import type { Result } from '@shared/types/Result';
 import type { PushDeliveryPort } from '@domain/ports/repositories/PushDeliveryPort';
 import type { PushTokenRepository } from '@domain/ports/repositories/PushTokenRepository';
+import { supabase } from '@infrastructure/supabase/client';
 
 /**
  * Delivers push notifications via both Web Push (Supabase Edge Function)
@@ -34,12 +35,16 @@ export class CombinedPushDelivery implements PushDeliveryPort {
     const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
     if (!supabaseUrl || !supabaseAnonKey) return;
 
+    // Send the user's JWT so the Edge Function can verify the caller is a real user
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token ?? supabaseAnonKey;
+
     await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         apikey: supabaseAnonKey,
-        Authorization: `Bearer ${supabaseAnonKey}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({ userId, title, body, data }),
     });

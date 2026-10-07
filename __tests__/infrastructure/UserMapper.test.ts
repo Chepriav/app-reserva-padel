@@ -70,9 +70,10 @@ describe('userMapper', () => {
       const legacy = toLegacyFormat(user);
       expect(legacy.name).toBe('Test User');
       expect(legacy.telefono).toBe('123456789');
+      expect(legacy.phone).toBe('123456789');
       expect(legacy.apartment).toBe('1-3-B');
       expect(legacy.requestedApartment).toBe('2-1-A');
-      expect(legacy.skillLevel).toBe('intermediate');
+      expect(legacy.skillLevel).toBe('intermedio');
       expect(legacy.profilePhoto).toBe('https://example.com/photo.jpg');
       expect(legacy.isAdmin).toBe(true);
       expect(legacy.approvalStatus).toBe('approved');
@@ -90,7 +91,7 @@ describe('userMapper', () => {
       expect(legacy.telefono).toBe(dbRow.telefono);
       expect(legacy.apartment).toBe(dbRow.vivienda);
       expect(legacy.requestedApartment).toBe(dbRow.vivienda_solicitada);
-      expect(legacy.skillLevel).toBe('intermediate');
+      expect(legacy.skillLevel).toBe('intermedio');
       expect(legacy.profilePhoto).toBe(dbRow.foto_perfil);
       expect(legacy.isAdmin).toBe(dbRow.es_admin);
       expect(legacy.isManager).toBe(dbRow.es_manager);
@@ -124,6 +125,12 @@ describe('userMapper', () => {
       const legacy = { skillLevel: null };
       const updates = fromLegacyFormat(legacy);
       expect(updates.skillLevel).toBeNull();
+    });
+
+    it('keeps skill level when saving an unchanged legacy profile', () => {
+      const legacy = toLegacyFormat(toDomain(dbRow));
+      const updates = fromLegacyFormat({ skillLevel: legacy.skillLevel });
+      expect(updates.skillLevel).toBe('intermediate');
     });
   });
 
@@ -206,6 +213,11 @@ describe('userMapper', () => {
       expect(skillLevelToDomain('profesional')).toBe('professional');
       expect(skillLevelToDomain(null)).toBeNull();
       expect(skillLevelToDomain('unknown')).toBeNull();
+    });
+
+    it('accepts values already in domain form', () => {
+      expect(skillLevelToDomain('intermediate')).toBe('intermediate');
+      expect(skillLevelToDomain('advanced')).toBe('advanced');
     });
 
     it('translates skill level to DB', () => {
