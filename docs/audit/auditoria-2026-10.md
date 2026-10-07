@@ -106,3 +106,29 @@ Todas son cambios de presentación (estilos y componentes), sin tocar la lógica
 - Un cambio por PR, empezando por 1, 2, 3 y 4, que son autocontenidos (un componente cada uno).
 - Probar cada PR en una *preview* de Vercel antes de pasar a producción.
 - Las propuestas 7 y 8 cambian colores que los vecinos ya conocen: anunciarlo en el Tablón.
+
+---
+
+## 5. Actualización tras el diagnóstico de la base de datos
+
+Resultados de `diagnostico-seguridad.sql` sobre la base de datos de producción:
+
+| Hallazgo | Gravedad | Estado |
+|---|---|---|
+| `users_update` no restringe columnas y no hay trigger: **cualquier vecino puede ponerse `es_admin = true`**, autoaprobarse o cambiarse la vivienda | 🔴 Crítico | Corregido en `20261007130000_fix_rls_privilege_escalation.sql` (trigger que protege `es_admin`, `es_manager`, `es_demo`, `estado_aprobacion` y `vivienda` salvo para admins) |
+| Las políticas "Demo users cannot…" están creadas como **PERMISSIVE** (debían ser RESTRICTIVE). Al sumarse con OR, **conceden** permisos: cualquier vecino puede modificar el perfil de cualquier otro, cancelar cualquier reserva o partida, y **cualquiera sin iniciar sesión** puede crear reservas y partidas | 🔴 Crítico | Corregido: recreadas como RESTRICTIVE |
+| `desplazar_reserva_y_crear_nueva` (SECURITY DEFINER) ejecutable por `anon` y sin comprobar quién llama | 🟠 Alto | Corregido: exige que el usuario y la vivienda sean los del que llama |
+| `crear_reserva_con_prioridad` ejecutable por `anon` sin comprobaciones | 🟠 Alto | Bloqueada. La app no la usa: llama a `criar_reserva_con_prioridad` (errata) y siempre usa el flujo de inserción directa |
+| `update_schedule_config` confía en `p_user_id` | 🔴 Crítico | Confirmado igual que en el repo; corregido en `20261007120000_…` |
+| `conversion_queue` y `notificaciones_desplazamiento` abiertas a `anon` | 🟡 Medio | Restringidas a usuarios con sesión |
+| Las cuentas de prueba del login (`juan@`/`maria@ejemplo.com`) no existen | — | Sin riesgo; conviene quitar la caja del login porque confunde |
+| 3 administradores: Cristina, Charly e Iván | — | Esperados |
+
+Flujos legítimos que solo funcionaban gracias al fallo y que ahora tienen su propia política: un admin cancelando reservas/partidas al bloquear horas, y un miembro de la vivienda cancelando una reserva hecha por otro miembro.
+
+La migración se probó en un PostgreSQL local con las mismas políticas que producción: 13 ataques (todos permitidos antes) quedan bloqueados o sin efecto, y 14 flujos legítimos siguen funcionando.
+
+### Pendiente (no incluido para no cambiar comportamiento)
+- `anuncios_destinatarios` y `notificaciones_usuario` permiten a cualquier vecino insertar notificaciones para otros (las genera la propia app). Riesgo bajo: spam interno.
+- La limpieza de reservas al borrar un usuario desde Admin falla en silencio (no hay política DELETE de admin en `reservas`).
+- Los límites (1 reserva por vivienda, 3 bloques, 7 días) solo se validan en la app. Para forzarlos en servidor haría falta un trigger en `reservas`.
