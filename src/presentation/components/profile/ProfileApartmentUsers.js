@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import { colors } from '../../../constants/colors';
-import { SKILL_LEVELS, isApartmentValid, formatApartment } from '../../../constants/config';
+import { getSkillLevelLabel, isApartmentValid, formatApartment } from '../../../constants/config';
 
 export function ProfileApartmentUsers({ user, apartmentUsers, loadingUsers }) {
   if (!user?.apartment) return null;
@@ -41,7 +41,7 @@ export function ProfileApartmentUsers({ user, apartmentUsers, loadingUsers }) {
                   </Text>
                   {apartmentUser.skillLevel && (
                     <Text style={styles.level}>
-                      {SKILL_LEVELS.find((n) => n.value === apartmentUser.skillLevel)?.label || apartmentUser.skillLevel}
+                      {getSkillLevelLabel(apartmentUser.skillLevel)}
                     </Text>
                   )}
                 </View>

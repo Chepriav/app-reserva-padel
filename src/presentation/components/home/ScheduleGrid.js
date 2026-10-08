@@ -2,7 +2,21 @@ import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { colors } from '../../../constants/colors';
 import { formatReadableDate, hasSlotEnded } from '../../../utils/dateHelpers';
+import { getGapBefore } from '../../../utils/scheduleGaps';
 import { TimeSlotChip } from './TimeSlotChip';
+
+/**
+ * Full-width row shown where the grid skips time (configured break)
+ */
+function BreakSeparator({ gap }) {
+  return (
+    <View style={styles.breakRow}>
+      <View style={styles.breakLine} />
+      <Text style={styles.breakText}>Pausa · {gap.start} – {gap.end}</Text>
+      <View style={styles.breakLine} />
+    </View>
+  );
+}
 
 /**
  * Schedule grid for day view
@@ -46,19 +60,23 @@ export function DayScheduleGrid({
           (isPast && !blockoutMode) ||
           (!blockoutMode && !isBlocked && (isOtherGuaranteed || isMyApartment));
 
+        const gap = getGapBefore(timeSlots, index);
+
         return (
-          <TimeSlotChip
-            key={index}
-            timeSlot={timeSlot}
-            date={date}
-            userApartment={userApartment}
-            estaSelected={estaSelected}
-            isSelectedForBlock={isSelectedForBlock}
-            isSelectedForUnblock={isSelectedForUnblock}
-            blockoutMode={blockoutMode}
-            disabled={estaDeshabilitado}
-            onPress={() => onTimeSlotPress(timeSlot, date)}
-          />
+          <React.Fragment key={index}>
+            {gap && <BreakSeparator gap={gap} />}
+            <TimeSlotChip
+              timeSlot={timeSlot}
+              date={date}
+              userApartment={userApartment}
+              estaSelected={estaSelected}
+              isSelectedForBlock={isSelectedForBlock}
+              isSelectedForUnblock={isSelectedForUnblock}
+              blockoutMode={blockoutMode}
+              disabled={estaDeshabilitado}
+              onPress={() => onTimeSlotPress(timeSlot, date)}
+            />
+          </React.Fragment>
         );
       })}
     </View>
@@ -131,19 +149,23 @@ export function WeekScheduleGrid({
                   (isPast && !blockoutMode) ||
                   (!blockoutMode && !isBlocked && (isOtherGuaranteed || isMyApartment));
 
+                const gap = getGapBefore(timeSlotsDay, index);
+
                 return (
-                  <TimeSlotChip
-                    key={index}
-                    timeSlot={timeSlot}
-                    date={date}
-                    userApartment={userApartment}
-                    estaSelected={estaSelected}
-                    isSelectedForBlock={isSelectedForBlock}
-                    isSelectedForUnblock={isSelectedForUnblock}
-                    blockoutMode={blockoutMode}
-                    disabled={estaDeshabilitado}
-                    onPress={() => onTimeSlotPress(timeSlot, date)}
-                  />
+                  <React.Fragment key={index}>
+                    {gap && <BreakSeparator gap={gap} />}
+                    <TimeSlotChip
+                      timeSlot={timeSlot}
+                      date={date}
+                      userApartment={userApartment}
+                      estaSelected={estaSelected}
+                      isSelectedForBlock={isSelectedForBlock}
+                      isSelectedForUnblock={isSelectedForUnblock}
+                      blockoutMode={blockoutMode}
+                      disabled={estaDeshabilitado}
+                      onPress={() => onTimeSlotPress(timeSlot, date)}
+                    />
+                  </React.Fragment>
                 );
               })}
             </View>
@@ -218,6 +240,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  breakRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 2,
+  },
+  breakLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  breakText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.textSecondary,
   },
   emptyText: {
     fontSize: 16,

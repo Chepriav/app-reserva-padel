@@ -83,3 +83,18 @@ describe('config — legacy aliases still work', () => {
     expect(esViviendaValida).toBe(isValidApartment);
   });
 });
+
+describe('getSkillLevelLabel', () => {
+  const { getSkillLevelLabel } = require('../src/constants/config');
+
+  it('returns Spanish label for legacy and domain values', () => {
+    expect(getSkillLevelLabel('intermedio')).toBe('Intermedio');
+    expect(getSkillLevelLabel('intermediate')).toBe('Intermedio');
+    expect(getSkillLevelLabel('professional')).toBe('Profesional');
+  });
+
+  it('returns null for empty values', () => {
+    expect(getSkillLevelLabel(null)).toBeNull();
+    expect(getSkillLevelLabel('')).toBeNull();
+  });
+});

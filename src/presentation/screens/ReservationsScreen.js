@@ -224,6 +224,7 @@ export default function ReservationsScreen() {
           <TouchableOpacity
             style={styles.cancelButton}
             onPress={() => handleCancel(reservation)}
+            accessibilityRole="button"
           >
             <Text style={styles.cancelButtonText}>Cancelar reserva</Text>
           </TouchableOpacity>

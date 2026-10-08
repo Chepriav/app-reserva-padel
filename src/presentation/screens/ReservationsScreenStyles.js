@@ -115,14 +115,17 @@ export const styles = StyleSheet.create({
     marginTop: 2,
   },
   cancelButton: {
-    backgroundColor: colors.error,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.error,
     borderRadius: 8,
-    padding: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: colors.error,
+    fontSize: 15,
     fontWeight: '600',
   },
   emptyState: {

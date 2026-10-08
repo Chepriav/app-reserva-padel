@@ -337,3 +337,28 @@ function getFutureDate(daysAhead) {
   date.setDate(date.getDate() + daysAhead);
   return date.toISOString().split('T')[0];
 }
+
+describe('getBookableDays / getDayPillLabel', () => {
+  const { getBookableDays, getDayPillLabel, isDateValid, formatDate } = require('../src/utils/dateHelpers');
+
+  it('returns today plus 7 days, all valid for booking', () => {
+    const days = getBookableDays();
+    expect(days).toHaveLength(8);
+    expect(days[0]).toBe(formatDate(new Date()));
+    days.forEach((d) => expect(isDateValid(d)).toBe(true));
+  });
+
+  it('handles month boundaries', () => {
+    const days = getBookableDays(new Date(2026, 0, 28));
+    expect(days[0]).toBe('2026-01-28');
+    expect(days[7]).toBe('2026-02-04');
+  });
+
+  it('labels today and tomorrow', () => {
+    expect(getDayPillLabel('2026-10-07', '2026-10-07').top).toBe('Hoy');
+    expect(getDayPillLabel('2026-10-08', '2026-10-07').top).toBe('Mañana');
+    const later = getDayPillLabel('2026-10-09', '2026-10-07');
+    expect(later.day).toBe('9');
+    expect(later.top).not.toBe('Hoy');
+  });
+});

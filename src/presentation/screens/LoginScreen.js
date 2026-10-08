@@ -195,15 +195,6 @@ export default function LoginScreen({ navigation }) {
               ¿No tienes cuenta? Regístrate aquí
             </Text>
           </TouchableOpacity>
-
-          <View style={styles.demoInfo}>
-            <Text style={styles.demoTitle}>Usuarios de prueba:</Text>
-            <Text style={styles.demoText}>Email: juan@ejemplo.com</Text>
-            <Text style={styles.demoText}>Contraseña: 123456</Text>
-            <Text style={styles.demoTextSeparator}>ó</Text>
-            <Text style={styles.demoText}>Email: maria@ejemplo.com</Text>
-            <Text style={styles.demoText}>Contraseña: 123456</Text>
-          </View>
         </View>
       </ScrollView>
 

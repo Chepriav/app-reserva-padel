@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Platform, View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/HomeScreen';
 import ReservationsScreen from '../screens/ReservationsScreen';
 import MatchesScreen from '../screens/MatchesScreen';
@@ -48,8 +49,8 @@ export default function TabNavigator() {
         component={HomeScreen}
         options={{
           headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="home" color={color} size={size} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name="home" color={color} size={size} focused={focused} />
           ),
         }}
       />
@@ -57,8 +58,8 @@ export default function TabNavigator() {
         name="Mis Reservas"
         component={ReservationsScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="calendar" color={color} size={size} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name="calendar" color={color} size={size} focused={focused} />
           ),
         }}
       />
@@ -66,8 +67,8 @@ export default function TabNavigator() {
         name="Partidas"
         component={MatchesScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="partidas" color={color} size={size} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name="partidas" color={color} size={size} focused={focused} />
           ),
         }}
       />
@@ -76,8 +77,8 @@ export default function TabNavigator() {
         component={BulletinScreen}
         options={{
           headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="tablon" color={color} size={size} badge={totalCount} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name="tablon" color={color} size={size} focused={focused} badge={totalCount} />
           ),
         }}
       />
@@ -87,8 +88,8 @@ export default function TabNavigator() {
           component={AdminScreen}
           options={{
             headerShown: false,
-            tabBarIcon: ({ color, size }) => (
-              <TabIcon name="admin" color={color} size={size} />
+            tabBarIcon: ({ color, size, focused }) => (
+              <TabIcon name="admin" color={color} size={size} focused={focused} />
             ),
           }}
         />
@@ -98,8 +99,8 @@ export default function TabNavigator() {
         component={ProfileScreen}
         options={{
           headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="user" color={color} size={size} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name="user" color={color} size={size} focused={focused} />
           ),
         }}
       />
@@ -107,22 +108,23 @@ export default function TabNavigator() {
   );
 }
 
-// Componente simple de icono con soporte para badge
-const TabIcon = ({ name, color, size, badge }) => {
-  const icons = {
-    home: '🏠',
-    calendar: '📅',
-    partidas: '🎾',
-    tablon: '📢',
-    admin: '⚙️',
-    user: '👤',
-  };
+// Tab icon (Ionicons: filled when active, outline when inactive) with optional badge
+const TAB_ICONS = {
+  home: 'home',
+  calendar: 'calendar',
+  partidas: 'tennisball',
+  tablon: 'megaphone',
+  admin: 'settings',
+  user: 'person',
+};
+
+const TabIcon = ({ name, color, size, badge, focused }) => {
+  const baseName = TAB_ICONS[name] || 'ellipse';
+  const iconName = focused ? baseName : `${baseName}-outline`;
 
   return (
     <View style={styles.iconContainer}>
-      <Text style={{ fontSize: size || 24, color }}>
-        {icons[name] || '•'}
-      </Text>
+      <Ionicons name={iconName} size={size || 24} color={color} />
       {badge > 0 && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>

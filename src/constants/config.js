@@ -30,6 +30,21 @@ export const PLAY_LEVELS = [
   { value: 'profesional', label: 'Profesional' },
 ];
 
+// Domain (English) skill level values → Spanish legacy values
+const SKILL_LEVEL_FROM_DOMAIN = {
+  beginner: 'principiante',
+  intermediate: 'intermedio',
+  advanced: 'avanzado',
+  professional: 'profesional',
+};
+
+/** Returns the Spanish label for a skill level in either legacy (Spanish) or domain (English) form */
+export const getSkillLevelLabel = (level) => {
+  if (!level) return null;
+  const value = SKILL_LEVEL_FROM_DOMAIN[level] ?? level;
+  return PLAY_LEVELS.find((l) => l.value === value)?.label ?? level;
+};
+
 // Class configuration
 export const CLASS_CONFIG = {
   MIN_STUDENTS: 2,
