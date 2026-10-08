@@ -63,11 +63,18 @@ export class GetAvailability {
 
       let reservations = reservationsResult.value;
 
-      // Apply P→G conversion per apartment
-      const apartments = [...new Set(reservations.map((r) => r.apartment))];
-      for (const apartment of apartments) {
-        const activeResult = await this.getActiveApartmentReservations.execute(apartment);
-        if (!activeResult.success) continue;
+      // Apply P→G conversion per apartment. Conversion can only upgrade
+      // provisional reservations, so only those apartments need a lookup
+      // (fetched in parallel instead of one query per apartment in sequence).
+      const apartments = [
+        ...new Set(reservations.filter((r) => r.priority === 'provisional').map((r) => r.apartment)),
+      ];
+      const activeResults = await Promise.all(
+        apartments.map((apartment) => this.getActiveApartmentReservations.execute(apartment)),
+      );
+      apartments.forEach((apartment, index) => {
+        const activeResult = activeResults[index];
+        if (!activeResult.success) return;
 
         const converted = this.applyConversion.execute(activeResult.value);
 
@@ -77,7 +84,7 @@ export class GetAvailability {
           const updated = converted.find((c) => c.id === r.id);
           return updated ?? r;
         });
-      }
+      });
 
       // Generate time slots
       const slots = this._generateSlots(date, config);
