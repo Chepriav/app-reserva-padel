@@ -59,6 +59,7 @@ export default function ProfileScreen() {
       text: 'OK',
       onPress: () => clearNotificationMessage(),
     }]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- react to a new notification message only
   }, [notificationMessage]);
 
   return (

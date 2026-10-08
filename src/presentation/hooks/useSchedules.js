@@ -106,6 +106,7 @@ export function useSchedules({
         loadWeekSchedules();
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- reload on these inputs only; the loaders are memoized on the same values
   }, [selectedCourt, selectedDate, currentView, reservationsVersion]);
 
   return {

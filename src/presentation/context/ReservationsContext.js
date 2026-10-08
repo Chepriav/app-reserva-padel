@@ -19,6 +19,7 @@ export const ReservationsProvider = ({ children }) => {
     } else {
       setReservations([]);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- reload only when the session changes; loadReservations is recreated every render
   }, [isAuthenticated, user]);
 
   // Load courts on init
