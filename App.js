@@ -5,6 +5,7 @@ import { AuthProvider } from './src/presentation/context/AuthContext';
 import { ReservationsProvider } from './src/presentation/context/ReservationsContext';
 import AppNavigator, { navigationRef, setRecoveryFlow } from './src/presentation/navigation/AppNavigator';
 import { registerServiceWorker, setUpdateCallback, applyUpdate } from './src/services/registerServiceWorker';
+import { startVersionCheck } from './src/services/versionCheck';
 import { colors } from './src/constants/colors';
 import { authService } from './src/services/authService.supabase';
 
@@ -50,6 +51,8 @@ export default function App() {
         setUpdateAvailable(true);
       });
       registerServiceWorker();
+      // Detect new deploys even if the service worker did not change
+      return startVersionCheck(() => setUpdateAvailable(true));
     }
   }, []);
 
@@ -145,7 +148,7 @@ export default function App() {
           {/* Banner de actualización */}
           {updateAvailable && (
             <View style={styles.updateBanner}>
-              <Text style={styles.updateText}>Nueva versión disponible</Text>
+              <Text style={styles.updateText}>Hay una nueva versión de la app</Text>
               <TouchableOpacity style={styles.updateButton} onPress={handleUpdate}>
                 <Text style={styles.updateButtonText}>Actualizar</Text>
               </TouchableOpacity>
@@ -197,6 +200,8 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '500',
+    flex: 1,
+    marginRight: 12,
   },
   updateButton: {
     backgroundColor: '#fff',

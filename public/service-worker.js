@@ -10,8 +10,8 @@ const STATIC_ASSETS = [
 // Instalación del Service Worker
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing...');
-  // Activar inmediatamente sin esperar
-  self.skipWaiting();
+  // No skipWaiting here: the new version waits until the user taps
+  // "Actualizar" (SKIP_WAITING message) or every tab is closed.
 
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -53,6 +53,11 @@ self.addEventListener('fetch', (event) => {
 
   // No interceptar blob: URLs (creados en el contexto de la página, inaccesibles desde el SW)
   if (event.request.url.startsWith('blob:')) {
+    return;
+  }
+
+  // version.json must always come from the network (update detection)
+  if (url.pathname === '/version.json') {
     return;
   }
 

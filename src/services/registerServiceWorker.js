@@ -2,6 +2,7 @@
 // Callback para notificar cuando hay una actualización disponible
 let onUpdateAvailable = null;
 let pendingWorker = null;
+let reloadRequested = false;
 
 export function setUpdateCallback(callback) {
   onUpdateAvailable = callback;
@@ -10,7 +11,9 @@ export function setUpdateCallback(callback) {
 export function registerServiceWorker() {
   if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
     // Escuchar cambios de controlador ANTES de registrar
+    // Only reload when the user tapped "Actualizar"; never interrupt them mid-use
     navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!reloadRequested) return;
       console.log('[SW] Controller changed, reloading...');
       window.location.reload();
     });
@@ -20,6 +23,12 @@ export function registerServiceWorker() {
         .register('/service-worker.js')
         .then((registration) => {
           console.log('Service Worker registrado:', registration.scope);
+
+          // A new version may already be waiting from a previous visit
+          if (registration.waiting && navigator.serviceWorker.controller) {
+            pendingWorker = registration.waiting;
+            if (onUpdateAvailable) onUpdateAvailable();
+          }
 
           // Verificar si hay una actualización disponible
           registration.addEventListener('updatefound', () => {
@@ -76,9 +85,13 @@ export function registerServiceWorker() {
 export function applyUpdate() {
   console.log('[SW] applyUpdate called, pendingWorker:', pendingWorker);
 
+  reloadRequested = true;
+
   if (pendingWorker) {
-    // Decirle al SW en espera que tome el control
+    // Decirle al SW en espera que tome el control (controllerchange recarga)
     pendingWorker.postMessage({ type: 'SKIP_WAITING' });
+    // Fallback: reload anyway if the controller does not change in time
+    setTimeout(() => window.location.reload(), 3000);
   } else {
     // Si no hay worker pendiente, simplemente recargar
     console.log('[SW] No pending worker, just reloading...');
