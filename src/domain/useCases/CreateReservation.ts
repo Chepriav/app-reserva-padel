@@ -1,5 +1,5 @@
 import type { Result } from '@shared/types/Result';
-import { ok, fail } from '@shared/types/Result';
+import { fail } from '@shared/types/Result';
 import type { ReservationRepository } from '@domain/ports/repositories/ReservationRepository';
 import type { CreateReservationData, Reservation } from '@domain/entities/Reservation';
 import {
@@ -170,7 +170,7 @@ export class CreateReservation {
     }
 
     // Insert reservation
-    return this.reservationRepository.create({ ...data });
+    return this.reservationRepository.create({ ...data, priority });
   }
 
   private determinePolicy(

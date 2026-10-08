@@ -1,5 +1,4 @@
 import type { Match, Player, CreateMatchData, MatchStatus, MatchType, PlayerStatus } from '@domain/entities/Match';
-import type { SkillLevel } from '@domain/entities/User';
 import { skillLevelToDomain } from './userMapper';
 
 // ---- Enum translations ----

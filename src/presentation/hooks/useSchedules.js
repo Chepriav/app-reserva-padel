@@ -38,7 +38,7 @@ export function useSchedules({
         );
         setSchedules([]);
       }
-    } catch (error) {
+    } catch {
       setLoadingSchedules(false);
       showAlerta(
         'Error de conexión',
@@ -81,7 +81,7 @@ export function useSchedules({
 
       setWeeklySchedules(timeSlotsTemp);
       setLoadingSchedules(false);
-    } catch (error) {
+    } catch {
       setLoadingSchedules(false);
       showAlerta('Error', 'No se pudieron cargar los horarios de la semana');
       setWeeklySchedules({});

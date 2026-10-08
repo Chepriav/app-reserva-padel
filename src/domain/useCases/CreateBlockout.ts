@@ -1,5 +1,5 @@
 import type { Result } from '@shared/types/Result';
-import { ok, fail } from '@shared/types/Result';
+import { fail } from '@shared/types/Result';
 import type { BlockoutRepository } from '@domain/ports/repositories/BlockoutRepository';
 import type { Blockout, CreateBlockoutData } from '@domain/entities/Blockout';
 import type { DisplacementNotifier } from '@domain/ports/repositories/DisplacementNotifier';

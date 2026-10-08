@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { parseApartment, combineApartment, SKILL_LEVELS } from '../../../constants/config';
+import { parseApartment, combineApartment } from '../../../constants/config';
 import { validateProfile, validateApartmentComponentes } from '../../../utils/validators';
 
 let ImageManipulator;

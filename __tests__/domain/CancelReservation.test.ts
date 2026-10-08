@@ -4,9 +4,6 @@ import type { MatchCancellationPort } from '../../src/domain/ports/repositories/
 import type { Reservation } from '../../src/domain/entities/Reservation';
 import { ok, fail } from '../../src/shared/types/Result';
 import {
-  ReservationNotFoundError,
-  ReservationAlreadyCancelledError,
-  ReservationPermissionError,
   InfrastructureError,
 } from '../../src/domain/errors/DomainErrors';
 

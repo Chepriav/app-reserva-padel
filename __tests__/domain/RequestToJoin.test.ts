@@ -3,14 +3,7 @@ import type { MatchRepository } from '../../src/domain/ports/repositories/MatchR
 import type { PlayerRepository } from '../../src/domain/ports/repositories/PlayerRepository';
 import type { MatchNotifier } from '../../src/domain/ports/repositories/MatchNotifier';
 import type { Match, Player } from '../../src/domain/entities/Match';
-import { ok, fail } from '../../src/shared/types/Result';
-import {
-  MatchNotFoundError,
-  MatchAlreadyCancelledError,
-  MatchFullError,
-  PlayerAlreadyJoinedError,
-  InfrastructureError,
-} from '../../src/domain/errors/DomainErrors';
+import { ok } from '../../src/shared/types/Result';
 
 const makeMatch = (overrides?: Partial<Match>): Match => ({
   id: 'm-1',

@@ -3,7 +3,7 @@ import type { AuthProvider } from '../../src/domain/ports/repositories/AuthProvi
 import type { UserRepository } from '../../src/domain/ports/repositories/UserRepository';
 import type { User } from '../../src/domain/entities/User';
 import { ok, fail } from '../../src/shared/types/Result';
-import { AuthenticationError, UserNotFoundError, UserNotApprovedError } from '../../src/domain/errors/DomainErrors';
+import { AuthenticationError } from '../../src/domain/errors/DomainErrors';
 
 const approvedUser: User = {
   id: 'user-1',

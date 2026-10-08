@@ -11,8 +11,6 @@ import type {
 } from '@domain/entities/Reservation';
 import {
   InfrastructureError,
-  ReservationNotFoundError,
-  RpcNotFoundError,
 } from '@domain/errors/DomainErrors';
 import { toDomain, toDbInsert, toConversionInfoDomain, priorityToDb } from '../mappers/reservationMapper';
 import { ReservationRpcHelper } from './ReservationRpcHelper';
@@ -51,7 +49,7 @@ export class SupabaseReservationRepository implements ReservationRepository {
       }
 
       return ok((data ?? []).map(toDomain));
-    } catch (err) {
+    } catch {
       return ok([]);
     }
   }
@@ -120,8 +118,8 @@ export class SupabaseReservationRepository implements ReservationRepository {
 
   async create(data: CreateReservationData): Promise<Result<Reservation>> {
     // This path is only used in the manual fallback (when RPC is unavailable).
-    // The caller is responsible for determining priority before calling create().
-    return this._insertWithPriority(data, 'guaranteed');
+    // The caller (CreateReservation) determines the priority.
+    return this._insertWithPriority(data, data.priority ?? 'guaranteed');
   }
 
   private async _insertWithPriority(
@@ -136,7 +134,7 @@ export class SupabaseReservationRepository implements ReservationRepository {
         .eq('id', data.courtId)
         .single();
 
-      const courtName = (court as { name?: string })?.name ?? 'Pista';
+      const courtName = (court as { nombre?: string } | null)?.nombre ?? 'Pista';
       const insertRow = toDbInsert(data, courtName, priority);
 
       const { data: row, error } = await supabase

@@ -138,7 +138,6 @@ export const reservationsService = {
    */
   async displaceReservation(reservationToDisplace, displacingApartment) {
     const { displaceReservation: displace } = await import('../di/container');
-    const { toDomain } = await import('../infrastructure/supabase/mappers/reservationMapper');
 
     // Convert legacy format to domain entity
     const domainReservation = {

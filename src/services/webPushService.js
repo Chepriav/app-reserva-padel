@@ -232,7 +232,7 @@ export const webPushService = {
       }
 
       return { success: true, data };
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Error obteniendo suscripciones' };
     }
   },

@@ -23,7 +23,7 @@ export class SupabaseUserNotificationRepository implements UserNotificationRepos
       }
 
       return ok((data ?? []).map((row) => toDomain(row as Record<string, unknown>)));
-    } catch (err) {
+    } catch {
       return ok([]); // Non-critical path, return empty on unexpected error
     }
   }

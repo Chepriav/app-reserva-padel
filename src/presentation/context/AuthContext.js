@@ -142,7 +142,7 @@ export const AuthProvider = ({ children }) => {
         error: response.error,
         needsEmailConfirmation: response.needsEmailConfirmation ?? false,
       };
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Error al iniciar sesión' };
     }
   };
@@ -172,7 +172,7 @@ export const AuthProvider = ({ children }) => {
       authService.logout().catch(() => {});
 
       return { success: true };
-    } catch (error) {
+    } catch {
       // Ensure session is always closed in UI
       setUser(null);
       setIsAuthenticated(false);
@@ -189,7 +189,7 @@ export const AuthProvider = ({ children }) => {
         return { success: true, message: response.message };
       }
       return { success: false, error: response.error };
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Error al registrarse' };
     }
   };
@@ -202,7 +202,7 @@ export const AuthProvider = ({ children }) => {
         return { success: true };
       }
       return { success: false, error: response.error };
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Error al actualizar perfil' };
     }
   };
@@ -211,7 +211,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authService.resetPassword(email);
       return response;
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Error al enviar correo de recuperación' };
     }
   };

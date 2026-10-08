@@ -1,5 +1,5 @@
 import type { Result } from '@shared/types/Result';
-import { ok, fail } from '@shared/types/Result';
+import { fail } from '@shared/types/Result';
 import type { MatchRepository } from '@domain/ports/repositories/MatchRepository';
 import type { PlayerRepository } from '@domain/ports/repositories/PlayerRepository';
 import type { MatchNotifier } from '@domain/ports/repositories/MatchNotifier';

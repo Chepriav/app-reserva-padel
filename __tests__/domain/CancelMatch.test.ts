@@ -4,8 +4,6 @@ import type { MatchNotifier } from '../../src/domain/ports/repositories/MatchNot
 import type { Match } from '../../src/domain/entities/Match';
 import { ok, fail } from '../../src/shared/types/Result';
 import {
-  MatchNotFoundError,
-  MatchPermissionError,
   InfrastructureError,
 } from '../../src/domain/errors/DomainErrors';
 

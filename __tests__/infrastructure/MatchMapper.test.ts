@@ -2,7 +2,6 @@ import {
   matchToDomain,
   playerToDomain,
   toLegacyFormat,
-  playerToLegacy,
   toDbInsert,
   matchStatusToDomain,
   matchStatusToDb,
@@ -11,7 +10,6 @@ import {
   playerStatusToDomain,
   playerStatusToDb,
 } from '@infrastructure/supabase/mappers/matchMapper';
-import type { Match, Player } from '@domain/entities/Match';
 
 const makePlayerRow = (overrides: Record<string, unknown> = {}) => ({
   id: 'player-1',

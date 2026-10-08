@@ -32,6 +32,8 @@ export interface CreateReservationData {
   endTime: string;
   players?: string[];
   forceDisplacement?: boolean;
+  /** Priority decided by CreateReservation; defaults to guaranteed */
+  priority?: ReservationPriority;
 }
 
 export interface ReservationStatistics {

@@ -143,7 +143,7 @@ self.addEventListener('push', (event) => {
         tag: payload.tag || data.tag,
         data: payload.data || {},
       };
-    } catch (e) {
+    } catch {
       // Si no es JSON, usar el texto como body
       data.body = event.data.text();
     }
@@ -167,27 +167,6 @@ self.addEventListener('push', (event) => {
       .catch((err) => console.error('[SW] Error mostrando notificación:', err))
   );
 });
-
-// Acciones según tipo de notificación
-function getActionsForType(type) {
-  switch (type) {
-    case 'reservation_reminder':
-      return [
-        { action: 'view', title: 'Ver reserva' },
-        { action: 'dismiss', title: 'Cerrar' },
-      ];
-    case 'vivienda_change':
-      return [
-        { action: 'view', title: 'Ver perfil' },
-      ];
-    case 'reservation_displacement':
-      return [
-        { action: 'view', title: 'Ver reservas' },
-      ];
-    default:
-      return [];
-  }
-}
 
 // Usuario hace clic en la notificación
 self.addEventListener('notificationclick', (event) => {
@@ -234,8 +213,7 @@ self.addEventListener('notificationclick', (event) => {
 
         // Si no hay ventana abierta, abrir una nueva con parámetro de navegación
         console.log('[SW] No hay ventana, abriendo nueva...');
-        const targetScreen = data.type === 'vivienda_change' ? 'perfil' : 'reservas';
-        return clients.openWindow('/?notification=' + data.type);
+        return clients.openWindow('/?notification=' + encodeURIComponent(data.type || ''));
       })
       .catch((err) => {
         console.error('[SW] Error en notificationclick:', err);
