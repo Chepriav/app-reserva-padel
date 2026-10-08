@@ -120,6 +120,7 @@ export function useAuthNotifications({ isAuthenticated, user, setNotificationMes
         notificationCleanup();
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- run on login/logout only; handlers only use stable setters and global navigation
   }, [isAuthenticated, user]);
 
   // Service Worker message listener (Web Push)
@@ -139,6 +140,7 @@ export function useAuthNotifications({ isAuthenticated, user, setNotificationMes
     return () => {
       navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- register the listener once; the handler only uses stable setters and global navigation
   }, []);
 
   return { notificationsPending, markNotificationsRead };

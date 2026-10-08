@@ -30,7 +30,7 @@ export class SupabaseDisplacementNotificationRepository
       }
 
       return ok((data ?? []).map(toDomain));
-    } catch (err) {
+    } catch {
       return ok([]);
     }
   }
@@ -82,7 +82,7 @@ export class SupabaseDisplacementNotificationRepository
       }
 
       return ok(undefined);
-    } catch (err) {
+    } catch {
       return ok(undefined); // Non-critical operation
     }
   }

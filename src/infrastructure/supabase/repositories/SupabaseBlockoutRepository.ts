@@ -24,7 +24,7 @@ export class SupabaseBlockoutRepository implements BlockoutRepository {
       }
 
       return ok((data ?? []).map(toDomain));
-    } catch (err) {
+    } catch {
       return ok([]); // Non-critical — degrade gracefully
     }
   }

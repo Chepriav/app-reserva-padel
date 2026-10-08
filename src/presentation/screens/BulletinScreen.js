@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   FlatList,
   RefreshControl,
-  Platform,
 } from 'react-native';
 import { styles } from './BulletinScreenStyles';
 import { SafeAreaView } from 'react-native-safe-area-context';

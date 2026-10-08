@@ -4,7 +4,6 @@ import type { CreateReservationData, Reservation } from '../../src/domain/entiti
 import { ok, fail } from '../../src/shared/types/Result';
 import {
   DisplacementRequiredError,
-  ReservationLimitExceededError,
   RpcNotFoundError,
 } from '../../src/domain/errors/DomainErrors';
 import { GetAvailability } from '../../src/domain/useCases/GetAvailability';
@@ -110,7 +109,9 @@ describe('CreateReservation', () => {
 
     expect(result.success).toBe(true);
     expect(mockGetAvailability.execute).toHaveBeenCalledWith(validData.courtId, validData.date);
-    expect(mockReservationRepository.create).toHaveBeenCalled();
+    expect(mockReservationRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ priority: 'guaranteed' }),
+    );
   });
 
   it('returns DisplacementRequiredError when slot has displaceable reservation', async () => {
@@ -153,13 +154,15 @@ describe('CreateReservation', () => {
     const existingReservation = makeReservation({ apartment: '1-3-B', status: 'confirmed' });
     (mockGetActiveReservations.execute as jest.Mock).mockResolvedValue(ok([existingReservation]));
 
-    const result = await useCase.execute({ ...validData, endTime: '09:30' });
+    // count === 1 → the domain allows a 2nd reservation, stored as provisional
+    // (the UI enforces the current limit of 1 before calling this use case)
+    (mockReservationRepository.create as jest.Mock).mockResolvedValue(ok(makeReservation({ id: 'new-2' })));
+    await useCase.execute({ ...validData, endTime: '09:30' });
+    expect(mockReservationRepository.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({ priority: 'provisional' }),
+    );
 
-    // Note: limit of 1 means provisional slot (2nd) — but with MAX_ACTIVE_RESERVATIONS=1
-    // DetermineReservationPriority returns null when count >= 1
-    // Actually: count === 1 → provisional; count >= 2 → null
-    // So for count === 1 this should still succeed with provisional priority
-    // Let's test the actual limit exceeded case (count >= 2)
+    // count >= 2 → limit exceeded
     const existing2 = makeReservation({ id: 'r-2', apartment: '1-3-B', status: 'confirmed' });
     (mockGetActiveReservations.execute as jest.Mock).mockResolvedValue(ok([existingReservation, existing2]));
 

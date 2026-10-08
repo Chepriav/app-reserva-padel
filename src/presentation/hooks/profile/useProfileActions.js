@@ -14,7 +14,7 @@ export function useProfileActions(user, logout, showAlert) {
         setDeleting(false);
         showAlert('Error', result.error || 'No se pudo eliminar la cuenta');
       }
-    } catch (error) {
+    } catch {
       setDeleting(false);
       showAlert('Error', 'Error inesperado al eliminar la cuenta');
     }

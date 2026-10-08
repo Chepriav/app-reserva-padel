@@ -108,7 +108,7 @@ export class ReservationRpcHelper {
       }
 
       return ok(undefined);
-    } catch (err) {
+    } catch {
       return ok(undefined); // Non-critical
     }
   }

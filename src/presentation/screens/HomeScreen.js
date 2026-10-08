@@ -93,6 +93,7 @@ export default function HomeScreen({ navigation }) {
 
   useEffect(() => {
     limpiarSelection();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- react to this trigger only; callbacks are recreated every render
   }, [dateSelected, viewActual]);
 
   useEffect(() => {
@@ -124,6 +125,7 @@ export default function HomeScreen({ navigation }) {
         }],
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- react to this trigger only; callbacks are recreated every render
   }, [notificationsPending, notificationMostrada]);
 
   const { reservando, cambiarDate, handleTimeSlotPress, confirmarReservation } = useHomeActions({

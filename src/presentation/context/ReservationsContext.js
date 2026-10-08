@@ -19,6 +19,7 @@ export const ReservationsProvider = ({ children }) => {
     } else {
       setReservations([]);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- reload only when the session changes; loadReservations is recreated every render
   }, [isAuthenticated, user]);
 
   // Load courts on init
@@ -109,7 +110,7 @@ export const ReservationsProvider = ({ children }) => {
         return { success: true, data: response.data };
       }
       return { success: false, error: response.error };
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Error al obtener disponibilidad' };
     }
   };
@@ -135,7 +136,7 @@ export const ReservationsProvider = ({ children }) => {
         return { success: true, data: response.data };
       }
       return { success: false, error: response.error };
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Error al crear reserva' };
     }
   };
@@ -154,7 +155,7 @@ export const ReservationsProvider = ({ children }) => {
         return { success: true };
       }
       return { success: false, error: response.error };
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Error al cancelar reserva' };
     }
   };
@@ -166,7 +167,7 @@ export const ReservationsProvider = ({ children }) => {
         return { success: true, data: response.data };
       }
       return { success: false, error: response.error };
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Error al obtener reservas' };
     }
   };

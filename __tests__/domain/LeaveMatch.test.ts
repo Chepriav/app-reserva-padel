@@ -4,7 +4,6 @@ import type { PlayerRepository } from '../../src/domain/ports/repositories/Playe
 import type { Match, Player } from '../../src/domain/entities/Match';
 import { ok, fail } from '../../src/shared/types/Result';
 import {
-  MatchNotFoundError,
   InfrastructureError,
 } from '../../src/domain/errors/DomainErrors';
 

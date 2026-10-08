@@ -8,8 +8,6 @@ import {
   formatApartment,
   APARTMENT_CONFIG,
   SCHEDULE_CONFIG,
-  RESERVATION_LIMITS,
-  CLASS_CONFIG,
   // Legacy aliases
   NIVELES_JUEGO,
   parseVivienda,

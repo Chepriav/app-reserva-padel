@@ -38,7 +38,7 @@ export function useSchedules({
         );
         setSchedules([]);
       }
-    } catch (error) {
+    } catch {
       setLoadingSchedules(false);
       showAlerta(
         'Error de conexión',
@@ -81,7 +81,7 @@ export function useSchedules({
 
       setWeeklySchedules(timeSlotsTemp);
       setLoadingSchedules(false);
-    } catch (error) {
+    } catch {
       setLoadingSchedules(false);
       showAlerta('Error', 'No se pudieron cargar los horarios de la semana');
       setWeeklySchedules({});
@@ -106,6 +106,7 @@ export function useSchedules({
         loadWeekSchedules();
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- reload on these inputs only; the loaders are memoized on the same values
   }, [selectedCourt, selectedDate, currentView, reservationsVersion]);
 
   return {

@@ -24,7 +24,7 @@ export function useProfileNotifications(user, showAlert) {
       } else {
         showAlert('Error', result.error || 'No se pudieron activar las notificaciones');
       }
-    } catch (error) {
+    } catch {
       showAlert('Error', 'Error al activar notificaciones');
     }
 

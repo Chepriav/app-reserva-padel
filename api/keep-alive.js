@@ -16,7 +16,7 @@ export default async function handler(req, res) {
 
   try {
     // Simple query to keep the database active
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('pistas')
       .select('id')
       .limit(1);

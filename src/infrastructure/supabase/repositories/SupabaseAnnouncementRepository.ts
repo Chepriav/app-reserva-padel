@@ -63,7 +63,7 @@ export class SupabaseAnnouncementRepository implements AnnouncementRepository {
       );
 
       return ok(unique.map((row) => toDomain(row, readMap.get(row.id as string) ?? false)));
-    } catch (err) {
+    } catch {
       return ok([]); // Non-critical path
     }
   }
@@ -81,7 +81,7 @@ export class SupabaseAnnouncementRepository implements AnnouncementRepository {
       }
 
       return ok((data ?? []).map((row) => toDomain(row as Record<string, unknown>, true)));
-    } catch (err) {
+    } catch {
       return ok([]);
     }
   }

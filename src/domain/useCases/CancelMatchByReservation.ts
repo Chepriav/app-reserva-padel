@@ -1,8 +1,7 @@
 import type { Result } from '@shared/types/Result';
-import { ok, fail } from '@shared/types/Result';
+import { ok } from '@shared/types/Result';
 import type { MatchRepository } from '@domain/ports/repositories/MatchRepository';
 import type { MatchNotifier } from '@domain/ports/repositories/MatchNotifier';
-import { InfrastructureError } from '@domain/errors/DomainErrors';
 
 export type CancelMatchByReservationResult = {
   hadMatch: boolean;

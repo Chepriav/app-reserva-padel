@@ -120,7 +120,7 @@ export class SupabasePlayerRepository implements PlayerRepository {
       }
 
       return ok(undefined);
-    } catch (err) {
+    } catch {
       return ok(undefined); // Non-critical
     }
   }

@@ -163,7 +163,7 @@ export class GetAvailability {
     }
   }
 
-  private _generateSlots(date: string, config: ScheduleConfig): Array<{ startTime: string; endTime: string }> {
+  private _generateSlots(date: string, config: ScheduleConfig): { startTime: string; endTime: string }[] {
     const slotDate = new Date(`${date}T00:00`);
     const duration = config.slotDuration;
 
@@ -197,7 +197,7 @@ export class GetAvailability {
     const opening = timeToMinutes(openingTimeStr);
     const closing = timeToMinutes(closingTimeStr);
 
-    const slots: Array<{ startTime: string; endTime: string }> = [];
+    const slots: { startTime: string; endTime: string }[] = [];
     let current = opening;
 
     while (current + duration <= closing) {
