@@ -147,17 +147,20 @@ EXPO_PUBLIC_VAPID_PUBLIC_KEY=BNRg...
 
 ## Colores Principales
 
+Definidos en `src/constants/colors.js`:
+
 ```javascript
-primary: '#2e7d32'          // Verde oscuro
-secondary: '#4caf50'        // Verde claro
-accent: '#ff9800'           // Naranja (selección)
-reservaGarantizada: '#2e7d32'  // Verde (G)
-reservaProvisional: '#FFC107'  // Amarillo (P)
-bloqueado: '#e53e3e'        // Rojo
+primary: '#1a365d'                // Azul marino
+secondary: '#2c5282'              // Azul medio
+accent: '#d69e2e'                 // Dorado (selección, admin)
+guaranteedReservation: '#2f855a'  // Verde (G / tu reserva)
+provisionalReservation: '#d69e2e' // Dorado (P)
+blockout: '#e53e3e'               // Rojo
 ```
 
 ## Despliegue
 
-```bash
-npx expo export:web && npx vercel --prod
-```
+- **Web**: Vercel está conectado a GitHub. Cada merge a `main` se publica solo (`npm run build:web`).
+  El build genera `dist/version.json`; la app lo consulta y muestra el aviso "Actualizar" a los usuarios.
+- **Base de datos**: las migraciones de `supabase/migrations/` se aplican a mano en Supabase → SQL Editor.
+- **Edge Functions**: `supabase functions deploy <nombre>`.
