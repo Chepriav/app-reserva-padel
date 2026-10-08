@@ -34,7 +34,7 @@
       "name": "Reserva Pádel Urbanización",
       "shortName": "Reserva Pádel",
       "description": "Gestiona tus reservas de pistas de pádel en la urbanización",
-      "themeColor": "#2e7d32",
+      "themeColor": "#1a365d",
       "backgroundColor": "#ffffff",
       "display": "standalone",
       "startUrl": "/",

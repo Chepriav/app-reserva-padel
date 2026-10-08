@@ -6,7 +6,7 @@ export default {
   start_url: '/',
   display: 'standalone',
   background_color: '#ffffff',
-  theme_color: '#2e7d32',
+  theme_color: '#1a365d',
   orientation: 'portrait',
   scope: '/',
   lang: 'es-ES',
