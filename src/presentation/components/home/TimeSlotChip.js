@@ -59,6 +59,16 @@ export function TimeSlotChip({
   const apartment = timeSlot.existingReservation?.apartment;
   const showApartment = !!apartment && !estaSelected && !isSelectedForBlock && !isSelectedForUnblock;
 
+  const statusLabel = (() => {
+    if (isPast) return 'pasado';
+    if (isBlocked) return 'no disponible';
+    if (isMyGuaranteed || isMyProvisional) return `tu reserva${apartment ? `, vivienda ${apartment}` : ''}`;
+    if (isOtherProvisional) return `reserva provisional de ${apartment}, desplazable`;
+    if (isOtherGuaranteed) return `reservado por ${apartment}`;
+    return 'libre';
+  })();
+  const accessibilityLabel = `${timeSlot.startTime}, ${statusLabel}${estaSelected ? ', seleccionado' : ''}`;
+
   const textColorStyles = [
     isPast && styles.slotChipTextPast,
     !isPast && isBlocked && !isSelectedForUnblock && styles.slotChipTextBlocked,
@@ -84,6 +94,9 @@ export function TimeSlotChip({
       ]}
       onPress={onPress}
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled: !!disabled, selected: !!(estaSelected || isSelectedForBlock || isSelectedForUnblock) }}
     >
       <Text style={[styles.slotChipText, ...textColorStyles]}>
         {timeSlot.startTime}
