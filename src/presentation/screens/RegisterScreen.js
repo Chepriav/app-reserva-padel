@@ -137,6 +137,7 @@ export default function RegisterScreen({ navigation }) {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Nombre completo *</Text>
             <TextInput
+              placeholderTextColor={colors.textSecondary}
               style={styles.input}
               placeholder="Juan Pérez"
               value={name}
@@ -148,6 +149,7 @@ export default function RegisterScreen({ navigation }) {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email *</Text>
             <TextInput
+              placeholderTextColor={colors.textSecondary}
               style={styles.input}
               placeholder="tu@email.com"
               value={email}
@@ -161,6 +163,7 @@ export default function RegisterScreen({ navigation }) {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Teléfono *</Text>
             <TextInput
+              placeholderTextColor={colors.textSecondary}
               style={styles.input}
               placeholder="666777888"
               value={phone}
@@ -185,6 +188,7 @@ export default function RegisterScreen({ navigation }) {
             <Text style={styles.label}>Contraseña *</Text>
             <View style={styles.passwordContainer}>
               <TextInput
+                placeholderTextColor={colors.textSecondary}
                 style={styles.passwordInput}
                 placeholder="Mínimo 6 caracteres"
                 value={password}
@@ -202,6 +206,7 @@ export default function RegisterScreen({ navigation }) {
             <Text style={styles.label}>Confirmar Contraseña *</Text>
             <View style={styles.passwordContainer}>
               <TextInput
+                placeholderTextColor={colors.textSecondary}
                 style={styles.passwordInput}
                 placeholder="Repite tu contraseña"
                 value={confirmPassword}

@@ -27,6 +27,15 @@ try {
   // Inyectar después de </title>
   html = html.replace('</title>', '</title>' + metaTags);
 
+  // viewport-fit=cover enables env(safe-area-inset-*) so the tab bar can
+  // stay clear of the iPhone home indicator in the installed PWA
+  html = html.replace(
+    /<meta name="viewport" content="([^"]*)"/,
+    (match, content) => (content.includes('viewport-fit')
+      ? match
+      : `<meta name="viewport" content="${content}, viewport-fit=cover"`),
+  );
+
   fs.writeFileSync(indexPath, html);
   console.log('PWA meta tags injected successfully');
 } catch (error) {

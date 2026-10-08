@@ -10,7 +10,9 @@ import {
   ScrollView,
   Modal,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import { colors } from '../../constants/colors';
 import { CustomAlert } from '../components/CustomAlert';
 import { styles } from './LoginScreenStyles';
 
@@ -133,6 +135,7 @@ export default function LoginScreen({ navigation }) {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email</Text>
             <TextInput
+              placeholderTextColor={colors.textSecondary}
               style={styles.input}
               placeholder="tu@email.com"
               value={email}
@@ -147,6 +150,7 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.label}>Contraseña</Text>
             <View style={styles.passwordContainer}>
               <TextInput
+                placeholderTextColor={colors.textSecondary}
                 style={styles.passwordInput}
                 placeholder="••••••"
                 value={password}
@@ -157,8 +161,14 @@ export default function LoginScreen({ navigation }) {
               <TouchableOpacity
                 style={styles.eyeButton}
                 onPress={() => setShowPassword(!showPassword)}
+                accessibilityRole="button"
+                accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               >
-                <Text style={styles.eyeIcon}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={22}
+                  color={colors.textSecondary}
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -213,6 +223,8 @@ export default function LoginScreen({ navigation }) {
             </Text>
 
             <TextInput
+
+              placeholderTextColor={colors.textSecondary}
               style={styles.modalInput}
               placeholder="tu@email.com"
               value={resetEmail}
