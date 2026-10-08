@@ -218,6 +218,7 @@ export default function ResetPasswordScreen({ navigation }) {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Nueva contrasena</Text>
             <TextInput
+              placeholderTextColor={colors.textSecondary}
               style={styles.input}
               placeholder="••••••"
               value={password}
@@ -230,6 +231,7 @@ export default function ResetPasswordScreen({ navigation }) {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Confirmar contrasena</Text>
             <TextInput
+              placeholderTextColor={colors.textSecondary}
               style={styles.input}
               placeholder="••••••"
               value={confirmPassword}
