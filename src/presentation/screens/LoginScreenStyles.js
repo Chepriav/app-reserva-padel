@@ -1,4 +1,4 @@
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { colors } from '../../constants/colors';
 
 export const styles = StyleSheet.create({
@@ -34,16 +34,6 @@ export const styles = StyleSheet.create({
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   registroButton: { marginTop: 16, padding: 12, alignItems: 'center' },
   registroButtonText: { color: colors.primary, fontSize: 14, fontWeight: '500' },
-  demoInfo: {
-    marginTop: 24, padding: 16, backgroundColor: colors.background,
-    borderRadius: 8, borderWidth: 1, borderColor: colors.border,
-  },
-  demoTitle: { fontSize: 14, fontWeight: '600', color: colors.text, marginBottom: 8 },
-  demoText: {
-    fontSize: 13, color: colors.textSecondary,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-  },
-  demoTextSeparator: { fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginVertical: 4 },
   forgotButton: { marginTop: 12, alignItems: 'center' },
   forgotButtonText: { color: colors.textSecondary, fontSize: 14 },
   modalOverlay: {
