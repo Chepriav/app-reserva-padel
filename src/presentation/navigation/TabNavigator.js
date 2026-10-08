@@ -14,6 +14,17 @@ import { useBulletinCounter } from '../hooks';
 
 const Tab = createBottomTabNavigator();
 
+// Web (PWA on iPhone): add the home-indicator safe area via CSS env();
+// it resolves to 0 on devices without one
+const TAB_BAR_SIZE = Platform.select({
+  ios: { height: 90, paddingBottom: 30 },
+  web: {
+    height: 'calc(60px + env(safe-area-inset-bottom, 0px))',
+    paddingBottom: 'calc(10px + env(safe-area-inset-bottom, 0px))',
+  },
+  default: { height: 60, paddingBottom: 10 },
+});
+
 export default function TabNavigator() {
   const { user } = useAuth();
   const isAdmin = user?.isAdmin;
@@ -27,8 +38,7 @@ export default function TabNavigator() {
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
-          height: Platform.OS === 'ios' ? 90 : 60,
-          paddingBottom: Platform.OS === 'ios' ? 30 : 10,
+          ...TAB_BAR_SIZE,
           paddingTop: 10,
         },
         tabBarLabelStyle: {
