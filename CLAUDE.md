@@ -67,6 +67,8 @@ src/
 | Cancelación | Sin límite de tiempo |
 | Protección desplazamiento | 24h |
 | Pausas/Descansos | Configurable por admin (ej: hora de comida) |
+| Retención de reservas | 2 meses desde la fecha (pg_cron diario `purge_old_reservations`) |
+| Borrar usuario | Borra sus reservas, partidas y notificaciones (trigger en `users`) |
 
 ## Prioridades
 
