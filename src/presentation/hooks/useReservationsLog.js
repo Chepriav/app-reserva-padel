@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { reservationsService } from '../../services/reservationsService.supabase';
+import { getDisplayStatus } from '../../utils/reservationStatus';
 
 /**
  * Hook for admin reservations log.
@@ -18,7 +19,10 @@ export function useReservationsLog(enabled = false) {
     try {
       const result = await reservationsService.getAllReservations();
       if (result.success) {
-        setAllReservations(result.data ?? []);
+        const now = new Date();
+        setAllReservations(
+          (result.data ?? []).map((r) => ({ ...r, status: getDisplayStatus(r, now) })),
+        );
       }
     } finally {
       setLoading(false);
