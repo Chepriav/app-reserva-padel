@@ -1,9 +1,52 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { reservationsService } from '../../services/reservationsService.supabase';
 import { notificationService } from '../../services/notificationService';
 import { useAuth } from './AuthContext';
 
 const ReservationsContext = createContext(null);
+
+/**
+ * Applies automatic conversion from Provisional to Guaranteed
+ * When a Guaranteed reservation passes (already occurred), the oldest Provisional
+ * is automatically converted to Guaranteed
+ */
+function applyAutomaticConversion(originalReservations) {
+  const now = new Date();
+
+  // Separate future confirmed reservations
+  const futureReservations = originalReservations.filter(r => {
+    const reservationDate = new Date(r.date + 'T' + r.startTime);
+    return r.status === 'confirmed' && reservationDate > now;
+  });
+
+  // Count future guaranteed reservations
+  const futureGuaranteed = futureReservations.filter(r => r.priority === 'guaranteed');
+  const futureProvisional = futureReservations.filter(r => r.priority === 'provisional');
+
+  // If there's no future guaranteed but there are provisionals,
+  // the oldest provisional is converted to guaranteed
+  if (futureGuaranteed.length === 0 && futureProvisional.length > 0) {
+    // Sort provisionals by date/time (earliest first)
+    const sortedProvisionals = [...futureProvisional].sort((a, b) => {
+      const dateA = new Date(a.date + 'T' + a.startTime);
+      const dateB = new Date(b.date + 'T' + b.startTime);
+      return dateA - dateB;
+    });
+
+    // The first provisional is converted to guaranteed
+    const toConvert = sortedProvisionals[0];
+
+    // Return reservations with conversion applied
+    return originalReservations.map(r => {
+      if (r.id === toConvert.id) {
+        return { ...r, priority: 'guaranteed' };
+      }
+      return r;
+    });
+  }
+
+  return originalReservations;
+}
 
 export const ReservationsProvider = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
@@ -19,7 +62,7 @@ export const ReservationsProvider = ({ children }) => {
     } else {
       setReservations([]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- reload only when the session changes; loadReservations is recreated every render
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- reload only when the session changes
   }, [isAuthenticated, user]);
 
   // Load courts on init
@@ -27,13 +70,16 @@ export const ReservationsProvider = ({ children }) => {
     loadCourts();
   }, []);
 
-  const loadReservations = async () => {
-    if (!user?.apartment) return;
+  // Memoized: screens reload on focus with this as a dependency, so a new
+  // function on every render caused an endless reload loop
+  const apartment = user?.apartment;
+  const loadReservations = useCallback(async () => {
+    if (!apartment) return;
 
     setLoading(true);
     try {
       // Load all reservations from the apartment (not just the user)
-      const response = await reservationsService.getReservationsByApartment(user.apartment);
+      const response = await reservationsService.getReservationsByApartment(apartment);
       if (response.success) {
         // Apply automatic P→G conversion if applicable
         const reservationsConversion = applyAutomaticConversion(response.data);
@@ -44,50 +90,7 @@ export const ReservationsProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  /**
-   * Applies automatic conversion from Provisional to Guaranteed
-   * When a Guaranteed reservation passes (already occurred), the oldest Provisional
-   * is automatically converted to Guaranteed
-   */
-  const applyAutomaticConversion = (originalReservations) => {
-    const now = new Date();
-
-    // Separate future confirmed reservations
-    const futureReservations = originalReservations.filter(r => {
-      const reservationDate = new Date(r.date + 'T' + r.startTime);
-      return r.status === 'confirmed' && reservationDate > now;
-    });
-
-    // Count future guaranteed reservations
-    const futureGuaranteed = futureReservations.filter(r => r.priority === 'guaranteed');
-    const futureProvisional = futureReservations.filter(r => r.priority === 'provisional');
-
-    // If there's no future guaranteed but there are provisionals,
-    // the oldest provisional is converted to guaranteed
-    if (futureGuaranteed.length === 0 && futureProvisional.length > 0) {
-      // Sort provisionals by date/time (earliest first)
-      const sortedProvisionals = [...futureProvisional].sort((a, b) => {
-        const dateA = new Date(a.date + 'T' + a.startTime);
-        const dateB = new Date(b.date + 'T' + b.startTime);
-        return dateA - dateB;
-      });
-
-      // The first provisional is converted to guaranteed
-      const toConvert = sortedProvisionals[0];
-
-      // Return reservations with conversion applied
-      return originalReservations.map(r => {
-        if (r.id === toConvert.id) {
-          return { ...r, priority: 'guaranteed' };
-        }
-        return r;
-      });
-    }
-
-    return originalReservations;
-  };
+  }, [apartment]);
 
   const loadCourts = async () => {
     try {
