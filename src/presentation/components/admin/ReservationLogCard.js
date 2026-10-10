@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors } from '../../../constants/colors';
+import { formatTime } from '../../../utils/dateHelpers';
 
 const STATUS_LABELS = {
   confirmed: 'Confirmada',
@@ -73,7 +74,7 @@ export function ReservationLogCard({ reservation }) {
       <View style={styles.row}>
         <Text style={styles.detail}>{formattedDate}</Text>
         <Text style={styles.separator}>·</Text>
-        <Text style={styles.detail}>{startTime}–{endTime}</Text>
+        <Text style={styles.detail}>{formatTime(startTime)}–{formatTime(endTime)}</Text>
         <Text style={styles.separator}>·</Text>
         <Text style={styles.detail}>{courtName}</Text>
         {duration != null && (

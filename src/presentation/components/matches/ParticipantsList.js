@@ -57,7 +57,7 @@ function ParticipantRow({ name, apartment, photo, level, isExternal = false }) {
           </Text>
         ) : (
           <Text style={styles.apartment}>
-            Apartment {apartment}
+            Vivienda {apartment}
             {levelLabel && ` • ${levelLabel}`}
           </Text>
         )}

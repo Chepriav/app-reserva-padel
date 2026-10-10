@@ -1,6 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Platform, View, Text, StyleSheet } from 'react-native';
+import { Platform, View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/HomeScreen';
 import ReservationsScreen from '../screens/ReservationsScreen';
@@ -29,6 +29,9 @@ export default function TabNavigator() {
   const { user } = useAuth();
   const isAdmin = user?.isAdmin;
   const { totalCount } = useBulletinCounter(user?.id);
+  // Narrow phones (e.g. 320 px) with 6 tabs: labels would touch each other
+  const { width } = useWindowDimensions();
+  const labelFontSize = width < 360 && isAdmin ? 10 : 12;
 
   return (
     <Tab.Navigator
@@ -42,7 +45,7 @@ export default function TabNavigator() {
           paddingTop: 10,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: labelFontSize,
           fontWeight: '600',
         },
         headerStyle: {

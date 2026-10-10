@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   infoValue: { fontSize: 16, fontWeight: '600', color: colors.text },
   separator: { height: 1, backgroundColor: colors.border },
   infoInput: {
-    flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: 6,
+    flex: 1, minWidth: 0, marginLeft: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 6,
     padding: 8, fontSize: 16, color: colors.text, backgroundColor: colors.background, textAlign: 'right',
   },
   apartmentLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

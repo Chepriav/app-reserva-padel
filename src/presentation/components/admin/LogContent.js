@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { colors } from '../../../constants/colors';
+import { formatTime } from '../../../utils/dateHelpers';
 import { ReservationLogCard } from './ReservationLogCard';
 
 const STATUS_OPTIONS = [
@@ -55,7 +56,7 @@ function buildRegistrosHtml(reservations) {
         <td style="font-weight:bold">${r.apartment ?? '—'}</td>
         <td>${r.userName ?? '—'}</td>
         <td>${date}</td>
-        <td>${r.startTime ?? '—'}–${r.endTime ?? '—'}</td>
+        <td>${r.startTime ? formatTime(r.startTime) : '—'}–${r.endTime ? formatTime(r.endTime) : '—'}</td>
         <td>${r.courtName ?? '—'}</td>
         <td style="color:${statusColor};font-weight:600">${STATUS_ES[r.status] ?? r.status}</td>
         <td>${PRIORITY_ES[r.priority] ?? r.priority ?? '—'}</td>
@@ -214,6 +215,7 @@ const styles = StyleSheet.create({
   },
   statusRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     paddingHorizontal: 16,
     paddingBottom: 8,
     gap: 6,
