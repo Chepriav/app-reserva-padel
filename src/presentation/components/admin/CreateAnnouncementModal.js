@@ -184,7 +184,7 @@ export function CreateAnnouncementModal({
               onPress={onClose}
               disabled={creating}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.cancelButtonText}>Cancelar</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

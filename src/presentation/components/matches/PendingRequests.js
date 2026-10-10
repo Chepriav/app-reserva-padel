@@ -43,7 +43,7 @@ function RequestRow({ request, onAccept, onReject }) {
       <View style={styles.info}>
         <Text style={styles.name}>{request.userName}</Text>
         <Text style={styles.apartment}>
-          Apartment {request.userApartment}
+          Vivienda {request.userApartment}
           {levelLabel && ` • ${levelLabel}`}
         </Text>
       </View>
