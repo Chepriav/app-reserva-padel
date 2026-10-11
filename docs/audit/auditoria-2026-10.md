@@ -132,3 +132,29 @@ La migración se probó en un PostgreSQL local con las mismas políticas que pro
 - `anuncios_destinatarios` y `notificaciones_usuario` permiten a cualquier vecino insertar notificaciones para otros (las genera la propia app). Riesgo bajo: spam interno.
 - La limpieza de reservas al borrar un usuario desde Admin falla en silencio (no hay política DELETE de admin en `reservas`).
 - Los límites (1 reserva por vivienda, 3 bloques, 7 días) solo se validan en la app. Para forzarlos en servidor haría falta un trigger en `reservas`.
+
+---
+
+## 6. Revisión profunda (octubre 2026, segunda pasada)
+
+Recorrido de la web a 375 y 320 px con datos simulados, más lectura del código de reservas, partidas, Tablón, admin e importación.
+
+**Causa común de varios fallos:** el commit `44a83c8` (feb. 2026) renombró identificadores de español a inglés y de paso cambió valores que la app compara y textos visibles.
+
+### Corregido
+| Área | Problema |
+|---|---|
+| Importación CSV | Rota del todo: leía `row.name` con cabecera `nombre` y enviaba `name`/`apartment` a la Edge Function, que espera `nombre`/`vivienda` |
+| Partidas | Las tarjetas nunca mostraban fecha y hora ni "Fecha a acordar"; al editar no se marcaba el tipo |
+| Partidas | Se podía aceptar por encima del máximo; la partida nunca pasaba a "completa"; el aviso de completa no contaba al creador; en clases contaba al profesor |
+| Tablón | Los anuncios "Aviso" se veían como "Información"; el vacío de Anuncios decía "Sin notificaciones" |
+| Textos | Espanglish ("Nuevo message", "Recipients", "Importar Users", "No hay timeSlots disponibles esta week"); "contrasena" |
+| Errores | Mensajes internos en inglés mostrados al usuario ("Error creating match"); ahora siempre en español |
+| Notificaciones | Fechas en bruto ("2026-10-11"); te notificaba a ti mismo al cancelar; el desplazamiento se avisaba como "cancelada" |
+| Seguridad | El PDF de Registros insertaba nombres sin escapar (XSS, mitigado por la CSP); nombre sin longitud máxima |
+| Visual | Emojis como iconos; mayúsculas gritando en alertas; "Semana del domingo…" → rango lunes–domingo; la cabecera de inicio podía ocultar el interruptor de bloqueo con nombres largos |
+| Base de datos | Dos vecinos podían reservar el mismo hueco a la vez; límites (1 activa, 30–90 min, 7 días) solo en la app → migración `20261011120000_reservation_integrity.sql` |
+
+### Pendiente
+- `notificaciones_usuario` permite a cualquier vecino crear notificaciones para otro (podría usarse para mensajes falsos en el Tablón). Arreglarlo bien requiere mover la creación de notificaciones a una función del servidor.
+- No se han podido revisar las políticas del bucket de fotos `Avatar` (no están en el repo).
