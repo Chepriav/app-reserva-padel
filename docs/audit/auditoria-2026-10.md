@@ -156,5 +156,19 @@ Recorrido de la web a 375 y 320 px con datos simulados, más lectura del código
 | Base de datos | Dos vecinos podían reservar el mismo hueco a la vez; límites (1 activa, 30–90 min, 7 días) solo en la app → migración `20261011120000_reservation_integrity.sql` |
 
 ### Pendiente
-- `notificaciones_usuario` permite a cualquier vecino crear notificaciones para otro (podría usarse para mensajes falsos en el Tablón). Arreglarlo bien requiere mover la creación de notificaciones a una función del servidor.
+- ~~`notificaciones_usuario` permite a cualquier vecino crear notificaciones para otro~~ → resuelto en la sección 7.
 - No se han podido revisar las políticas del bucket de fotos `Avatar` (no están en el repo).
+
+---
+
+## 7. Notificaciones falsas (octubre 2026)
+
+**Problema:** cualquier vecino podía crear notificaciones en el Tablón de otro (`notificaciones_usuario` con `WITH CHECK (true)`) y enviar avisos push con cualquier texto a cualquier usuario (`send-push-notification` solo comprobaba que el remitente estuviera aprobado). `anuncios_destinatarios` también aceptaba inserciones de cualquiera.
+
+**Fallo asociado:** la app insertaba con `RETURNING` y RLS solo deja ver las notificaciones propias, así que las notificaciones del Tablón entre vecinos (solicitudes, aceptaciones, cancelaciones) nunca llegaban a guardarse. Solo llegaba el push.
+
+**Solución** (migración `20261012120000_secure_user_notifications.sql`, más la Edge Function):
+- Las notificaciones se crean con la RPC `create_user_notification()`: el remitente debe estar aprobado y ser el propio usuario, un admin, o alguien que comparte partida o clase con el destinatario. Solo se aceptan tipos conocidos y textos acotados. Ya no se permite el `INSERT` directo.
+- `send-push-notification` aplica la misma regla con `can_notify()` (solo `service_role`).
+- `anuncios_destinatarios`: un vecino solo puede insertar su propia fila (marcar como leído); los admins, cualquiera.
+- Límite conocido: las notificaciones de desplazamiento entre viviendas (modo de 2 reservas, desactivado) no pasan la regla; el aviso de desplazamiento al iniciar sesión sigue funcionando.

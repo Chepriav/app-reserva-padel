@@ -30,17 +30,15 @@ export class SupabaseUserNotificationRepository implements UserNotificationRepos
 
   async create(data: CreateUserNotificationData): Promise<Result<UserNotification>> {
     try {
-      const { data: row, error } = await supabase
-        .from('notificaciones_usuario')
-        .insert({
-          usuario_id: data.userId,
-          tipo: notificationTypeToDb(data.type),
-          titulo: data.title,
-          mensaje: data.message,
-          datos: data.data ?? {},
-        })
-        .select()
-        .single();
+      // Server-side RPC: checks the sender may notify this user (RLS no
+      // longer allows direct inserts)
+      const { data: row, error } = await supabase.rpc('create_user_notification', {
+        p_usuario_id: data.userId,
+        p_tipo: notificationTypeToDb(data.type),
+        p_titulo: data.title,
+        p_mensaje: data.message,
+        p_datos: data.data ?? {},
+      });
 
       if (error) return fail(new InfrastructureError('Error creating notification', error));
       return ok(toDomain(row as Record<string, unknown>));
