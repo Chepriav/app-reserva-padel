@@ -243,6 +243,20 @@ export const getDayPillLabel = (dateStr, today = getTodayDate()) => {
   };
 };
 
+// Monday–Sunday range of the week containing dateStr: "5 – 11 de octubre" / "28 sept – 4 oct"
+export const formatWeekRange = (dateStr) => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  const dayOfWeek = date.getDay();
+  const monday = new Date(y, m - 1, d - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+  const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+  const month = (dt, style) => dt.toLocaleDateString('es-ES', { month: style }).replace('.', '');
+  if (monday.getMonth() === sunday.getMonth()) {
+    return `${monday.getDate()} – ${sunday.getDate()} de ${month(sunday, 'long')}`;
+  }
+  return `${monday.getDate()} ${month(monday, 'short')} – ${sunday.getDate()} ${month(sunday, 'short')}`;
+};
+
 // Legacy exports for backwards compatibility
 // TODO: Remove these aliases once all consumers are updated
 export const formatDateReadable = formatReadableDate;

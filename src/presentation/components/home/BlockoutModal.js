@@ -23,7 +23,7 @@ export function BlockoutModal({
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>🔒 Bloquear franjas</Text>
+          <Text style={styles.modalTitle}>Bloquear franjas</Text>
           <Text style={styles.modalSubtitle}>
             {countTimeSlots} franja{countTimeSlots > 1 ? 's' : ''} seleccionada{countTimeSlots > 1 ? 's' : ''}
           </Text>

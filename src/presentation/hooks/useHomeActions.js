@@ -165,10 +165,10 @@ export function useHomeActions({
 
       title = 'Desplazar y Reservar';
       message = `¿Reservar ${courtSelected.name} el ${formatDateReadable(date)} de ${startTime} a ${endTime}?\n\n`;
-      message += `⚠️ ATENCIÓN: Se cancelarán las reservas provisionales de:\n`;
+      message += `Atención: se cancelarán las reservas provisionales de:\n`;
       message += `• Vivienda(s): ${apartmentsDisplaced.join(', ')}\n`;
       message += `• Horario(s): ${hoursDisplaced}\n\n`;
-      message += `Tu reserva será GARANTIZADA.`;
+      message += `Tu reserva quedará como garantizada.`;
     }
 
     showAlertaPersonalizada({
@@ -193,7 +193,7 @@ export function useHomeActions({
 
             if (result.success) {
               const successMessage = hasDisplacements
-                ? 'Tu reserva GARANTIZADA se ha creado correctamente.\nLas reservas provisionales anteriores han sido desplazadas.'
+                ? 'Tu reserva garantizada se ha creado correctamente.\nLas reservas provisionales anteriores han sido desplazadas.'
                 : 'Tu reserva se ha creado correctamente';
               showAlerta('¡Reserva confirmada!', successMessage);
               limpiarSelection();

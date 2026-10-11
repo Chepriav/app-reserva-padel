@@ -9,10 +9,11 @@ export function HomeHeader({ userName, isAdmin, blockoutMode, onModoBlockoutChan
   return (
     <View style={[styles.header, blockoutMode && styles.headerModoBlockout]}>
       <View style={styles.headerContent}>
-        <View>
-          <Text style={styles.greeting}>Hola, {userName}</Text>
-          <Text style={styles.subtitle}>
-            {blockoutMode ? '🔒 Modo Bloqueo activo' : 'Selecciona pista y horario'}
+        {/* flex: 1 keeps the admin switch visible with long names */}
+        <View style={styles.headerText}>
+          <Text style={styles.greeting} numberOfLines={1}>Hola, {userName?.trim().split(/\s+/)[0]}</Text>
+          <Text style={styles.subtitle} numberOfLines={1}>
+            {blockoutMode ? 'Modo bloqueo activo' : 'Selecciona pista y horario'}
           </Text>
         </View>
         {isAdmin && (
@@ -21,8 +22,10 @@ export function HomeHeader({ userName, isAdmin, blockoutMode, onModoBlockoutChan
             <Switch
               value={blockoutMode}
               onValueChange={onModoBlockoutChange}
-              trackColor={{ false: '#767577', true: colors.blocked }}
-              thumbColor={blockoutMode ? '#fff' : '#f4f3f4'}
+              trackColor={{ false: '#767577', true: 'rgba(255, 255, 255, 0.55)' }}
+              thumbColor="#fff"
+              activeThumbColor="#fff"
+              accessibilityLabel="Modo bloqueo"
             />
           </View>
         )}
@@ -44,6 +47,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  headerText: {
+    flex: 1,
+    minWidth: 0,
+    marginRight: 12,
   },
   greeting: {
     fontSize: 24,

@@ -20,6 +20,7 @@ import { useProfileNotifications } from '../hooks/profile/useProfileNotification
 import { useApartmentChange } from '../hooks/profile/useApartmentChange';
 import { useProfileActions } from '../hooks/profile/useProfileActions';
 import { authService } from '../../services/authService.supabase';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function ProfileScreen() {
   const { user, logout, updateProfile, refreshUser, notificationMessage, clearNotificationMessage } = useAuth();
@@ -126,7 +127,10 @@ export default function ProfileScreen() {
           {notifications.enablingNotifications ? (
             <ActivityIndicator color="#fff" size="small" />
           ) : (
-            <Text style={styles.notificationButtonText}>🔔 Activar notificaciones</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Ionicons name="notifications-outline" size={18} color="#fff" />
+              <Text style={styles.notificationButtonText}>Activar notificaciones</Text>
+            </View>
           )}
         </TouchableOpacity>
       )}

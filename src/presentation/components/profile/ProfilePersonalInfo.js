@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet 
 import { colors } from '../../../constants/colors';
 import { ApartmentSelector } from '../ApartmentSelector';
 import { SKILL_LEVELS, isApartmentValid, formatApartment } from '../../../constants/config';
+import { Ionicons } from '@expo/vector-icons';
 
 export function ProfilePersonalInfo({
   user, editMode,
@@ -49,7 +50,7 @@ export function ProfilePersonalInfo({
         <View style={styles.infoRowVertical}>
           <View style={styles.apartmentLabelRow}>
             <Text style={styles.infoLabel}>Vivienda</Text>
-            {!user?.isAdmin && <Text style={styles.apartmentLocked}>🔒</Text>}
+            {!user?.isAdmin && <Ionicons name="lock-closed" size={14} color={colors.textSecondary} />}
           </View>
           {editMode && user?.isAdmin ? (
             <View style={styles.apartmentSelectorContainer}>

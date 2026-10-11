@@ -156,7 +156,7 @@ export function useBlockouts({ selectedCourt, userId, showAlerta, onReloadSchedu
   // Show blockout reason
   const handleTapBlocked = useCallback((timeSlot) => {
     showAlerta(
-      '🔒 Horario Bloqueado',
+      'Horario bloqueado',
       timeSlot.blockoutReason || 'Bloqueado por administración'
     );
   }, [showAlerta]);
