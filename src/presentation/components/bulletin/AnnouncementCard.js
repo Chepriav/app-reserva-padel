@@ -15,7 +15,7 @@ const TYPE_CONFIG = {
     color: colors.announcementInfo,
     label: 'Información',
   },
-  notice: {
+  warning: {
     icon: 'warning',
     color: colors.announcementNotice,
     label: 'Aviso',

@@ -58,7 +58,7 @@ describe('SupabaseDisplacementNotifier — notifyApartmentDisplacement', () => {
     expect(pushDelivery.sendToUser).toHaveBeenCalledWith(
       'u1',
       'Reserva desplazada',
-      expect.stringContaining('2027-03-01'),
+      expect.stringContaining('lunes 1 de marzo a las 10:00'),
       expect.any(Object),
     );
   });

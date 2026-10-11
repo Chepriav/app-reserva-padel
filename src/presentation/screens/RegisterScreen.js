@@ -139,6 +139,7 @@ export default function RegisterScreen({ navigation }) {
               placeholderTextColor={colors.textSecondary}
               style={styles.input}
               placeholder="Juan Pérez"
+              maxLength={60}
               value={name}
               onChangeText={setName}
               autoCapitalize="words"

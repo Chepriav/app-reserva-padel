@@ -158,3 +158,25 @@ describe('CancelMatchByReservation', () => {
     );
   });
 });
+
+describe('CancelMatchByReservation — excludeUserId', () => {
+  it('does not notify the user who cancelled', async () => {
+    const { CancelMatchByReservation } = require('../../src/domain/useCases/CancelMatchByReservation');
+    const { ok } = require('../../src/shared/types/Result');
+    const repo = {
+      cancelByReservationId: jest.fn().mockResolvedValue(ok({
+        matchId: 'm-1',
+        match: {
+          id: 'm-1', creatorId: 'creator', creatorName: 'Ana', date: '2027-03-01', startTime: '10:00',
+          isClass: false, players: [{ userId: 'p2', status: 'confirmed' }],
+        },
+      })),
+    };
+    const notifier = { notifyMatchCancelledByReservation: jest.fn().mockResolvedValue(ok(undefined)) };
+    const useCase = new CancelMatchByReservation(repo, notifier);
+
+    await useCase.execute('r-1', 'reserva_cancelada', 'creator');
+
+    expect(notifier.notifyMatchCancelledByReservation.mock.calls[0][0]).toEqual(['p2']);
+  });
+});

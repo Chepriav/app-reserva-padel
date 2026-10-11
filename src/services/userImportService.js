@@ -47,9 +47,10 @@ async function importSingleUser(user) {
 
   const response = await supabase.functions.invoke('create-user', {
     body: {
+      // Field names expected by the create-user Edge Function
       email: user.email,
-      name: user.name,
-      apartment: user.apartment,
+      nombre: user.name,
+      vivienda: user.apartment,
       redirectTo,
     },
   });

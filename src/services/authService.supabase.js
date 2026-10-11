@@ -4,6 +4,7 @@
  * Delegates to domain use cases while maintaining the legacy API.
  * Consumers (AuthContext, screens, hooks) need zero changes.
  */
+import { translateError } from './errorMessages';
 import {
   loginUser,
   registerUser,
@@ -214,7 +215,7 @@ export const authService = {
     const domainUpdates = fromLegacyFormat(safeUpdates);
     const result = await updateProfile.execute(userId, domainUpdates);
     if (!result.success) {
-      return { success: false, error: result.error.message || 'Error al actualizar perfil' };
+      return { success: false, error: translateError(result.error, 'No se pudo actualizar el perfil.') };
     }
     return { success: true, data: toLegacyFormat(result.value) };
   },

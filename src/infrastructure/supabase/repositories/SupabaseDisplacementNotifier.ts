@@ -5,6 +5,7 @@ import type { UserRepository } from '@domain/ports/repositories/UserRepository';
 import type { CreateUserNotification } from '@domain/useCases/CreateUserNotification';
 import type { PushDeliveryPort } from '@domain/ports/repositories/PushDeliveryPort';
 import type { NotificationType } from '@domain/entities/UserNotification';
+import { formatNotificationDate, formatNotificationTime } from '../helpers/notificationFormat';
 
 /**
  * Real implementation of DisplacementNotifier.
@@ -28,7 +29,7 @@ export class SupabaseDisplacementNotifier implements DisplacementNotifier {
     _displacedByApartment: string,
   ): Promise<Result<void>> {
     const title = 'Reserva desplazada';
-    const body = `La reserva del ${date} a las ${startTime} en ${courtName} ha sido desplazada.`;
+    const body = `Tu reserva del ${formatNotificationDate(date)} a las ${formatNotificationTime(startTime)} en ${courtName} ha sido desplazada por otra vivienda.`;
 
     await this.notifyApartment(apartment, 'displacement', title, body, {
       date: date,
@@ -47,7 +48,7 @@ export class SupabaseDisplacementNotifier implements DisplacementNotifier {
     courtName: string,
   ): Promise<Result<void>> {
     const title = 'Reserva cancelada por bloqueo';
-    const body = `Tu reserva del ${date} a las ${startTime} en ${courtName} ha sido cancelada por el administrador.`;
+    const body = `Tu reserva del ${formatNotificationDate(date)} a las ${formatNotificationTime(startTime)} en ${courtName} ha sido cancelada por el administrador.`;
 
     await this.notifyApartment(apartment, 'blockout_cancellation', title, body, {
       date: date,

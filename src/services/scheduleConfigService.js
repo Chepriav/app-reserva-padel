@@ -4,6 +4,7 @@
  * Delegates to domain use cases while maintaining the legacy API.
  * Consumers (reservationsService, ScheduleConfigSection) need zero changes.
  */
+import { translateError } from './errorMessages';
 import {
   getScheduleConfig,
   updateScheduleConfig,
@@ -40,7 +41,7 @@ export const scheduleConfigService = {
     const result = await updateScheduleConfig.execute(userId, domainConfig);
 
     if (!result.success) {
-      return { success: false, error: result.error.message || 'Error al actualizar configuración' };
+      return { success: false, error: translateError(result.error, 'No se pudo guardar la configuración de horarios.') };
     }
 
     return { success: true, data: toLegacyFormat(result.value) };

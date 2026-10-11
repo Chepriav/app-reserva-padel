@@ -27,32 +27,11 @@ import {
   toLegacyFormat as reservationToLegacy,
   fromLegacyCreateData,
 } from '../infrastructure/supabase/mappers/reservationMapper';
+import { translateError } from './errorMessages';
 import { toLegacyFormat as courtToLegacy } from '../infrastructure/supabase/mappers/courtMapper';
 import { toLegacyFormat as blockoutToLegacy } from '../infrastructure/supabase/mappers/blockoutMapper';
 import { toLegacyFormat as availabilityToLegacy } from '../infrastructure/supabase/mappers/availabilityMapper';
 import { toLegacyFormat as notificationToLegacy } from '../infrastructure/supabase/mappers/displacementNotificationMapper';
-
-/**
- * Translates domain AppError to Spanish user-facing message.
- */
-const ERROR_MESSAGES = {
-  DISPLACEMENT_REQUIRED: null, // handled separately
-  RESERVATION_LIMIT_EXCEEDED: 'Tu vivienda ya tiene el máximo de reservas activas',
-  RESERVATION_SLOT_UNAVAILABLE: 'El horario seleccionado no está disponible',
-  RESERVATION_TOO_EARLY: 'No se puede reservar con tan poca anticipación',
-  RESERVATION_TOO_FAR_AHEAD: 'No se puede reservar con tanta anticipación',
-  RESERVATION_NOT_FOUND: 'Reserva no encontrada',
-  RESERVATION_ALREADY_CANCELLED: 'Esta reserva ya fue cancelada',
-  RESERVATION_PERMISSION_ERROR: 'No tienes permisos para esta operación',
-  COURT_NOT_FOUND: 'Pista no encontrada',
-  BLOCKOUT_CONFLICT: 'Este horario ya está bloqueado',
-  BLOCKOUT_NOT_FOUND: 'Bloqueo no encontrado',
-  INFRASTRUCTURE_ERROR: 'Error del servidor. Intenta de nuevo',
-};
-
-const translateError = (error) => {
-  return ERROR_MESSAGES[error?.code] || error?.message || 'Ha ocurrido un error. Intenta de nuevo';
-};
 
 export const reservationsService = {
   /**

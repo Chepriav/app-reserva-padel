@@ -11,9 +11,31 @@ import type {
 } from '@domain/entities/Reservation';
 import {
   InfrastructureError,
+  ReservationLimitExceededError,
+  ReservationSlotUnavailableError,
+  ReservationTooEarlyError,
+  ReservationTooFarAheadError,
+  ValidationError,
 } from '@domain/errors/DomainErrors';
+import type { AppError } from '@shared/types/Result';
 import { toDomain, toDbInsert, toConversionInfoDomain, priorityToDb } from '../mappers/reservationMapper';
 import { ReservationRpcHelper } from './ReservationRpcHelper';
+
+/**
+ * Translates database rule violations (exclusion constraint / reservation
+ * rules trigger) into domain errors, so users get a meaningful message.
+ */
+function mapInsertError(error: { code?: string; message?: string }): AppError {
+  const message = error.message ?? '';
+  if (error.code === '23P01') return new ReservationSlotUnavailableError('Slot already taken');
+  if (error.code === '23514') {
+    if (message.includes('reserva activa')) return new ReservationLimitExceededError(message);
+    if (message.includes('antelación')) return new ReservationTooFarAheadError(message);
+    if (message.includes('pasado')) return new ReservationTooEarlyError(message);
+    return new ValidationError(message);
+  }
+  return new InfrastructureError('Error creating reservation', error);
+}
 
 export class SupabaseReservationRepository implements ReservationRepository {
   private readonly rpcHelper = new ReservationRpcHelper();
@@ -153,11 +175,11 @@ export class SupabaseReservationRepository implements ReservationRepository {
             .select()
             .single();
           if (retry.error) {
-            return fail(new InfrastructureError('Error creating reservation', retry.error));
+            return fail(mapInsertError(retry.error));
           }
           return ok(toDomain(retry.data as Record<string, unknown>));
         }
-        return fail(new InfrastructureError('Error creating reservation', error));
+        return fail(mapInsertError(error));
       }
 
       return ok(toDomain(row as Record<string, unknown>));

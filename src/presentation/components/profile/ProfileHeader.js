@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, Platform, StyleSheet } from 'react-native';
 import { colors } from '../../../constants/colors';
+import { Ionicons } from '@expo/vector-icons';
 
 export function ProfileHeader({ user, editMode, profilePhoto, imageError, onImageError, onPickImage, onDeleteImage, onEditPress }) {
   const initials = user?.name
@@ -24,7 +25,7 @@ export function ProfileHeader({ user, editMode, profilePhoto, imageError, onImag
         )}
         {editMode && (
           <View style={styles.cameraOverlay}>
-            <Text style={styles.cameraIcon}>📷</Text>
+            <Ionicons name="camera" size={16} color="#fff" />
           </View>
         )}
       </TouchableOpacity>
@@ -32,7 +33,7 @@ export function ProfileHeader({ user, editMode, profilePhoto, imageError, onImag
       {editMode && (
         <View style={styles.photoButtons}>
           <TouchableOpacity style={styles.photoButton} onPress={onPickImage}>
-            <Text style={styles.photoButtonText}>{profilePhoto ? 'Cambiar Foto' : 'Añadir Foto'}</Text>
+            <Text style={styles.photoButtonText}>{profilePhoto ? 'Cambiar foto' : 'Añadir foto'}</Text>
           </TouchableOpacity>
           {profilePhoto && (
             <TouchableOpacity style={[styles.photoButton, styles.deletePhotoButton]} onPress={onDeleteImage}>
@@ -47,7 +48,10 @@ export function ProfileHeader({ user, editMode, profilePhoto, imageError, onImag
 
       {!editMode && (
         <TouchableOpacity style={styles.editButton} onPress={onEditPress}>
-          <Text style={styles.editButtonText}>✏️ Editar perfil</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="create-outline" size={16} color="#fff" />
+            <Text style={styles.editButtonText}>Editar perfil</Text>
+          </View>
         </TouchableOpacity>
       )}
     </View>

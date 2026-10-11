@@ -10,10 +10,17 @@ import type { CancelMatchByReservation } from '@domain/useCases/CancelMatchByRes
 export class DomainMatchCancellationAdapter implements MatchCancellationPort {
   constructor(private readonly cancelMatchByReservationUseCase: CancelMatchByReservation) {}
 
-  async cancelMatchByReservation(reservationId: string): Promise<Result<void>> {
+  async cancelMatchByReservation(
+    reservationId: string,
+    options: { reason?: 'reserva_cancelada' | 'reserva_desplazada'; excludeUserId?: string } = {},
+  ): Promise<Result<void>> {
     // Fire-and-forget: errors are ignored so reservation cancellation proceeds
     try {
-      await this.cancelMatchByReservationUseCase.execute(reservationId, 'reserva_cancelada');
+      await this.cancelMatchByReservationUseCase.execute(
+        reservationId,
+        options.reason ?? 'reserva_cancelada',
+        options.excludeUserId,
+      );
     } catch {
       // Non-critical: ignore errors
     }

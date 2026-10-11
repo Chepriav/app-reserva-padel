@@ -113,24 +113,55 @@ describe('AcceptRequest', () => {
     expect(mockNotifier.scheduleReminders).toHaveBeenCalled();
   });
 
-  it('notifies match full when confirmed count reaches maxParticipants', async () => {
+  it('closes and notifies when the creator plus confirmed players reach maxParticipants', async () => {
     const confirmedPlayers = [
       makePlayer({ id: 'p-1', userId: 'user-2' }),
       makePlayer({ id: 'p-2', userId: 'user-3' }),
       makePlayer({ id: 'p-3', userId: 'user-4' }),
-      makePlayer({ id: 'p-4', userId: 'user-5' }),
     ];
     const fullMatch = makeMatch({ maxParticipants: 4, players: confirmedPlayers });
 
     mockMatchRepository.findById
       .mockResolvedValueOnce(ok(makeMatch()))
       .mockResolvedValueOnce(ok(fullMatch));
+    mockMatchRepository.close.mockResolvedValue(ok(undefined));
     mockPlayerRepository.updateStatus.mockResolvedValue(ok(makePlayer()));
 
     const result = await useCase.execute('p-1', 'm-1', 'creator-1');
 
     expect(result.success).toBe(true);
+    expect(mockMatchRepository.close).toHaveBeenCalledWith('m-1');
     expect(mockNotifier.notifyMatchFull).toHaveBeenCalled();
+  });
+
+  it('does not close a class until confirmed students reach maxParticipants', async () => {
+    const students = [makePlayer({ id: 'p-1' }), makePlayer({ id: 'p-2', userId: 'user-3' })];
+    mockMatchRepository.findById
+      .mockResolvedValueOnce(ok(makeMatch({ isClass: true, maxParticipants: 3 })))
+      .mockResolvedValueOnce(ok(makeMatch({ isClass: true, maxParticipants: 3, players: students })));
+    mockPlayerRepository.updateStatus.mockResolvedValue(ok(makePlayer()));
+
+    const result = await useCase.execute('p-1', 'm-1', 'creator-1');
+
+    expect(result.success).toBe(true);
+    expect(mockMatchRepository.close).not.toHaveBeenCalled();
+  });
+
+  it('rejects accepting when the match is already full', async () => {
+    const confirmedPlayers = [
+      makePlayer({ id: 'p-1', userId: 'user-2' }),
+      makePlayer({ id: 'p-2', userId: 'user-3' }),
+      makePlayer({ id: 'p-3', userId: 'user-4' }),
+    ];
+    mockMatchRepository.findById.mockResolvedValue(
+      ok(makeMatch({ maxParticipants: 4, players: confirmedPlayers })),
+    );
+
+    const result = await useCase.execute('p-9', 'm-1', 'creator-1');
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.code).toBe('MATCH_FULL');
+    expect(mockPlayerRepository.updateStatus).not.toHaveBeenCalled();
   });
 
   it('returns MatchNotFoundError when match does not exist', async () => {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { colors } from '../../../constants/colors';
-import { formatReadableDate, getBookableDays, getDayPillLabel, getTodayDate } from '../../../utils/dateHelpers';
+import { formatReadableDate, formatWeekRange, getBookableDays, getDayPillLabel, getTodayDate } from '../../../utils/dateHelpers';
 
 const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 
@@ -70,7 +70,7 @@ export function DateSelector({ dateSelected, viewActual, onCambiarDate, onSelect
         <Text style={styles.dateText}>
           {viewActual === 'dia'
             ? formatReadableDate(dateSelected)
-            : 'Semana del ' + formatReadableDate(dateSelected)}
+            : 'Semana del ' + formatWeekRange(dateSelected)}
         </Text>
       </View>
 

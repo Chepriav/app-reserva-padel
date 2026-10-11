@@ -69,7 +69,7 @@ describe('CancelReservation', () => {
 
       expect(result.success).toBe(true);
       expect(mockReservationRepository.cancel).toHaveBeenCalledWith('r-1');
-      expect(mockMatchCancellation.cancelMatchByReservation).toHaveBeenCalledWith('r-1');
+      expect(mockMatchCancellation.cancelMatchByReservation).toHaveBeenCalledWith('r-1', expect.objectContaining({ excludeUserId: expect.any(String) }));
     });
 
     it('fails when userId does not match', async () => {

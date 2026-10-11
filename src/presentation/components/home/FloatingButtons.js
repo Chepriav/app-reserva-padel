@@ -51,7 +51,7 @@ export function BlockoutButtons({
             disabled={disabled}
           >
             <Text style={styles.blockButtonText}>
-              🔒 Bloquear {countBlock} franja{countBlock > 1 ? 's' : ''}
+              Bloquear {countBlock} franja{countBlock > 1 ? 's' : ''}
             </Text>
           </TouchableOpacity>
         </View>
@@ -76,7 +76,7 @@ export function BlockoutButtons({
             disabled={disabled}
           >
             <Text style={styles.unblockButtonText}>
-              🔓 Desbloquear {countUnblock} franja{countUnblock > 1 ? 's' : ''}
+              Desbloquear {countUnblock} franja{countUnblock > 1 ? 's' : ''}
             </Text>
           </TouchableOpacity>
         </View>

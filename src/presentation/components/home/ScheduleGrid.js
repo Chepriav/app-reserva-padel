@@ -34,7 +34,7 @@ export function DayScheduleGrid({
   onTimeSlotPress,
 }) {
   if (!timeSlots || timeSlots.length === 0) {
-    return <Text style={styles.emptyText}>No hay timeSlots disponibles</Text>;
+    return <Text style={styles.emptyText}>No hay horarios disponibles</Text>;
   }
 
   return (
@@ -98,12 +98,12 @@ export function WeekScheduleGrid({
   onTimeSlotPress,
 }) {
   if (!timeSlotsSemanales) {
-    return <Text style={styles.emptyText}>No hay timeSlots disponibles esta week</Text>;
+    return <Text style={styles.emptyText}>No hay horarios disponibles esta semana</Text>;
   }
   const dates = Object.keys(timeSlotsSemanales);
 
   if (dates.length === 0) {
-    return <Text style={styles.emptyText}>No hay timeSlots disponibles esta week</Text>;
+    return <Text style={styles.emptyText}>No hay horarios disponibles esta semana</Text>;
   }
 
   return (

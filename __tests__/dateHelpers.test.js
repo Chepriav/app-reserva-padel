@@ -362,3 +362,14 @@ describe('getBookableDays / getDayPillLabel', () => {
     expect(later.top).not.toBe('Hoy');
   });
 });
+
+describe('formatWeekRange', () => {
+  const { formatWeekRange } = require('../src/utils/dateHelpers');
+  it('returns the Monday–Sunday range of the week', () => {
+    expect(formatWeekRange('2026-10-11')).toBe('5 – 11 de octubre'); // Sunday
+    expect(formatWeekRange('2026-10-05')).toBe('5 – 11 de octubre'); // Monday
+  });
+  it('handles weeks spanning two months', () => {
+    expect(formatWeekRange('2026-10-01')).toMatch(/^28 sept? – 4 oct$/);
+  });
+});

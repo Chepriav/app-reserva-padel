@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors } from '../../../constants/colors';
 import { hasSlotEnded } from '../../../utils/dateHelpers';
+import { Ionicons } from '@expo/vector-icons';
 
 /**
  * Individual time slot chip with all visual states
@@ -113,7 +114,7 @@ export function TimeSlotChip({
 
       {showIconoBlocked && (
         <View style={styles.blockedIcon}>
-          <Text style={styles.blockedIconText}>🔒</Text>
+          <Ionicons name="lock-closed" size={10} color="#fff" />
         </View>
       )}
 

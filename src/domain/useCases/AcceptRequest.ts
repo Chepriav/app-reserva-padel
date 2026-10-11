@@ -1,9 +1,19 @@
+import type { Match } from '@domain/entities/Match';
 import type { Result } from '@shared/types/Result';
 import { ok, fail } from '@shared/types/Result';
 import type { MatchRepository } from '@domain/ports/repositories/MatchRepository';
 import type { PlayerRepository } from '@domain/ports/repositories/PlayerRepository';
 import type { MatchNotifier } from '@domain/ports/repositories/MatchNotifier';
-import { MatchNotFoundError, MatchPermissionError } from '@domain/errors/DomainErrors';
+import { MatchNotFoundError, MatchPermissionError, MatchFullError } from '@domain/errors/DomainErrors';
+
+/**
+ * Spots taken: confirmed players, plus the creator in regular matches
+ * (in classes the creator is the teacher and maxParticipants counts students).
+ */
+const occupiedSpots = (match: Match): number => {
+  const confirmed = match.players.filter((p) => p.status === 'confirmed').length;
+  return match.isClass ? confirmed : confirmed + 1;
+};
 
 export class AcceptRequest {
   constructor(
@@ -20,6 +30,10 @@ export class AcceptRequest {
     if (!match) return fail(new MatchNotFoundError());
     if (match.creatorId !== requesterId) {
       return fail(new MatchPermissionError('Only the match creator can accept requests'));
+    }
+
+    if (match.status === 'full' || occupiedSpots(match) >= match.maxParticipants) {
+      return fail(new MatchFullError());
     }
 
     const updateResult = await this.playerRepository.updateStatus(playerId, 'confirmed');
@@ -41,8 +55,8 @@ export class AcceptRequest {
     // Re-fetch to check if now full
     const refreshed = await this.matchRepository.findById(matchId);
     if (refreshed.success && refreshed.value) {
-      const confirmedCount = refreshed.value.players.filter((p) => p.status === 'confirmed').length;
-      if (confirmedCount >= refreshed.value.maxParticipants) {
+      if (occupiedSpots(refreshed.value) >= refreshed.value.maxParticipants) {
+        await this.matchRepository.close(matchId);
         const playerIds = refreshed.value.players
           .filter((p) => p.status === 'confirmed' && p.userId)
           .map((p) => p.userId!);

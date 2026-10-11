@@ -118,7 +118,7 @@ export default function ResetPasswordScreen({ navigation }) {
       setAlertConfig({
         visible: true,
         title: 'Error',
-        message: 'La contrasena debe tener al menos 6 caracteres',
+        message: 'La contraseña debe tener al menos 6 caracteres',
         buttons: [{ text: 'OK', onPress: () => {} }],
       });
       return;
@@ -128,7 +128,7 @@ export default function ResetPasswordScreen({ navigation }) {
       setAlertConfig({
         visible: true,
         title: 'Error',
-        message: 'Las contrasenas no coinciden',
+        message: 'Las contraseñas no coinciden',
         buttons: [{ text: 'OK', onPress: () => {} }],
       });
       return;
@@ -144,8 +144,8 @@ export default function ResetPasswordScreen({ navigation }) {
 
       setAlertConfig({
         visible: true,
-        title: 'Contrasena actualizada',
-        message: 'Tu contrasena ha sido actualizada correctamente.',
+        title: 'Contraseña actualizada',
+        message: 'Tu contraseña ha sido actualizada correctamente.',
         buttons: [
           {
             text: 'Continuar',
@@ -210,13 +210,13 @@ export default function ResetPasswordScreen({ navigation }) {
     >
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Text style={styles.title}>Restablecer Contrasena</Text>
-          <Text style={styles.subtitle}>Introduce una nueva contrasena</Text>
+          <Text style={styles.title}>Restablecer Contraseña</Text>
+          <Text style={styles.subtitle}>Introduce una nueva contraseña</Text>
         </View>
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Nueva contrasena</Text>
+            <Text style={styles.label}>Nueva contraseña</Text>
             <TextInput
               placeholderTextColor={colors.textSecondary}
               style={styles.input}
@@ -229,7 +229,7 @@ export default function ResetPasswordScreen({ navigation }) {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Confirmar contrasena</Text>
+            <Text style={styles.label}>Confirmar contraseña</Text>
             <TextInput
               placeholderTextColor={colors.textSecondary}
               style={styles.input}
@@ -249,7 +249,7 @@ export default function ResetPasswordScreen({ navigation }) {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>Actualizar contrasena</Text>
+              <Text style={styles.buttonText}>Actualizar contraseña</Text>
             )}
           </TouchableOpacity>
         </View>

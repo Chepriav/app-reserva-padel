@@ -75,7 +75,9 @@ export const canMakeReservation = (user, newReservation, currentReservations) =>
     return {
       valid: false,
       valido: false,
-      error: `Tu vivienda ya tiene ${RESERVATION_LIMITS.maxActiveReservations} reservas activas`,
+      error: RESERVATION_LIMITS.maxActiveReservations === 1
+        ? 'Tu vivienda ya tiene una reserva activa. Cancélala en «Mis Reservas» si quieres cambiarla.'
+        : `Tu vivienda ya tiene ${RESERVATION_LIMITS.maxActiveReservations} reservas activas.`,
     };
   }
 
@@ -108,6 +110,8 @@ export const validateRegistration = (data) => {
 
   if (!data.name || data.name.trim().length < 2) {
     errors.name = 'El nombre debe tener al menos 2 caracteres';
+  } else if (data.name.trim().length > 60) {
+    errors.name = 'El nombre no puede tener más de 60 caracteres';
   }
 
   if (!validateEmail(data.email)) {
@@ -146,6 +150,8 @@ export const validateProfile = (data) => {
 
   if (!data.name || data.name.trim().length < 2) {
     errors.name = 'El nombre debe tener al menos 2 caracteres';
+  } else if (data.name.trim().length > 60) {
+    errors.name = 'El nombre no puede tener más de 60 caracteres';
   }
 
   const phone = data.phone ?? data.telefono;

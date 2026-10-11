@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../../constants/colors';
 
-export function EmptyState({ type = 'notificaciones' }) {
+export function EmptyState({ type = 'notifications' }) {
   const config = {
     notifications: {
       icon: 'notifications-off-outline',
@@ -17,7 +17,9 @@ export function EmptyState({ type = 'notificaciones' }) {
     },
   };
 
-  const { icon, title, message } = config[type] || config.notifications;
+  // Screens still pass the Spanish tab names
+  const key = { notificaciones: 'notifications', anuncios: 'announcements' }[type] ?? type;
+  const { icon, title, message } = config[key] || config.notifications;
 
   return (
     <View style={styles.container}>
