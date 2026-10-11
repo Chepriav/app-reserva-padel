@@ -46,7 +46,7 @@ export class CancelReservation {
     if (!cancelResult.success) return cancelResult;
 
     // Cancel linked match (fire-and-forget)
-    this.matchCancellation.cancelMatchByReservation(reservationId);
+    this.matchCancellation.cancelMatchByReservation(reservationId, { excludeUserId: userId });
 
     return ok(undefined);
   }

@@ -123,8 +123,8 @@ export const csvImportService = {
   validateCSVRow(row, lineNumber) {
     const errors = [];
 
-    // Validate nombre
-    const name = row.name?.trim();
+    // Validate nombre (header documented as "nombre"; "name" accepted too)
+    const name = (row.nombre ?? row.name)?.trim();
     if (!name) {
       errors.push(`Línea ${lineNumber}: El nombre es obligatorio`);
     } else if (name.length < 2) {

@@ -71,7 +71,7 @@ export function SelectorRecipients({
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Cargando users...</Text>
+        <Text style={styles.loadingText}>Cargando usuarios...</Text>
       </View>
     );
   }
@@ -113,7 +113,7 @@ export function SelectorRecipients({
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>No se encontraron users</Text>
+          <Text style={styles.emptyText}>No se encontraron usuarios</Text>
         }
       />
     </View>

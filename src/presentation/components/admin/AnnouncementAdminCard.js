@@ -13,9 +13,9 @@ const TYPE_CONFIG = {
   info: {
     icon: 'information-circle',
     color: colors.announcementInfo,
-    label: 'Info',
+    label: 'Información',
   },
-  notice: {
+  warning: {
     icon: 'warning',
     color: colors.announcementNotice,
     label: 'Aviso',

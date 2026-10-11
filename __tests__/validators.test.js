@@ -84,7 +84,7 @@ describe('canMakeReservation', () => {
 
     const result = canMakeReservation(user, newReservation, currentReservations);
     expect(result.valid).toBe(false);
-    expect(result.error).toContain('1 reserva');
+    expect(result.error).toContain('una reserva activa');
   });
 
   test('rechaza si ya tiene reserva a la misma hora', () => {
@@ -348,3 +348,11 @@ function getFutureDate(daysAhead) {
   date.setDate(date.getDate() + daysAhead);
   return date.toISOString().split('T')[0];
 }
+
+describe('name length', () => {
+  const { validateRegistration } = require('../src/utils/validators');
+  it('rejects names longer than 60 characters', () => {
+    const r = validateRegistration({ name: 'x'.repeat(61), email: 'a@b.co', phone: '600000000', apartment: '1-1-A', password: '123456' });
+    expect(r.errors.name).toMatch(/60/);
+  });
+});

@@ -76,7 +76,7 @@ export function CreateAnnouncementModal({
       >
         <View style={styles.container}>
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Nuevo message</Text>
+            <Text style={styles.headerTitle}>Nuevo mensaje</Text>
             <TouchableOpacity onPress={onClose} disabled={creating}>
               <Ionicons name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -93,7 +93,7 @@ export function CreateAnnouncementModal({
               editable={!creating}
             />
 
-            <Text style={styles.label}>Message</Text>
+            <Text style={styles.label}>Mensaje</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               placeholder="Escribe el mensaje..."
@@ -106,7 +106,7 @@ export function CreateAnnouncementModal({
               editable={!creating}
             />
 
-            <Text style={styles.label}>Type</Text>
+            <Text style={styles.label}>Tipo</Text>
             <View style={styles.typesContainer}>
               {TYPES_ANNOUNCEMENT.map(t => (
                 <TouchableOpacity
@@ -135,7 +135,7 @@ export function CreateAnnouncementModal({
               ))}
             </View>
 
-            <Text style={styles.label}>Recipients</Text>
+            <Text style={styles.label}>Destinatarios</Text>
             <View style={styles.recipientsOptions}>
               <TouchableOpacity
                 style={[
@@ -148,7 +148,7 @@ export function CreateAnnouncementModal({
                 <View style={[styles.radio, recipients === 'todos' && styles.radioSelected]}>
                   {recipients === 'todos' && <View style={styles.radioInner} />}
                 </View>
-                <Text style={styles.optionLabel}>Todos los users</Text>
+                <Text style={styles.optionLabel}>Todos los usuarios</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -162,7 +162,7 @@ export function CreateAnnouncementModal({
                 <View style={[styles.radio, recipients === 'seleccionados' && styles.radioSelected]}>
                   {recipients === 'seleccionados' && <View style={styles.radioInner} />}
                 </View>
-                <Text style={styles.optionLabel}>Select users</Text>
+                <Text style={styles.optionLabel}>Seleccionar usuarios</Text>
               </TouchableOpacity>
             </View>
 
@@ -195,7 +195,7 @@ export function CreateAnnouncementModal({
               {creating ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.submitButtonText}>Enviar message</Text>
+                <Text style={styles.submitButtonText}>Enviar mensaje</Text>
               )}
             </TouchableOpacity>
           </View>

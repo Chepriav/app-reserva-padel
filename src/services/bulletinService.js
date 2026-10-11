@@ -6,6 +6,7 @@
  * notificationService.js (Phase 6) calls it with DB-format values.
  * The facade translates them to domain types before calling the use case.
  */
+import { translateError } from './errorMessages';
 import {
   getUserNotifications as getUserNotificationsUC,
   createUserNotification as createUserNotificationUC,
@@ -32,7 +33,7 @@ import {
 // ---- Error translation ----
 
 function toFail(appError) {
-  return { success: false, error: appError?.message ?? 'Error inesperado' };
+  return { success: false, error: translateError(appError) };
 }
 
 export const bulletinService = {

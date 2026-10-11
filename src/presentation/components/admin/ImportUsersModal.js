@@ -84,7 +84,7 @@ export function ImportUsersModal({ visible, onClose, onComplete, onImport }) {
                 <View style={styles.exampleBox}>
                   <Text style={styles.exampleTitle}>Formato esperado:</Text>
                   <View style={styles.exampleCode}>
-                    <Text style={styles.exampleCodeText}>name,codigo,email</Text>
+                    <Text style={styles.exampleCodeText}>nombre,codigo,email</Text>
                     <Text style={styles.exampleCodeText}>Juan Pérez,1-3-B,juan@example.com</Text>
                     <Text style={styles.exampleCodeText}>María López,2-4-C,maria@example.com</Text>
                   </View>

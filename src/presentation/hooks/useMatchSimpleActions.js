@@ -79,7 +79,10 @@ export function useMatchSimpleActions({ user, actions, showAlert }) {
   };
 
   const handleRejectRequest = async (playerId, match) => {
-    await actions.rejectRequest(playerId, match.id);
+    const result = await actions.rejectRequest(playerId, match.id);
+    if (!result?.success) {
+      showAlert('Error', result?.error || 'No se pudo rechazar la solicitud');
+    }
   };
 
   const handleCloseClass = (match) => {

@@ -75,7 +75,8 @@ export function useMatchHandlers({
       }));
 
     createModal.setModalState({
-      type: match.reservationId ? 'with_reservation' : (match.type || 'open'),
+      // UI form vocabulary: 'abierta' / 'con_reserva'
+      type: match.reservationId || match.type === 'with_reservation' ? 'con_reserva' : 'abierta',
       selectedReservation: currentReservation,
       message: match.message || '',
       preferredLevel: match.preferredLevel || null,

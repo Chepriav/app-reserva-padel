@@ -54,7 +54,9 @@ export class DisplaceReservation {
     );
 
     // 4. Cancel linked match (fire-and-forget)
-    this.matchCancellation.cancelMatchByReservation(reservationToDisplace.id);
+    this.matchCancellation.cancelMatchByReservation(reservationToDisplace.id, {
+      reason: 'reserva_desplazada',
+    });
 
     return ok(undefined);
   }

@@ -25,7 +25,7 @@ export function ProfilePersonalInfo({
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Nombre</Text>
           {editMode ? (
-            <TextInput style={styles.infoInput} value={name} onChangeText={setName} autoCapitalize="words" />
+            <TextInput style={styles.infoInput} value={name} maxLength={60} onChangeText={setName} autoCapitalize="words" />
           ) : (
             <Text style={styles.infoValue}>{user?.name}</Text>
           )}

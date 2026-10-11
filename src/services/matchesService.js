@@ -25,22 +25,10 @@ import {
   matchRepository,
 } from '@di/container';
 import { toLegacyFormat, playerToLegacy } from '@infrastructure/supabase/mappers/matchMapper';
+import { translateError } from './errorMessages';
 import { skillLevelToDomain } from '@infrastructure/supabase/mappers/userMapper';
 
 // ---- Error translation ----
-
-const ERROR_MESSAGES = {
-  MATCH_NOT_FOUND: 'Partida no encontrada',
-  MATCH_PERMISSION: 'Solo el creador puede realizar esta acción',
-  MATCH_ALREADY_CANCELLED: 'La partida ya está cancelada',
-  PLAYER_ALREADY_JOINED: 'Ya tienes una solicitud o estás apuntado a esta partida',
-  MATCH_FULL: 'La partida ya está completa',
-  INFRASTRUCTURE: 'Error de conexión. Inténtalo de nuevo.',
-};
-
-function translateError(appError) {
-  return ERROR_MESSAGES[appError?.code] ?? appError?.message ?? 'Error inesperado';
-}
 
 function toFail(appError) {
   return { success: false, error: translateError(appError) };
@@ -274,7 +262,7 @@ export const matchesService = {
 
     const matchResult = await matchRepository.findById(matchId);
     if (!matchResult.success) return toFail(matchResult.error);
-    if (!matchResult.value) return { success: false, error: ERROR_MESSAGES.MATCH_NOT_FOUND };
+    if (!matchResult.value) return { success: false, error: translateError({ code: 'MATCH_NOT_FOUND' }) };
 
     const result = await rejectRequestUC.execute(
       playerResult.value.id,

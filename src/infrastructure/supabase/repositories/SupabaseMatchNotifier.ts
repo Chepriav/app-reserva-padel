@@ -5,6 +5,7 @@ import type { CreateUserNotification } from '@domain/useCases/CreateUserNotifica
 import type { PushDeliveryPort } from '@domain/ports/repositories/PushDeliveryPort';
 import type { LocalSchedulerPort } from '@domain/ports/repositories/LocalSchedulerPort';
 import type { NotificationType } from '@domain/entities/UserNotification';
+import { formatNotificationDate } from '../helpers/notificationFormat';
 
 /**
  * Real implementation of MatchNotifier.
@@ -110,7 +111,7 @@ export class SupabaseMatchNotifier implements MatchNotifier {
       reason === 'reserva_desplazada'
         ? `La reserva de la ${typeLabel} de ${creatorName} ha sido desplazada por otra vivienda.`
         : date
-          ? `La reserva de la ${typeLabel} del ${date} ha sido cancelada.`
+          ? `La reserva de la ${typeLabel} del ${formatNotificationDate(date)} ha sido cancelada.`
           : `La reserva de la ${typeLabel} de ${creatorName} ha sido cancelada.`;
     const type: NotificationType = isClass
       ? 'class_cancelled_by_reservation'

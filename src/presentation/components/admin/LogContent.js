@@ -26,6 +26,14 @@ const STATUS_ES = {
   completed: 'Completada',
 };
 
+// User-provided values (names, apartments) go into a printable HTML page: escape them
+const escapeHtml = (value) => String(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
 const PRIORITY_ES = {
   guaranteed: 'Garantizada (G)',
   provisional: 'Provisional (P)',
@@ -53,13 +61,13 @@ function buildRegistrosHtml(reservations) {
       : r.status === 'cancelled' ? '#c53030' : '#718096';
     return `
       <tr>
-        <td style="font-weight:bold">${r.apartment ?? '—'}</td>
-        <td>${r.userName ?? '—'}</td>
-        <td>${date}</td>
-        <td>${r.startTime ? formatTime(r.startTime) : '—'}–${r.endTime ? formatTime(r.endTime) : '—'}</td>
-        <td>${r.courtName ?? '—'}</td>
-        <td style="color:${statusColor};font-weight:600">${STATUS_ES[r.status] ?? r.status}</td>
-        <td>${PRIORITY_ES[r.priority] ?? r.priority ?? '—'}</td>
+        <td style="font-weight:bold">${escapeHtml(r.apartment ?? '—')}</td>
+        <td>${escapeHtml(r.userName ?? '—')}</td>
+        <td>${escapeHtml(date)}</td>
+        <td>${r.startTime ? escapeHtml(formatTime(r.startTime)) : '—'}–${r.endTime ? escapeHtml(formatTime(r.endTime)) : '—'}</td>
+        <td>${escapeHtml(r.courtName ?? '—')}</td>
+        <td style="color:${statusColor};font-weight:600">${escapeHtml(STATUS_ES[r.status] ?? r.status)}</td>
+        <td>${escapeHtml(PRIORITY_ES[r.priority] ?? r.priority ?? '—')}</td>
         <td>${createdAt}</td>
       </tr>`;
   }).join('');

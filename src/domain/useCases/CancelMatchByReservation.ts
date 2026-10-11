@@ -17,6 +17,7 @@ export class CancelMatchByReservation {
   async execute(
     reservationId: string,
     reason: 'reserva_cancelada' | 'reserva_desplazada' = 'reserva_cancelada',
+    excludeUserId?: string,
   ): Promise<Result<CancelMatchByReservationResult>> {
     const result = await this.matchRepository.cancelByReservationId(reservationId);
     if (!result.success) return result;
@@ -31,7 +32,7 @@ export class CancelMatchByReservation {
       ...match.players
         .filter((p) => p.userId && p.userId !== match.creatorId)
         .map((p) => p.userId!),
-    ];
+    ].filter((id) => id !== excludeUserId);
 
     this.notifier.notifyMatchCancelledByReservation(
       allPlayerIds,

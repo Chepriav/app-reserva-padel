@@ -24,10 +24,11 @@ export default function MatchCard({
 }) {
   const confirmedPlayers = match?.players?.filter(p => p.status === 'confirmed') || [];
   const pendingPlayers = match?.players?.filter(p => p.status === 'pending') || [];
-  const playersCount = 1 + confirmedPlayers.length;
+  const isClass = match?.isLesson || false;
+  // In classes the creator is the teacher: only students count towards the limit
+  const playersCount = (isClass ? 0 : 1) + confirmedPlayers.length;
   const maxParticipants = match?.maxParticipants || 4;
   const isComplete = match?.status === 'full' || playersCount >= maxParticipants;
-  const isClass = match?.isLesson || false;
 
   const myRequest = match?.players?.find(p => p.userId === currentUserId);
   const isConfirmed = myRequest?.status === 'confirmed';
@@ -163,8 +164,11 @@ function ClassInfo({ match }) {
   );
 }
 
+// Match type arrives in domain form ('open' / 'with_reservation'); accept legacy values too
+const isWithReservation = (type) => type === 'with_reservation' || type === 'con_reserva';
+
 function DateInfo({ match }) {
-  if (match.type === 'con_reserva' && match.date) {
+  if ((isWithReservation(match.type) || match.reservationId) && match.date) {
     return (
       <View style={styles.dateContainer}>
         <Text style={styles.date}>
@@ -174,7 +178,7 @@ function DateInfo({ match }) {
     );
   }
 
-  if (match.type === 'abierta') {
+  if (!isWithReservation(match.type)) {
     return (
       <View style={styles.dateContainer}>
         <Text style={styles.openDate}>Fecha a acordar</Text>
