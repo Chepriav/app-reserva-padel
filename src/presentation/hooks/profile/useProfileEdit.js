@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { parseApartment, combineApartment } from '../../../constants/config';
 import { validateProfile, validateApartmentComponentes } from '../../../utils/validators';
+import { resizeImageWeb } from '../../../utils/resizeImageWeb';
 
 let ImageManipulator;
 if (Platform.OS !== 'web') {
@@ -81,6 +82,7 @@ export function useProfileEdit(user, updateProfile, showAlert) {
         if (base64) {
           imageUri = `data:${mimeType};base64,${base64}`;
         }
+        imageUri = await resizeImageWeb(imageUri);
       } else if (ImageManipulator) {
         const manipResult = await ImageManipulator.manipulateAsync(
           imageUri,
