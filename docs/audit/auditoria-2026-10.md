@@ -157,7 +157,7 @@ Recorrido de la web a 375 y 320 px con datos simulados, más lectura del código
 
 ### Pendiente
 - ~~`notificaciones_usuario` permite a cualquier vecino crear notificaciones para otro~~ → resuelto en la sección 7.
-- No se han podido revisar las políticas del bucket de fotos `Avatar` (no están en el repo).
+- ~~No se han podido revisar las políticas del bucket de fotos `Avatar`~~ → revisadas en la sección 8.
 
 ---
 
@@ -172,3 +172,13 @@ Recorrido de la web a 375 y 320 px con datos simulados, más lectura del código
 - `send-push-notification` aplica la misma regla con `can_notify()` (solo `service_role`).
 - `anuncios_destinatarios`: un vecino solo puede insertar su propia fila (marcar como leído); los admins, cualquiera.
 - Límite conocido: las notificaciones de desplazamiento entre viviendas (modo de 2 reservas, desactivado) no pasan la regla; el aviso de desplazamiento al iniciar sesión sigue funcionando.
+
+---
+
+## 8. Fotos de perfil (bucket `Avatar`)
+
+- **Políticas:** son correctas. Cada usuario solo puede subir, listar, cambiar y borrar dentro de su carpeta (`<uid>/`). La lectura es pública porque el bucket es público y la app usa `getPublicUrl`.
+- **Sobrantes:** quedan 8 políticas antiguas para un bucket `avatars` (minúsculas) que la app no usa. También son de carpeta propia: no suponen riesgo, solo desorden.
+- **Sin límites:** el bucket no tenía límite de tamaño ni de tipo. En la web la foto se subía sin reducir (3–6 MB desde un iPhone).
+  - Ahora la web la reduce a 800×800 JPEG (`src/utils/resizeImageWeb.js`), igual que el móvil nativo.
+  - Con eso desplegado, se configura en Supabase → Storage → Avatar: 2 MB e `image/jpeg, image/png, image/webp`.
