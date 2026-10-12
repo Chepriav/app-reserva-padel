@@ -3,6 +3,8 @@
 //
 // Requiere el JWT de un usuario autenticado y aprobado en el header Authorization.
 // La anon key sola ya no basta (es pública y viaja en el bundle web).
+// Solo puede notificar a sí mismo, siendo admin, o a quien comparta partida/clase
+// con él (función SQL can_notify, migración 20261012120000).
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -79,6 +81,18 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'userId and title are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Only to yourself, as admin, or to someone you share a match/class with
+    const { data: allowed, error: allowedError } = await supabase.rpc('can_notify', {
+      p_sender: caller.id,
+      p_target: userId,
+    });
+    if (allowedError || allowed !== true) {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
