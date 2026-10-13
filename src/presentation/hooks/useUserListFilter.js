@@ -19,42 +19,58 @@ export const normalizeText = (value) =>
 const compareText = (a, b) =>
   (a || '').localeCompare(b || '', 'es', { numeric: true, sensitivity: 'base' });
 
+// Ascending comparators; the direction is applied in filterAndSortUsers
 const COMPARATORS = {
   name: (a, b) => compareText(a.name, b.name),
   // numeric: "2-10-A" after "2-9-A"
-  apartment: (a, b) => compareText(a.apartment, b.apartment) || compareText(a.name, b.name),
+  apartment: (a, b) => compareText(a.apartment, b.apartment),
   email: (a, b) => compareText(a.email, b.email),
-  // Most recent first, never-recorded at the end
-  lastAccess: (a, b) => {
-    const ta = a.lastAccessAt ? Date.parse(a.lastAccessAt) : -Infinity;
-    const tb = b.lastAccessAt ? Date.parse(b.lastAccessAt) : -Infinity;
-    return tb - ta || compareText(a.name, b.name);
-  },
+  lastAccess: (a, b) => Date.parse(a.lastAccessAt) - Date.parse(b.lastAccessAt),
 };
 
+// First tap on a sort option: most recent access first, A→Z for the rest
+export const DEFAULT_SORT_DIRECTION = { name: 'asc', apartment: 'asc', email: 'asc', lastAccess: 'desc' };
+
 /** Pure helper (testable): filters by name/apartment/email and sorts. */
-export function filterAndSortUsers(users, query, sortBy) {
+export function filterAndSortUsers(users, query, sortBy, direction = DEFAULT_SORT_DIRECTION[sortBy] ?? 'asc') {
   const q = normalizeText(query);
   const filtered = q
     ? users.filter((u) =>
         [u.name, u.apartment, u.email].some((field) => normalizeText(field).includes(q)),
       )
     : users;
-  const comparator = COMPARATORS[sortBy] ?? COMPARATORS.name;
-  return [...filtered].sort(comparator);
+  const key = COMPARATORS[sortBy] ? sortBy : 'name';
+  const sign = direction === 'desc' ? -1 : 1;
+  return [...filtered].sort((a, b) => {
+    // Users who never opened the app always go last
+    if (key === 'lastAccess' && !a.lastAccessAt !== !b.lastAccessAt) return a.lastAccessAt ? -1 : 1;
+    if (key === 'lastAccess' && !a.lastAccessAt) return compareText(a.name, b.name);
+    return sign * COMPARATORS[key](a, b) || compareText(a.name, b.name);
+  });
 }
 
 /**
  * Search + sort state for Admin → Usuarios.
+ * Tapping the active sort option again reverses the order.
  */
 export function useUserListFilter(users) {
   const [query, setQuery] = useState('');
-  const [sortBy, setSortBy] = useState('name');
+  const [sortBy, setSortByState] = useState('name');
+  const [sortDirection, setSortDirection] = useState('asc');
+
+  const setSortBy = (key) => {
+    if (key === sortBy) {
+      setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortByState(key);
+      setSortDirection(DEFAULT_SORT_DIRECTION[key] ?? 'asc');
+    }
+  };
 
   const visibleUsers = useMemo(
-    () => filterAndSortUsers(users, query, sortBy),
-    [users, query, sortBy],
+    () => filterAndSortUsers(users, query, sortBy, sortDirection),
+    [users, query, sortBy, sortDirection],
   );
 
-  return { query, setQuery, sortBy, setSortBy, visibleUsers };
+  return { query, setQuery, sortBy, sortDirection, setSortBy, visibleUsers };
 }

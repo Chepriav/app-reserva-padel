@@ -110,7 +110,7 @@ export function UsersContent({
   onDelete,
   onImportUsers,
 }) {
-  const { query, setQuery, sortBy, setSortBy, visibleUsers } = useUserListFilter(users);
+  const { query, setQuery, sortBy, sortDirection, setSortBy, visibleUsers } = useUserListFilter(users);
 
   return (
     <>
@@ -125,6 +125,7 @@ export function UsersContent({
           query={query}
           onChangeQuery={setQuery}
           sortBy={sortBy}
+          sortDirection={sortDirection}
           onChangeSort={setSortBy}
           shown={visibleUsers.length}
           total={users.length}
