@@ -62,6 +62,9 @@ const ERROR_BY_CODE = {
     'Error de conexión al verificar tu cuenta. Comprueba tu conexión a internet e inténtalo de nuevo',
 };
 
+// Emails are case-insensitive: avoid "Ana@x.com " vs "ana@x.com" mismatches
+const normalizeEmail = (email) => (email || '').trim().toLowerCase();
+
 const getErrorMessage = (error, defaultMessage) => {
   if (!error) return defaultMessage || ERROR_MESSAGES.default;
 
@@ -120,7 +123,7 @@ const mapListResult = (result, errorMsg) => {
 
 export const authService = {
   async login(email, password) {
-    const result = await loginUser.execute(email, password);
+    const result = await loginUser.execute(normalizeEmail(email), password);
     if (!result.success) {
       const needsEmailConfirmation = result.error?.message === 'Email not confirmed';
       return {
@@ -151,7 +154,7 @@ export const authService = {
   async register(userData) {
     const domainData = fromLegacyRegisterData({
       ...userData,
-      email: (userData.email || '').trim().toLowerCase(),
+      email: normalizeEmail(userData.email),
     });
     const result = await registerUser.execute(domainData);
     if (!result.success) {
@@ -244,7 +247,7 @@ export const authService = {
   },
 
   async resetPassword(email) {
-    const result = await resetPasswordUseCase.execute(email);
+    const result = await resetPasswordUseCase.execute(normalizeEmail(email));
     if (!result.success) {
       return {
         success: false,

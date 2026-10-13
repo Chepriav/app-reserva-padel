@@ -116,7 +116,7 @@ export default function RegisterScreen({ navigation }) {
           { text: 'Cancelar', style: 'cancel', onPress: () => {} },
           {
             text: 'Recuperar contraseña',
-            onPress: () => navigation.navigate('Login', { resetEmail: email.trim() }),
+            onPress: () => navigation.navigate('Login', { resetEmail: email.trim().toLowerCase() }),
           },
         ],
       });
