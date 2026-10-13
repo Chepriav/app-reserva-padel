@@ -99,3 +99,18 @@ isSupported()
 subscribe(userId)
 unsubscribe(userId)
 ```
+
+## Aviso a los admins de nuevas solicitudes de alta
+
+Edge Function `notify-new-signup`. Envía Web Push y Expo Push a todos los admins aprobados cuando se inserta en `public.users` un usuario con `estado_aprobacion = 'pendiente'`. Los usuarios importados por CSV ya entran aprobados y no generan aviso.
+
+Quien se registra todavía no tiene sesión, así que el aviso sale del servidor mediante un **Database Webhook**:
+
+1. `supabase functions deploy notify-new-signup`. Usa los mismos secretos VAPID que `send-push-notification`.
+2. Supabase → **Database → Webhooks → Create a new hook**:
+   - Name: `notify_new_signup`
+   - Table: `public.users` · Events: **Insert**
+   - Type: **Supabase Edge Functions** → `notify-new-signup` · Method `POST`
+   - HTTP Headers: **Add auth header with service key**
+
+La función rechaza cualquier llamada que no venga con la clave de service role. Al tocar la notificación, la app abre Admin (tipo `new_signup`).
