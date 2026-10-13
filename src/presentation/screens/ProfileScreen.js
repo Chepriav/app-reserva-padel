@@ -117,8 +117,32 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      {/* Notifications button (web only) */}
-      {Platform.OS === 'web' && (
+      {/* Notifications (web only) */}
+      {Platform.OS === 'web' && (notifications.notificationsEnabled ? (
+        <View style={styles.notificationsCard}>
+          <View style={styles.notificationsStatus}>
+            <Ionicons name="checkmark-circle" size={22} color={colors.guaranteedReservation} />
+            <View style={styles.notificationsStatusText}>
+              <Text style={styles.notificationsTitle}>Notificaciones activadas</Text>
+              <Text style={styles.notificationsSubtitle}>En este dispositivo</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={[styles.testButton, notifications.sendingTest && styles.buttonDisabled]}
+            onPress={notifications.handleSendTest}
+            disabled={notifications.sendingTest}
+          >
+            {notifications.sendingTest ? (
+              <ActivityIndicator color={colors.primary} size="small" />
+            ) : (
+              <>
+                <Ionicons name="paper-plane-outline" size={16} color={colors.primary} />
+                <Text style={styles.testButtonText}>Probar</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      ) : (
         <TouchableOpacity
           style={[styles.notificationButton, notifications.enablingNotifications && styles.buttonDisabled]}
           onPress={notifications.handleEnableNotifications}
@@ -133,7 +157,7 @@ export default function ProfileScreen() {
             </View>
           )}
         </TouchableOpacity>
-      )}
+      ))}
 
       <TouchableOpacity style={styles.logoutButton} onPress={actions.handleLogout}>
         <Text style={styles.logoutButtonText}>Cerrar sesión</Text>
@@ -197,6 +221,22 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4,
   },
   notificationButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  notificationsCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: colors.surface, borderRadius: 12, padding: 14,
+    margin: 16, marginBottom: 0,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  notificationsStatus: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  notificationsStatusText: { flex: 1 },
+  notificationsTitle: { fontSize: 15, fontWeight: '600', color: colors.text },
+  notificationsSubtitle: { fontSize: 13, color: colors.textSecondary, marginTop: 1 },
+  testButton: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    minWidth: 92, paddingVertical: 8, paddingHorizontal: 12,
+    borderRadius: 8, borderWidth: 1, borderColor: colors.primary,
+  },
+  testButtonText: { color: colors.primary, fontSize: 14, fontWeight: '600' },
   logoutButton: {
     backgroundColor: colors.error, borderRadius: 12, padding: 16,
     margin: 16, marginTop: 8, alignItems: 'center',

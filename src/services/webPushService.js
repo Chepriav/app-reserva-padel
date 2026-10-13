@@ -143,6 +143,54 @@ export const webPushService = {
   },
 
   /**
+   * True when this browser has permission and an active push subscription
+   */
+  async isSubscribed() {
+    if (!this.isSupported() || Notification.permission !== 'granted') return false;
+    try {
+      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000));
+      const registration = await Promise.race([navigator.serviceWorker.ready, timeout]);
+      return !!(await registration.pushManager.getSubscription());
+    } catch {
+      return false;
+    }
+  },
+
+  /**
+   * Sends a test push to all of the user's devices through the Edge Function
+   * (same path as real notifications). Returns a Spanish message for the UI.
+   */
+  async sendTest(userId) {
+    try {
+      const { data, error } = await supabase.functions.invoke('send-push-notification', {
+        body: {
+          userId,
+          title: 'Notificación de prueba',
+          body: 'Si ves esto, las notificaciones funcionan correctamente.',
+          data: { type: 'test' },
+        },
+      });
+      if (error) {
+        return { success: false, error: 'No se pudo enviar la prueba. Inténtalo de nuevo en unos minutos.' };
+      }
+      if (!data?.sent) {
+        return {
+          success: false,
+          error: 'No hay ningún dispositivo con las notificaciones activadas. Pulsa "Activar notificaciones" en este móvil.',
+        };
+      }
+      return {
+        success: true,
+        message: data.sent === 1
+          ? 'Enviada. Debería llegarte en unos segundos.'
+          : `Enviada a ${data.sent} dispositivos. Debería llegarte en unos segundos.`,
+      };
+    } catch {
+      return { success: false, error: 'No se pudo enviar la prueba. Comprueba tu conexión.' };
+    }
+  },
+
+  /**
    * Saves the subscription to Supabase
    */
   async saveSubscription(userId, subscription) {
