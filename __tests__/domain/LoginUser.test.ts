@@ -41,6 +41,7 @@ const mockUserRepository: UserRepository = {
   updateProfile: jest.fn(),
   deleteWithRelations: jest.fn(),
   recordAccess: jest.fn(),
+  findPublicProfiles: jest.fn(),
 };
 
 describe('LoginUser', () => {

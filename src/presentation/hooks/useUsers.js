@@ -14,7 +14,8 @@ export function useCommunityUsers(currentUserId) {
     if (loaded) return;
 
     setLoading(true);
-    const result = await authService.getTodosUsers();
+    // Public profiles only: residents can't read other residents' email/phone
+    const result = await authService.getCommunityUsers();
     if (result.success) {
       // Filter out the current user
       setUsers(result.data.filter(u => u.id !== currentUserId));

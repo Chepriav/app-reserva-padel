@@ -3,6 +3,7 @@ export type { ScheduleConfig, TimeRange } from './ScheduleConfig';
 export type {
   User,
   ApartmentUser,
+  PublicUserProfile,
   RegisterData,
   ProfileUpdate,
   ApprovalStatus,

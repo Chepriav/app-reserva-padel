@@ -1,11 +1,11 @@
 import type { UserRepository } from '@domain/ports/repositories/UserRepository';
-import type { User, ApartmentUser, RegisterData, ProfileUpdate } from '@domain/entities/User';
+import type { User, ApartmentUser, PublicUserProfile, RegisterData, ProfileUpdate } from '@domain/entities/User';
 import type { AvatarStoragePort } from '@domain/ports/repositories/AvatarStoragePort';
 import { InfrastructureError, ProfileUpdateError } from '@domain/errors/DomainErrors';
 import type { Result } from '@shared/types/Result';
 import { ok, fail } from '@shared/types/Result';
 import { supabase } from '../client';
-import { toDomain, toApartmentUserDomain, toDbProfileUpdate, toDbCreateRow } from '../mappers/userMapper';
+import { toDomain, toApartmentUserDomain, toPublicProfileDomain, toDbProfileUpdate, toDbCreateRow } from '../mappers/userMapper';
 import { cleanupUserRelations } from '../helpers/userCleanupHelper';
 
 export class SupabaseUserRepository implements UserRepository {
@@ -69,11 +69,11 @@ export class SupabaseUserRepository implements UserRepository {
 
   async findByApartment(apartment: string): Promise<Result<ApartmentUser[]>> {
     try {
+      // users_public only lists approved users and never exposes email/phone
       const { data, error } = await supabase
-        .from('users')
-        .select('id, nombre, email, foto_perfil, nivel_juego')
+        .from('users_public')
+        .select('id, nombre, foto_perfil, nivel_juego')
         .eq('vivienda', apartment)
-        .eq('estado_aprobacion', 'aprobado')
         .order('nombre', { ascending: true });
 
       if (error) {
@@ -83,6 +83,23 @@ export class SupabaseUserRepository implements UserRepository {
       return ok((data || []).map(toApartmentUserDomain));
     } catch (err) {
       return fail(new InfrastructureError('Error fetching apartment users', err));
+    }
+  }
+
+  async findPublicProfiles(): Promise<Result<PublicUserProfile[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('users_public')
+        .select('id, nombre, vivienda, foto_perfil, nivel_juego')
+        .order('nombre', { ascending: true });
+
+      if (error) {
+        return fail(new InfrastructureError('Error fetching community users', error));
+      }
+
+      return ok((data || []).map(toPublicProfileDomain));
+    } catch (err) {
+      return fail(new InfrastructureError('Error fetching community users', err));
     }
   }
 

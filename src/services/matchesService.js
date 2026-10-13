@@ -45,7 +45,7 @@ async function enrichCreatorData(matches) {
 
   try {
     const { data } = await supabase
-      .from('users')
+      .from('users_public')
       .select('id, foto_perfil, nivel_juego')
       .in('id', creatorIds);
 
@@ -73,7 +73,7 @@ export const matchesService = {
     if (!userId) return null;
     try {
       const { data } = await supabase
-        .from('users')
+        .from('users_public')
         .select('foto_perfil')
         .eq('id', userId)
         .single();
@@ -87,7 +87,7 @@ export const matchesService = {
     if (!userIds || userIds.length === 0) return {};
     try {
       const { data } = await supabase
-        .from('users')
+        .from('users_public')
         .select('id, foto_perfil, nivel_juego')
         .in('id', userIds);
 

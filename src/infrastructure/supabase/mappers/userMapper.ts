@@ -1,6 +1,7 @@
 import type {
   User,
   ApartmentUser,
+  PublicUserProfile,
   RegisterData,
   ProfileUpdate,
   ApprovalStatus,
@@ -122,14 +123,29 @@ export function toDomain(row: UserRow): User {
 export function toApartmentUserDomain(row: {
   id: string;
   nombre: string;
-  email: string;
   foto_perfil: string | null;
   nivel_juego: string | null;
 }): ApartmentUser {
   return {
     id: row.id,
     name: row.nombre,
-    email: row.email,
+    profilePhoto: row.foto_perfil,
+    skillLevel: skillLevelToDomain(row.nivel_juego),
+  };
+}
+
+/** users_public view row → domain PublicUserProfile */
+export function toPublicProfileDomain(row: {
+  id: string;
+  nombre: string;
+  vivienda: string;
+  foto_perfil: string | null;
+  nivel_juego: string | null;
+}): PublicUserProfile {
+  return {
+    id: row.id,
+    name: row.nombre,
+    apartment: row.vivienda,
     profilePhoto: row.foto_perfil,
     skillLevel: skillLevelToDomain(row.nivel_juego),
   };

@@ -1,4 +1,4 @@
-import type { User, ApartmentUser, RegisterData, ProfileUpdate } from '@domain/entities/User';
+import type { User, ApartmentUser, PublicUserProfile, RegisterData, ProfileUpdate } from '@domain/entities/User';
 import type { Result } from '@shared/types/Result';
 
 /**
@@ -8,6 +8,8 @@ import type { Result } from '@shared/types/Result';
 export interface UserRepository {
   findById(userId: string): Promise<Result<User | null>>;
   findByApartment(apartment: string): Promise<Result<ApartmentUser[]>>;
+  /** Approved residents with public fields only (name, apartment, level, photo) */
+  findPublicProfiles(): Promise<Result<PublicUserProfile[]>>;
   create(userId: string, data: RegisterData): Promise<Result<void>>;
   updateProfile(userId: string, updates: ProfileUpdate): Promise<Result<User>>;
   deleteWithRelations(userId: string): Promise<Result<void>>;

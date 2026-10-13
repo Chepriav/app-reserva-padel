@@ -21,6 +21,7 @@ import { UpdateProfile } from '@domain/useCases/UpdateProfile';
 import { DeleteOwnAccount } from '@domain/useCases/DeleteOwnAccount';
 import { GetApartmentUsers } from '@domain/useCases/GetApartmentUsers';
 import { RecordUserAccess } from '@domain/useCases/RecordUserAccess';
+import { GetCommunityUsers } from '@domain/useCases/GetCommunityUsers';
 import { GetPendingUsers } from '@domain/useCases/GetPendingUsers';
 import { GetAllApprovedUsers } from '@domain/useCases/GetAllApprovedUsers';
 import { ApproveUser } from '@domain/useCases/ApproveUser';
@@ -114,6 +115,7 @@ export const updateProfile = new UpdateProfile(userRepository);
 export const deleteOwnAccount = new DeleteOwnAccount(userRepository, authProvider);
 export const getApartmentUsers = new GetApartmentUsers(userRepository);
 export const recordUserAccess = new RecordUserAccess(userRepository);
+export const getCommunityUsers = new GetCommunityUsers(userRepository);
 
 // Admin user management use cases
 export const getPendingUsers = new GetPendingUsers(userAdminRepository);

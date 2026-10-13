@@ -114,6 +114,15 @@ CREATE TABLE public.partidas_jugadores (
 );
 ```
 
+## Vista: users_public
+```sql
+-- Lo que un vecino puede ver de otros (solo usuarios aprobados).
+-- public.users: cada usuario lee su ficha; los admins, todas.
+CREATE VIEW public.users_public AS
+  SELECT id, nombre, vivienda, nivel_juego, foto_perfil
+  FROM public.users WHERE estado_aprobacion = 'aprobado';
+```
+
 ## Tabla: notificaciones_usuario
 ```sql
 CREATE TABLE public.notificaciones_usuario (
