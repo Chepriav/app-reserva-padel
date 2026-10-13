@@ -87,9 +87,9 @@ export function DateSelector({ dateSelected, viewActual, onCambiarDate, onSelect
 const styles = StyleSheet.create({
   stripContainer: {
     backgroundColor: colors.surface,
-    paddingVertical: 12,
-    marginTop: 16,
-    marginHorizontal: 16,
+    paddingVertical: 10,
+    marginTop: 12,
+    marginHorizontal: 12,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },

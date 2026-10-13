@@ -3,43 +3,41 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors } from '../../../constants/colors';
 
 /**
- * Schedule section header with clear button
+ * Schedule section header. The selection summary and "Limpiar" live on the
+ * same row as the title, so selecting a slot never shifts the grid.
  */
 export function ScheduleHeader({ viewActual, countSelected, onLimpiar }) {
+  const hasSelection = countSelected > 0;
   return (
     <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>
-        {viewActual === 'dia' ? 'Horarios Disponibles' : 'Horarios de la Semana'}
+      <Text style={styles.sectionTitle} numberOfLines={1}>
+        {viewActual === 'dia' ? 'Horarios disponibles' : 'Horarios de la semana'}
       </Text>
-      {countSelected > 0 && (
-        <TouchableOpacity
-          style={styles.clearButton}
-          onPress={onLimpiar}
-        >
-          <Text style={styles.clearText}>Limpiar</Text>
-        </TouchableOpacity>
+      {hasSelection && (
+        <View style={styles.selectionRow}>
+          <View style={styles.selectionChip}>
+            <Text style={styles.selectionChipText}>
+              {countSelected * 30} min
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.clearButton}
+            onPress={onLimpiar}
+            accessibilityLabel="Limpiar selección"
+          >
+            <Text style={styles.clearText}>Limpiar</Text>
+          </TouchableOpacity>
+        </View>
       )}
     </View>
   );
 }
 
 /**
- * Selected slots information
- * Always renders to reserve space and prevent layout shift
+ * Kept for API compatibility: the summary now lives in ScheduleHeader.
  */
-export function SelectionInfo({ countSlots }) {
-  const hasSelection = countSlots > 0;
-
-  return (
-    <View style={[styles.selectionInfo, !hasSelection && styles.selectionInfoHidden]}>
-      <Text style={[styles.selectionText, !hasSelection && styles.selectionTextHidden]}>
-        {hasSelection
-          ? `${countSlots} bloque${countSlots > 1 ? 's' : ''} seleccionado${countSlots > 1 ? 's' : ''} (${countSlots * 30} min)`
-          : 'Selecciona horarios para reservar'
-        }
-      </Text>
-    </View>
-  );
+export function SelectionInfo() {
+  return null;
 }
 
 // Legacy aliases for backwards compatibility
@@ -50,44 +48,42 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    gap: 8,
+    minHeight: 32,
+    marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    flexShrink: 1,
+    fontSize: 17,
+    fontWeight: '700',
     color: colors.text,
   },
+  selectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  selectionChip: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  selectionChipText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
   clearButton: {
-    backgroundColor: colors.error,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.error,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 14,
   },
   clearText: {
-    color: '#fff',
-    fontSize: 14,
+    color: colors.error,
+    fontSize: 13,
     fontWeight: '600',
-  },
-  selectionInfo: {
-    backgroundColor: colors.accent,
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  selectionInfoHidden: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderStyle: 'dashed',
-  },
-  selectionText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  selectionTextHidden: {
-    color: colors.textSecondary,
-    fontWeight: '400',
   },
 });

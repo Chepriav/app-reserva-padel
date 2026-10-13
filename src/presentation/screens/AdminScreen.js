@@ -199,6 +199,7 @@ export default function AdminScreen() {
 
       <ScrollView
         style={styles.content}
+        contentContainerStyle={styles.contentContainer}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -255,6 +256,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 16,
+  },
+  // Padding on the content container: with a RefreshControl, react-native-web
+  // applies the ScrollView style twice (doubling the side margins)
+  contentContainer: {
+    padding: 12,
+    paddingBottom: 24,
   },
 });

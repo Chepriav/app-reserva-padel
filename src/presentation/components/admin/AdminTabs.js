@@ -14,7 +14,7 @@ export function AdminHeader({ onShowLog, isLogView = false }) {
         </TouchableOpacity>
       )}
       <Text style={[styles.title, isLogView && styles.titleLog]}>
-        {isLogView ? 'Registros' : 'Panel de Administración'}
+        {isLogView ? 'Registros' : 'Administración'}
       </Text>
       {!isLogView && onShowLog && (
         <TouchableOpacity style={styles.logBtn} onPress={onShowLog}>
@@ -74,7 +74,7 @@ export function AdminTabs({
             activeTab === 'configuration' && styles.tabTextActive,
           ]}
         >
-          Configuración
+          Ajustes
         </Text>
       </TouchableOpacity>
     </View>
@@ -83,22 +83,21 @@ export function AdminTabs({
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: colors.accent,
-    padding: 20,
-    paddingTop: Platform.OS === 'web' ? 20 : 40,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: Platform.OS === 'web' ? 14 : 40,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
     flex: 1,
   },
-  titleLog: {
-    fontSize: 20,
-  },
+  titleLog: {},
   backBtn: {
     marginRight: 12,
   },
@@ -120,11 +119,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
   },
   tab: {
     flex: 1,
-    paddingVertical: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 2,
     alignItems: 'center',
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.accent,
   },
   tabText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '500',
     color: colors.textSecondary,
   },

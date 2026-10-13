@@ -2,13 +2,13 @@ import { StyleSheet } from 'react-native';
 import { colors } from '../../../constants/colors';
 
 export const styles = StyleSheet.create({
-  card: { backgroundColor: colors.surface, borderRadius: 12, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2, borderWidth: 2, borderColor: 'transparent' },
+  card: { backgroundColor: colors.surface, borderRadius: 12, padding: 14, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2, borderWidth: 2, borderColor: 'transparent' },
   cardComplete: { borderColor: colors.guaranteedReservation },
   cardClass: { backgroundColor: colors.classBackground, borderColor: colors.classColor },
   cardClassComplete: { borderColor: colors.classColor },
   classBadgeContainer: { position: 'absolute', top: 0, right: 0, backgroundColor: colors.classColor, paddingHorizontal: 10, paddingVertical: 4, borderTopRightRadius: 10, borderBottomLeftRadius: 10 },
   classBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
   creatorName: { fontSize: 16, fontWeight: '600', color: colors.text },
   creatorApartment: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
   badge: { backgroundColor: colors.primary + '20', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
@@ -23,7 +23,8 @@ export const styles = StyleSheet.create({
   classPrices: { flexDirection: 'row', gap: 12, marginTop: 4 },
   classPrice: { fontSize: 14, fontWeight: '600', color: colors.classColor },
   dateContainer: { marginBottom: 8 },
-  date: { fontSize: 14, color: colors.text, fontWeight: '500' },
+  dateRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  date: { fontSize: 14, color: colors.text, fontWeight: '600' },
   openDate: { fontSize: 14, color: colors.accent, fontStyle: 'italic' },
   level: { fontSize: 13, color: colors.textSecondary, marginBottom: 8 },
   message: { fontSize: 14, color: colors.text, fontStyle: 'italic', marginBottom: 12, backgroundColor: colors.background, padding: 10, borderRadius: 8 },

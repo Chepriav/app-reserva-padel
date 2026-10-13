@@ -146,6 +146,7 @@ export function UsersContent({
             key={user.id}
             user={user}
             currentUserId={currentUserId}
+            showLastAccess={sortBy === 'lastAccess'}
             onToggleAdmin={onToggleAdmin}
             onEditApartment={onEditApartment}
             onDelete={onDelete}
@@ -209,17 +210,14 @@ const styles = StyleSheet.create({
   usersHeader: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 8,
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    marginBottom: 10,
   },
   usersTitle: {
     flexShrink: 1,
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
     color: colors.text,
   },

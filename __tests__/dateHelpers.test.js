@@ -373,3 +373,14 @@ describe('formatWeekRange', () => {
     expect(formatWeekRange('2026-10-01')).toMatch(/^28 sept? – 4 oct$/);
   });
 });
+
+describe('formatShortDate', () => {
+  const { formatShortDate } = require('../src/utils/dateHelpers');
+  test('today and tomorrow', () => {
+    expect(formatShortDate('2026-10-13', '2026-10-13')).toBe('Hoy');
+    expect(formatShortDate('2026-10-14', '2026-10-13')).toBe('Mañana');
+  });
+  test('other days: capitalised weekday, day and month', () => {
+    expect(formatShortDate('2026-10-15', '2026-10-13')).toBe('Jue 15 oct');
+  });
+});

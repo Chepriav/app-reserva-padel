@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../../constants/colors';
 import { USER_SORT_OPTIONS } from '../../hooks/useUserListFilter';
@@ -33,8 +33,12 @@ export function UserListFilters({ query, onChangeQuery, sortBy, onChangeSort, sh
         )}
       </View>
 
-      <View style={styles.sortRow}>
-        <Text style={styles.sortLabel}>Ordenar:</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.sortRow}
+      >
+        <Ionicons name="swap-vertical" size={16} color={colors.textSecondary} accessibilityLabel="Ordenar por" />
         {USER_SORT_OPTIONS.map((option) => {
           const active = option.key === sortBy;
           return (
@@ -51,7 +55,7 @@ export function UserListFilters({ query, onChangeQuery, sortBy, onChangeSort, sh
             </TouchableOpacity>
           );
         })}
-      </View>
+      </ScrollView>
 
       {shown !== total && (
         <Text style={styles.count}>
@@ -64,7 +68,7 @@ export function UserListFilters({ query, onChangeQuery, sortBy, onChangeSort, sh
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: 10,
   },
   searchBox: {
     flexDirection: 'row',
@@ -75,7 +79,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   searchInput: {
     flex: 1,
@@ -86,18 +90,13 @@ const styles = StyleSheet.create({
   },
   sortRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 12,
-  },
-  sortLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
+    gap: 6,
+    marginTop: 8,
   },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border,
@@ -116,7 +115,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   count: {
-    marginTop: 10,
+    marginTop: 6,
     fontSize: 13,
     color: colors.textSecondary,
   },

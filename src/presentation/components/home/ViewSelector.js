@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
   viewSelector: {
     flexDirection: 'row',
     backgroundColor: colors.surface,
-    margin: 16,
+    margin: 12,
     marginBottom: 0,
     borderRadius: 12,
     padding: 4,
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
   },
   viewButton: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: 'center',
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   viewButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: colors.textSecondary,
   },

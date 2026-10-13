@@ -15,8 +15,8 @@ export function ImportUsersButton({ onPress, disabled = false }) {
       disabled={disabled}
       activeOpacity={0.7}
     >
-      <Ionicons name="cloud-upload-outline" size={18} color="#fff" />
-      <Text style={styles.buttonText}>Importar usuarios</Text>
+      <Ionicons name="cloud-upload-outline" size={16} color="#fff" />
+      <Text style={styles.buttonText}>Importar CSV</Text>
     </TouchableOpacity>
   );
 }
@@ -26,17 +26,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.primary,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
     borderRadius: 8,
-    gap: 8,
+    gap: 6,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
 });

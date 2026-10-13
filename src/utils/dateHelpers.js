@@ -243,6 +243,13 @@ export const getDayPillLabel = (dateStr, today = getTodayDate()) => {
   };
 };
 
+// Compact date for cards: "Hoy", "Mañana" or "Mié 14 oct"
+export const formatShortDate = (dateStr, today = getTodayDate()) => {
+  const { top, day, month } = getDayPillLabel(dateStr, today);
+  if (top === 'Hoy' || top === 'Mañana') return top;
+  return `${top.charAt(0).toUpperCase()}${top.slice(1)} ${day} ${month}`;
+};
+
 // Monday–Sunday range of the week containing dateStr: "5 – 11 de octubre" / "28 sept – 4 oct"
 export const formatWeekRange = (dateStr) => {
   const [y, m, d] = dateStr.split('-').map(Number);
