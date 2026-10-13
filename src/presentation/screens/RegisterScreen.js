@@ -107,6 +107,19 @@ export default function RegisterScreen({ navigation }) {
           },
         ],
       });
+    } else if (result.emailAlreadyRegistered) {
+      setAlertConfig({
+        visible: true,
+        title: 'Email ya registrado',
+        message: result.error,
+        buttons: [
+          { text: 'Cancelar', style: 'cancel', onPress: () => {} },
+          {
+            text: 'Recuperar contraseña',
+            onPress: () => navigation.navigate('Login', { resetEmail: email.trim() }),
+          },
+        ],
+      });
     } else {
       setAlertConfig({
         visible: true,

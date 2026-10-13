@@ -3,7 +3,7 @@ import type { AuthProvider } from '../../src/domain/ports/repositories/AuthProvi
 import type { UserRepository } from '../../src/domain/ports/repositories/UserRepository';
 import type { RegisterData } from '../../src/domain/entities/User';
 import { ok, fail } from '../../src/shared/types/Result';
-import { AuthenticationError, InfrastructureError } from '../../src/domain/errors/DomainErrors';
+import { AuthenticationError, EmailAlreadyRegisteredError, InfrastructureError } from '../../src/domain/errors/DomainErrors';
 
 const mockAuthProvider: AuthProvider = {
   signIn: jest.fn(),
@@ -23,6 +23,7 @@ const mockUserRepository: UserRepository = {
   create: jest.fn(),
   updateProfile: jest.fn(),
   deleteWithRelations: jest.fn(),
+  recordAccess: jest.fn(),
 };
 
 describe('RegisterUser', () => {
@@ -64,6 +65,16 @@ describe('RegisterUser', () => {
     const result = await useCase.execute(validData);
 
     expect(result.success).toBe(false);
+    expect(mockUserRepository.create).not.toHaveBeenCalled();
+  });
+
+  it('does not create a duplicate profile when the email is already registered', async () => {
+    (mockAuthProvider.signUp as jest.Mock).mockResolvedValue(fail(new EmailAlreadyRegisteredError()));
+
+    const result = await useCase.execute(validData);
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.code).toBe('EMAIL_ALREADY_REGISTERED');
     expect(mockUserRepository.create).not.toHaveBeenCalled();
   });
 
