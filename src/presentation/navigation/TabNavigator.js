@@ -10,7 +10,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import AdminScreen from '../screens/AdminScreen';
 import { colors } from '../../constants/colors';
 import { useAuth } from '../context/AuthContext';
-import { useBulletinCounter } from '../hooks';
+import { useBulletinCounter, useAdminPendingCount } from '../hooks';
 
 const Tab = createBottomTabNavigator();
 
@@ -29,6 +29,7 @@ export default function TabNavigator() {
   const { user } = useAuth();
   const isAdmin = user?.isAdmin;
   const { totalCount } = useBulletinCounter(user?.id);
+  const adminPendingCount = useAdminPendingCount(isAdmin);
   // Narrow phones (e.g. 320 px) with 6 tabs: labels would touch each other
   const { width } = useWindowDimensions();
   const labelFontSize = width < 360 && isAdmin ? 10 : 12;
@@ -102,7 +103,7 @@ export default function TabNavigator() {
           options={{
             headerShown: false,
             tabBarIcon: ({ color, size, focused }) => (
-              <TabIcon name="admin" color={color} size={size} focused={focused} />
+              <TabIcon name="admin" color={color} size={size} focused={focused} badge={adminPendingCount} />
             ),
           }}
         />

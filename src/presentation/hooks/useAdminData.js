@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { authService } from '../../services/authService.supabase';
+import { refreshAdminBadge } from './useAdminPendingCount';
 
 /**
  * Hook to load and manage admin panel data
@@ -61,10 +62,12 @@ export function useAdminData() {
   // Functions to update local state
   const removePendingUser = useCallback((userId) => {
     setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
+    refreshAdminBadge();
   }, []);
 
   const removeChangeRequest = useCallback((userId) => {
     setChangeRequests((prev) => prev.filter((u) => u.id !== userId));
+    refreshAdminBadge();
   }, []);
 
   const updateUser = useCallback((userId, updates) => {
