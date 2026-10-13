@@ -97,6 +97,7 @@ const parseRecoveryParams = (url) => {
 
     const type = getParam('type');
     const code = getParam('code');
+    const tokenHash = getParam('token_hash');
     const accessToken = getParam('access_token');
     const refreshToken = getParam('refresh_token');
 
@@ -107,6 +108,7 @@ const parseRecoveryParams = (url) => {
       accessToken,
       refreshToken,
       code,
+      tokenHash,
     };
   } catch (error) {
     console.error('Error parsing recovery params:', error);
@@ -307,11 +309,26 @@ export const authService = {
   },
 
   async handlePasswordRecoveryUrl(url) {
-    const { type, accessToken, refreshToken, code } = parseRecoveryParams(url);
+    const { type, accessToken, refreshToken, code, tokenHash } = parseRecoveryParams(url);
 
     const isRecoveryFlow = type === 'recovery' || !!code;
     if (!isRecoveryFlow) {
       return { handled: false };
+    }
+
+    // Email template link with {{ .TokenHash }}: works on any device/browser,
+    // unlike ?code= (PKCE), which needs the verifier stored where the reset
+    // was requested (fails e.g. iPhone PWA → link opened in Safari).
+    if (tokenHash) {
+      try {
+        const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' });
+        if (error) {
+          return { handled: true, error: error.message };
+        }
+        return { handled: true };
+      } catch (err) {
+        return { handled: true, error: err.message || 'Error processing recovery link' };
+      }
     }
 
     if (code) {

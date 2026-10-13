@@ -15,7 +15,8 @@ import { authService } from './src/services/authService.supabase';
 const getInitialRecoveryState = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     const url = window.location.href;
-    const hasCode = url.includes('?code=') || url.includes('&code=');
+    // ?code= (PKCE, same browser only) or ?token_hash= (works on any device)
+    const hasCode = /[?&#](code|token_hash)=/.test(url);
     const isResetPath = url.includes('reset-password');
     const isEmailConfirmedPath = url.includes('/email-confirmed');
 
@@ -60,7 +61,8 @@ export default function App() {
     const handleRecoveryUrl = async (url) => {
       if (!url) return;
 
-      const hasCode = url.includes('?code=') || url.includes('&code=');
+      // ?code= (PKCE, same browser only) or ?token_hash= (works on any device)
+      const hasCode = /[?&#](code|token_hash)=/.test(url);
       const isResetPath = url.includes('reset-password');
       // Supabase can redirect email confirmation either as:
       //   PKCE flow:    ?code=XXXX  (query param)
