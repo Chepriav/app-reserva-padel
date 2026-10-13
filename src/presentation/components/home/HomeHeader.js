@@ -37,8 +37,9 @@ export function HomeHeader({ userName, isAdmin, blockoutMode, onModoBlockoutChan
 const styles = StyleSheet.create({
   header: {
     backgroundColor: colors.primary,
-    padding: 20,
-    paddingTop: Platform.OS === 'web' ? 20 : 40,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingTop: Platform.OS === 'web' ? 12 : 40,
   },
   headerModoBlockout: {
     backgroundColor: colors.blocked,
@@ -54,15 +55,15 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   greeting: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#fff',
-    opacity: 0.9,
-    marginTop: 4,
+    opacity: 0.85,
+    marginTop: 2,
   },
   modoBlockoutContainer: {
     flexDirection: 'row',

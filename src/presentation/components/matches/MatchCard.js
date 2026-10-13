@@ -1,7 +1,9 @@
 import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { colors } from '../../../constants/colors';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { SKILL_LEVELS } from '../../../constants/config';
-import { formatReadableDate } from '../../../utils/dateHelpers';
+import { formatShortDate } from '../../../utils/dateHelpers';
 import { styles } from './MatchCardStyles';
 import ParticipantsList from './ParticipantsList';
 import PendingRequests from './PendingRequests';
@@ -170,9 +172,10 @@ const isWithReservation = (type) => type === 'with_reservation' || type === 'con
 function DateInfo({ match }) {
   if ((isWithReservation(match.type) || match.reservationId) && match.date) {
     return (
-      <View style={styles.dateContainer}>
+      <View style={[styles.dateContainer, styles.dateRow]}>
+        <Ionicons name="calendar-outline" size={15} color={colors.primary} />
         <Text style={styles.date}>
-          {formatReadableDate(match.date)} • {match.startTime?.slice(0, 5)} - {match.endTime?.slice(0, 5)}
+          {formatShortDate(match.date)} · {match.startTime?.slice(0, 5)}–{match.endTime?.slice(0, 5)}
         </Text>
       </View>
     );

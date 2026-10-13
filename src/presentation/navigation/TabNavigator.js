@@ -54,7 +54,8 @@ export default function TabNavigator() {
         },
         headerTintColor: '#fff',
         headerTitleStyle: {
-          fontWeight: 'bold',
+          fontWeight: '700',
+          fontSize: 20,
         },
       }}
     >

@@ -13,7 +13,8 @@ export const styles = StyleSheet.create({
     paddingBottom: 140,
   },
   section: {
-    margin: 16,
+    marginHorizontal: 12,
+    marginTop: 14,
   },
   loadingOverlay: {
     position: 'absolute',
