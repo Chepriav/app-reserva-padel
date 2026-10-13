@@ -33,6 +33,13 @@ describe('filterAndSortUsers', () => {
     filterAndSortUsers(users, '', 'email');
     expect(users).toEqual(copy);
   });
+  test('descending reverses the order', () => {
+    expect(ids(filterAndSortUsers(users, '', 'name', 'desc'))).toEqual(['1', '3', '2']);
+    expect(ids(filterAndSortUsers(users, '', 'apartment', 'desc'))).toEqual(['1', '2', '3']);
+  });
+  test('last access ascending: oldest first, never recorded still last', () => {
+    expect(ids(filterAndSortUsers(users, '', 'lastAccess', 'asc'))).toEqual(['1', '3', '2']);
+  });
   test('normalizeText handles null', () => expect(normalizeText(null)).toBe(''));
 });
 

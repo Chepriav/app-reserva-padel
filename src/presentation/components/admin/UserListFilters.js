@@ -7,7 +7,7 @@ import { USER_SORT_OPTIONS } from '../../hooks/useUserListFilter';
 /**
  * Search box + sort chips for the admin user list
  */
-export function UserListFilters({ query, onChangeQuery, sortBy, onChangeSort, shown, total }) {
+export function UserListFilters({ query, onChangeQuery, sortBy, sortDirection, onChangeSort, shown, total }) {
   return (
     <View style={styles.container}>
       <View style={styles.searchBox}>
@@ -48,10 +48,22 @@ export function UserListFilters({ query, onChangeQuery, sortBy, onChangeSort, sh
               onPress={() => onChangeSort(option.key)}
               accessibilityRole="button"
               accessibilityState={{ selected: active }}
+              accessibilityLabel={
+                active
+                  ? `${option.label}, ${sortDirection === 'asc' ? 'ascendente' : 'descendente'}. Pulsa para invertir`
+                  : `Ordenar por ${option.label}`
+              }
             >
               <Text style={[styles.chipText, active && styles.chipTextActive]}>
                 {option.label}
               </Text>
+              {active && (
+                <Ionicons
+                  name={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'}
+                  size={13}
+                  color="#fff"
+                />
+              )}
             </TouchableOpacity>
           );
         })}
@@ -95,6 +107,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 16,
