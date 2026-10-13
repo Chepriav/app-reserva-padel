@@ -14,6 +14,7 @@ CREATE TABLE public.users (
   es_admin BOOLEAN DEFAULT FALSE,
   es_manager BOOLEAN DEFAULT FALSE,
   estado_aprobacion TEXT DEFAULT 'pendiente',
+  ultimo_acceso TIMESTAMPTZ,        -- Última vez que abrió la app (RPC record_user_access)
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

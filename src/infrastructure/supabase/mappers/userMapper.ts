@@ -23,6 +23,7 @@ interface UserRow {
   estado_aprobacion: string;
   created_at: string;
   updated_at: string;
+  ultimo_acceso?: string | null;
 }
 
 /** Legacy format used by existing consumers (Spanish camelCase) */
@@ -43,6 +44,7 @@ export interface LegacyUser {
   approvalStatus: string;
   createdAt: string;
   updatedAt: string;
+  lastAccessAt: string | null;
 }
 
 // --- Enum translators ---
@@ -112,6 +114,7 @@ export function toDomain(row: UserRow): User {
     approvalStatus: approvalStatusToDomain(row.estado_aprobacion),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    lastAccessAt: row.ultimo_acceso ?? null,
   };
 }
 
@@ -174,6 +177,7 @@ export function toLegacyFormat(user: User): LegacyUser {
     approvalStatus: user.approvalStatus,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
+    lastAccessAt: user.lastAccessAt,
   };
 }
 

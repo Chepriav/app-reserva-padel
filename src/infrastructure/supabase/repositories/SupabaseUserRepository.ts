@@ -140,6 +140,17 @@ export class SupabaseUserRepository implements UserRepository {
     }
   }
 
+  async recordAccess(): Promise<Result<void>> {
+    try {
+      // Throttled server-side (at most once every 15 min per user)
+      const { error } = await supabase.rpc('record_user_access');
+      if (error) return fail(new InfrastructureError('Error recording access', error));
+      return ok(undefined);
+    } catch (err) {
+      return fail(new InfrastructureError('Unexpected error recording access', err));
+    }
+  }
+
   async deleteWithRelations(userId: string): Promise<Result<void>> {
     try {
       await cleanupUserRelations(userId, { removeAdminContent: true });

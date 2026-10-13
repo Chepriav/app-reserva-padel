@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { colors } from '../../../constants/colors';
+import { formatLastAccess } from '../../../utils/formatLastAccess';
 
 /**
  * Tarjeta de usuario en la lista de usuarios
@@ -44,6 +45,12 @@ export function UserCard({
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Vivienda:</Text>
           <Text style={styles.infoValue}>{user.apartment}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Último acceso:</Text>
+          <Text style={[styles.infoValue, !user.lastAccessAt && styles.infoMuted]}>
+            {formatLastAccess(user.lastAccessAt)}
+          </Text>
         </View>
       </View>
 
@@ -113,6 +120,7 @@ const styles = StyleSheet.create({
   badgesContainer: {
     flexDirection: 'row',
     gap: 8,
+    marginLeft: 8,
   },
   adminBadge: {
     backgroundColor: colors.primary,
@@ -141,12 +149,16 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontSize: 14,
     color: colors.textSecondary,
-    width: 80,
+    width: 110,
   },
   infoValue: {
     fontSize: 14,
     color: colors.text,
     flex: 1,
+  },
+  infoMuted: {
+    color: colors.textSecondary,
+    fontStyle: 'italic',
   },
   adminToggleContainer: {
     flexDirection: 'row',

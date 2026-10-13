@@ -21,6 +21,8 @@ export interface User {
   approvalStatus: ApprovalStatus;
   createdAt: string;
   updatedAt: string;
+  /** Last time the user opened the app (null if never recorded) */
+  lastAccessAt: string | null;
 }
 
 /** Partial user returned by getUsersBySameApartment */

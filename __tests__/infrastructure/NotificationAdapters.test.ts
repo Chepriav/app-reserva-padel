@@ -22,6 +22,7 @@ const makeUserRepo = (users: ApartmentUser[] = []): UserRepository =>
     create: jest.fn(),
     updateProfile: jest.fn(),
     deleteWithRelations: jest.fn(),
+  recordAccess: jest.fn(),
   }) as unknown as UserRepository;
 
 const makeCreateNotification = (): CreateUserNotification =>

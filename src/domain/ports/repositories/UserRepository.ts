@@ -11,4 +11,6 @@ export interface UserRepository {
   create(userId: string, data: RegisterData): Promise<Result<void>>;
   updateProfile(userId: string, updates: ProfileUpdate): Promise<Result<User>>;
   deleteWithRelations(userId: string): Promise<Result<void>>;
+  /** Records that the signed-in user opened the app */
+  recordAccess(): Promise<Result<void>>;
 }
