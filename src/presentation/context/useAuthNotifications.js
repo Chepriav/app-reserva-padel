@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { notificationService } from '../../services/notificationService';
 import { reservationsService } from '../../services/reservationsService.supabase';
 import { navigateFromNotification } from '../navigation/AppNavigator';
+import { refreshAdminBadge } from '../hooks/useAdminPendingCount';
 
 /**
  * Manages push notification setup, SW messages, and displacement notifications.
@@ -63,6 +64,11 @@ export function useAuthNotifications({ isAuthenticated, user, setNotificationMes
         message = { type: 'warning', title: 'Partida cancelada', text: 'Una partida en la que estabas apuntado ha sido cancelada.' };
         setNotificationMessage(message);
         navigateFromNotification('Partidas');
+        break;
+
+      case 'new_signup':
+        refreshAdminBadge();
+        navigateFromNotification('Admin');
         break;
 
       default:
