@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import { colors } from '../../constants/colors';
 import { CustomAlert } from '../components/CustomAlert';
 import { styles } from './LoginScreenStyles';
 
-export default function LoginScreen({ navigation }) {
+export default function LoginScreen({ navigation, route }) {
   const { login, resetPassword, resendConfirmationEmail } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,6 +33,16 @@ export default function LoginScreen({ navigation }) {
     message: '',
     buttons: [],
   });
+
+  // Coming from Registro with an already-registered email: open password recovery
+  const recoveryEmail = route?.params?.resetEmail;
+  useEffect(() => {
+    if (!recoveryEmail) return;
+    setEmail(recoveryEmail);
+    setResetEmail(recoveryEmail);
+    setShowResetModal(true);
+    navigation.setParams({ resetEmail: undefined });
+  }, [recoveryEmail, navigation]);
 
   const handleLogin = async () => {
     if (!email || !password) {

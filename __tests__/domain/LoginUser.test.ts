@@ -40,6 +40,7 @@ const mockUserRepository: UserRepository = {
   create: jest.fn(),
   updateProfile: jest.fn(),
   deleteWithRelations: jest.fn(),
+  recordAccess: jest.fn(),
 };
 
 describe('LoginUser', () => {

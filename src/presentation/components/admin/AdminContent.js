@@ -11,6 +11,8 @@ import { RequestCard } from './RequestCard';
 import { UserCard } from './UserCard';
 import { ApartmentChangeCard } from './ApartmentChangeCard';
 import { ImportUsersButton } from './ImportUsersButton';
+import { UserListFilters } from './UserListFilters';
+import { useUserListFilter } from '../../hooks/useUserListFilter';
 
 /**
  * Estado vacío genérico
@@ -108,6 +110,8 @@ export function UsersContent({
   onDelete,
   onImportUsers,
 }) {
+  const { query, setQuery, sortBy, setSortBy, visibleUsers } = useUserListFilter(users);
+
   return (
     <>
       {/* Header with import button */}
@@ -116,11 +120,28 @@ export function UsersContent({
         <ImportUsersButton onPress={onImportUsers} />
       </View>
 
+      {users.length > 0 && (
+        <UserListFilters
+          query={query}
+          onChangeQuery={setQuery}
+          sortBy={sortBy}
+          onChangeSort={setSortBy}
+          shown={visibleUsers.length}
+          total={users.length}
+        />
+      )}
+
       {/* User list */}
       {users.length === 0 ? (
         <EmptyState text="No hay usuarios" />
+      ) : visibleUsers.length === 0 ? (
+        <EmptyState
+          icon="search-outline"
+          text="Ningún usuario coincide"
+          subtext="Prueba con otro nombre, vivienda o email"
+        />
       ) : (
-        users.map((user) => (
+        visibleUsers.map((user) => (
           <UserCard
             key={user.id}
             user={user}
@@ -187,6 +208,8 @@ const styles = StyleSheet.create({
   },
   usersHeader: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
@@ -195,6 +218,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   usersTitle: {
+    flexShrink: 1,
     fontSize: 18,
     fontWeight: '600',
     color: colors.text,

@@ -36,6 +36,11 @@ export class UserNotApprovedError implements AppError {
   constructor(public readonly message: string) {}
 }
 
+export class EmailAlreadyRegisteredError implements AppError {
+  readonly code = 'EMAIL_ALREADY_REGISTERED';
+  readonly message = 'Email already registered';
+}
+
 export class AuthenticationError implements AppError {
   readonly code = 'AUTHENTICATION_ERROR';
   constructor(

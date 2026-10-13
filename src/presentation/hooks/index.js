@@ -20,5 +20,6 @@ export { useSchedules } from './useSchedules';
 
 // AdminScreen hooks
 export { useAdminData } from './useAdminData';
+export { useAdminPendingCount, refreshAdminBadge } from './useAdminPendingCount';
 export { useAdminActions } from './useAdminActions';
 export { useEditApartmentModal } from './useEditApartmentModal';

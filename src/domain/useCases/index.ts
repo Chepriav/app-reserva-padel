@@ -10,6 +10,7 @@ export { GetCurrentUser } from './GetCurrentUser';
 export { UpdateProfile } from './UpdateProfile';
 export { DeleteOwnAccount } from './DeleteOwnAccount';
 export { GetApartmentUsers } from './GetApartmentUsers';
+export { RecordUserAccess } from './RecordUserAccess';
 export { GetPendingUsers } from './GetPendingUsers';
 export { GetAllApprovedUsers } from './GetAllApprovedUsers';
 export { ApproveUser } from './ApproveUser';

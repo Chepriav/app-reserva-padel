@@ -22,7 +22,7 @@ export function useProfileNotifications(user, showAlert) {
         setNotificationsEnabled(true);
         showAlert('Notificaciones Activadas', 'Recibirás notificaciones sobre tus reservas y cambios importantes.');
       } else {
-        showAlert('Error', result.error || 'No se pudieron activar las notificaciones');
+        showAlert('Notificaciones no activadas', result.error || 'No se pudieron activar las notificaciones');
       }
     } catch {
       showAlert('Error', 'Error al activar notificaciones');

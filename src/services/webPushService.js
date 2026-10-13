@@ -28,6 +28,29 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
+const isIOS = () =>
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+const isStandalone = () =>
+  window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true;
+
+/** Explains how to unblock notifications on the user's device (Spanish UI text). */
+export function getNotificationHelp() {
+  if (Platform.OS !== 'web' || typeof navigator === 'undefined') {
+    return 'Activa las notificaciones de la app en los Ajustes del móvil.';
+  }
+  if (isIOS()) {
+    return isStandalone()
+      ? 'Las notificaciones están bloqueadas. Ve a Ajustes del iPhone → Notificaciones → busca esta app y activa "Permitir notificaciones".'
+      : 'En iPhone, primero añade la app a la pantalla de inicio (botón Compartir → "Añadir a pantalla de inicio"), ábrela desde ese icono y vuelve a pulsar "Activar notificaciones".';
+  }
+  if (/Android/i.test(navigator.userAgent)) {
+    return 'Las notificaciones están bloqueadas. En Chrome, pulsa el candado o los tres puntos → Información del sitio → Notificaciones → Permitir. Después recarga la app y vuelve a activarlas.';
+  }
+  return 'Las notificaciones están bloqueadas en este navegador. Pulsa el candado a la izquierda de la dirección web → Notificaciones → Permitir. Después recarga la página y vuelve a activarlas.';
+}
+
 export const webPushService = {
   /**
    * Checks if the browser supports Web Push
@@ -46,7 +69,7 @@ export const webPushService = {
    */
   async requestPermission() {
     if (!this.isSupported()) {
-      return { success: false, error: 'Web Push no soportado en este navegador' };
+      return { success: false, error: getNotificationHelp() };
     }
 
     try {
@@ -54,7 +77,7 @@ export const webPushService = {
       return {
         success: permission === 'granted',
         permission,
-        error: permission !== 'granted' ? 'Permiso denegado' : null,
+        error: permission !== 'granted' ? getNotificationHelp() : null,
       };
     } catch (error) {
       console.error('Error solicitando permiso:', error);
@@ -67,7 +90,7 @@ export const webPushService = {
    */
   async subscribe(userId) {
     if (!this.isSupported()) {
-      return { success: false, error: 'Web Push no soportado' };
+      return { success: false, error: getNotificationHelp() };
     }
 
     if (!VAPID_PUBLIC_KEY) {

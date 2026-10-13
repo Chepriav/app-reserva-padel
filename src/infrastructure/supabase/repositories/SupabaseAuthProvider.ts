@@ -1,5 +1,5 @@
 import type { AuthProvider } from '@domain/ports/repositories/AuthProvider';
-import { AuthenticationError, InfrastructureError } from '@domain/errors/DomainErrors';
+import { AuthenticationError, EmailAlreadyRegisteredError, InfrastructureError } from '@domain/errors/DomainErrors';
 import type { Result } from '@shared/types/Result';
 import { ok, fail } from '@shared/types/Result';
 import { Platform } from 'react-native';
@@ -37,9 +37,18 @@ export class SupabaseAuthProvider implements AuthProvider {
       // calls signOut() to clear any stale session.
       this.clearPKCEVerifier();
       if (error) {
+        if (/already registered|already in use/i.test(error.message)) {
+          return fail(new EmailAlreadyRegisteredError());
+        }
         return fail(new AuthenticationError(error.message, error));
       }
-      return ok({ userId: data.user!.id });
+      // With email confirmation on, Supabase doesn't error for an existing
+      // email: it returns an obfuscated user with no identities. Creating a
+      // profile for it produced duplicate sign-up requests.
+      if (!data.user || (Array.isArray(data.user.identities) && data.user.identities.length === 0)) {
+        return fail(new EmailAlreadyRegisteredError());
+      }
+      return ok({ userId: data.user.id });
     } catch (err) {
       return fail(new AuthenticationError('Sign up failed', err));
     }

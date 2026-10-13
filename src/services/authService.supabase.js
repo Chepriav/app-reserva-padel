@@ -15,6 +15,7 @@ import {
   updateProfile,
   deleteOwnAccount,
   getApartmentUsers,
+  recordUserAccess,
   getPendingUsers,
   getAllApprovedUsers,
   approveUser,
@@ -53,6 +54,8 @@ const ERROR_MESSAGES = {
 };
 
 const ERROR_BY_CODE = {
+  EMAIL_ALREADY_REGISTERED:
+    'Este email ya está dado de alta. Si no recuerdas la contraseña, puedes recuperarla.',
   USER_NOT_FOUND:
     'No se encontró tu perfil de usuario. Puede que tu cuenta no esté configurada correctamente. Contacta con el administrador',
   INFRASTRUCTURE_ERROR:
@@ -146,9 +149,19 @@ export const authService = {
   },
 
   async register(userData) {
-    const domainData = fromLegacyRegisterData(userData);
+    const domainData = fromLegacyRegisterData({
+      ...userData,
+      email: (userData.email || '').trim().toLowerCase(),
+    });
     const result = await registerUser.execute(domainData);
     if (!result.success) {
+      if (result.error?.code === 'EMAIL_ALREADY_REGISTERED') {
+        return {
+          success: false,
+          emailAlreadyRegistered: true,
+          error: ERROR_BY_CODE.EMAIL_ALREADY_REGISTERED,
+        };
+      }
       // Pass the raw error message as fallback so unknown Supabase errors are visible
       const rawMsg = result.error?.message || null;
       return { success: false, error: getErrorMessage(result.error, rawMsg || 'Error al registrarse') };
@@ -163,6 +176,11 @@ export const authService = {
   async getPendingUsers() {
     const result = await getPendingUsers.execute();
     return mapListResult(result, 'Error al obtener usuarios pendientes');
+  },
+
+  /** Fire-and-forget: updates the user's last access (Admin → Usuarios). */
+  async recordAccess() {
+    await recordUserAccess.execute();
   },
 
   async getAllUsers() {

@@ -87,6 +87,11 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
+  // Record last access (Admin → Usuarios) when signed in; throttled server-side
+  useEffect(() => {
+    if (isAuthenticated && user?.id) authService.recordAccess();
+  }, [isAuthenticated, user?.id]);
+
   // Refresh session when app returns to foreground
   useEffect(() => {
     const handleAppStateChange = async (nextAppState) => {
@@ -105,6 +110,8 @@ export const AuthProvider = ({ children }) => {
             // Session expired, onAuthStateChange will handle cleaning the state
             return;
           }
+
+          if (isAuthenticated) authService.recordAccess();
 
           // If there's a session but user is not in state, recover it
           if (result.session && !isAuthenticated) {
