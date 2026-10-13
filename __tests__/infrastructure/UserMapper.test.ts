@@ -1,6 +1,7 @@
 import {
   toDomain,
   toApartmentUserDomain,
+  toPublicProfileDomain,
   toDbProfileUpdate,
   toDbCreateRow,
   toLegacyFormat,
@@ -53,7 +54,6 @@ describe('userMapper', () => {
       const row = {
         id: 'user-1',
         nombre: 'Test User',
-        email: 'test@example.com',
         foto_perfil: null,
         nivel_juego: 'avanzado',
       };
@@ -61,6 +61,17 @@ describe('userMapper', () => {
       expect(result.name).toBe('Test User');
       expect(result.skillLevel).toBe('advanced');
       expect(result.profilePhoto).toBeNull();
+    });
+  });
+
+  describe('toPublicProfileDomain', () => {
+    it('maps the users_public view row (no private fields)', () => {
+      const result = toPublicProfileDomain({
+        id: 'user-1', nombre: 'Ana', vivienda: '2-3-B', foto_perfil: null, nivel_juego: 'intermedio',
+      });
+      expect(result).toEqual({
+        id: 'user-1', name: 'Ana', apartment: '2-3-B', profilePhoto: null, skillLevel: 'intermediate',
+      });
     });
   });
 

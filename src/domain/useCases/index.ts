@@ -11,6 +11,7 @@ export { UpdateProfile } from './UpdateProfile';
 export { DeleteOwnAccount } from './DeleteOwnAccount';
 export { GetApartmentUsers } from './GetApartmentUsers';
 export { RecordUserAccess } from './RecordUserAccess';
+export { GetCommunityUsers } from './GetCommunityUsers';
 export { GetPendingUsers } from './GetPendingUsers';
 export { GetAllApprovedUsers } from './GetAllApprovedUsers';
 export { ApproveUser } from './ApproveUser';

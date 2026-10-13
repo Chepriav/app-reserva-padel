@@ -69,6 +69,7 @@ src/
 | Pausas/Descansos | Configurable por admin (ej: hora de comida) |
 | Retención de reservas | 2 meses desde la fecha (pg_cron diario `purge_old_reservations`) |
 | Borrar usuario | Borra sus reservas, partidas y notificaciones (trigger en `users`) |
+| Privacidad | Un vecino solo lee su propia ficha de `users`; de los demás solo nombre, vivienda, nivel y foto (vista `users_public`). Admins: todo |
 | Integridad en BD | Sin solapes por pista (`reservas_no_overlap`) y límites 1 activa/vivienda, 30–90 min, 7 días (trigger `enforce_reservation_rules`; admins exentos) |
 
 ## Prioridades

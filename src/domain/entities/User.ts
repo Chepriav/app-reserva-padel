@@ -29,7 +29,18 @@ export interface User {
 export interface ApartmentUser {
   id: string;
   name: string;
-  email: string;
+  profilePhoto: string | null;
+  skillLevel: SkillLevel | null;
+}
+
+/**
+ * What a resident may see about another resident (users_public view):
+ * no email, phone, last access or roles.
+ */
+export interface PublicUserProfile {
+  id: string;
+  name: string;
+  apartment: string;
   profilePhoto: string | null;
   skillLevel: SkillLevel | null;
 }

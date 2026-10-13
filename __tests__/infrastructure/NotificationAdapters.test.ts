@@ -10,7 +10,6 @@ import { ok } from '@shared/types/Result';
 const makeApartmentUser = (id: string): ApartmentUser => ({
   id,
   name: `User ${id}`,
-  email: `${id}@test.com`,
   profilePhoto: null,
   skillLevel: null,
 });
@@ -23,6 +22,7 @@ const makeUserRepo = (users: ApartmentUser[] = []): UserRepository =>
     updateProfile: jest.fn(),
     deleteWithRelations: jest.fn(),
   recordAccess: jest.fn(),
+  findPublicProfiles: jest.fn(),
   }) as unknown as UserRepository;
 
 const makeCreateNotification = (): CreateUserNotification =>

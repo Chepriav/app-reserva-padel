@@ -16,6 +16,7 @@ import {
   deleteOwnAccount,
   getApartmentUsers,
   recordUserAccess,
+  getCommunityUsers,
   getPendingUsers,
   getAllApprovedUsers,
   approveUser,
@@ -29,6 +30,7 @@ import {
   fromLegacyFormat,
   fromLegacyRegisterData,
   toDomain,
+  skillLevelToDb,
 } from '../infrastructure/supabase/mappers/userMapper';
 import { supabase } from './supabaseConfig';
 
@@ -181,6 +183,27 @@ export const authService = {
   async getPendingUsers() {
     const result = await getPendingUsers.execute();
     return mapListResult(result, 'Error al obtener usuarios pendientes');
+  },
+
+  /**
+   * Approved residents with public fields only (no email/phone), for any
+   * signed-in user. Admin screens use getAllUsers() instead.
+   */
+  async getCommunityUsers() {
+    const result = await getCommunityUsers.execute();
+    if (!result.success) {
+      return { success: false, error: 'Error al obtener usuarios' };
+    }
+    return {
+      success: true,
+      data: result.value.map((u) => ({
+        id: u.id,
+        name: u.name,
+        apartment: u.apartment,
+        profilePhoto: u.profilePhoto,
+        skillLevel: skillLevelToDb(u.skillLevel),
+      })),
+    };
   },
 
   /** Fire-and-forget: updates the user's last access (Admin → Usuarios). */
@@ -458,7 +481,6 @@ export const authService = {
       data: result.value.map((u) => ({
         id: u.id,
         name: u.name,
-        email: u.email,
         profilePhoto: u.profilePhoto,
         skillLevel: u.skillLevel,
       })),
