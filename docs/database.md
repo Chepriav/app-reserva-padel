@@ -118,9 +118,12 @@ CREATE TABLE public.partidas_jugadores (
 ```sql
 -- Lo que un vecino puede ver de otros (solo usuarios aprobados).
 -- public.users: cada usuario lee su ficha; los admins, todas.
-CREATE VIEW public.users_public AS
-  SELECT id, nombre, vivienda, nivel_juego, foto_perfil
-  FROM public.users WHERE estado_aprobacion = 'aprobado';
+-- Los datos salen de get_users_public() (SECURITY DEFINER, solo usuarios
+-- con sesión); la vista usa los permisos de quien consulta.
+CREATE VIEW public.users_public WITH (security_invoker = true)
+  AS SELECT * FROM public.get_users_public();
+-- get_users_public(): id, nombre, vivienda, nivel_juego, foto_perfil
+--   FROM users WHERE estado_aprobacion = 'aprobado'
 ```
 
 ## Tabla: notificaciones_usuario
