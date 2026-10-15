@@ -15,4 +15,6 @@ export interface UserAdminRepository {
   setRequestedApartment(userId: string, apartment: string): Promise<Result<void>>;
   clearApartmentRequest(userId: string): Promise<Result<void>>;
   approveApartmentChange(userId: string): Promise<Result<void>>;
+  /** Ids of users whose email is not verified yet */
+  findUnverifiedUserIds(): Promise<Result<string[]>>;
 }

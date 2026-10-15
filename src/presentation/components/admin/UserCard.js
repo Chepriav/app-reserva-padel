@@ -44,6 +44,11 @@ export function UserCard({
                 <Text style={styles.badgeText}>Admin</Text>
               </View>
             )}
+            {user.emailVerified === false && (
+              <View style={[styles.badge, styles.unverifiedBadge]}>
+                <Text style={[styles.badgeText, styles.unverifiedBadgeText]}>Sin verificar</Text>
+              </View>
+            )}
           </View>
           {showLastAccess && !expanded && (
             <Text style={styles.subline} numberOfLines={1}>
@@ -69,6 +74,16 @@ export function UserCard({
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Teléfono</Text>
               <Text style={styles.infoValue} selectable>{user.phone}</Text>
+            </View>
+          )}
+          {user.emailVerified === false && (
+            <View style={styles.unverifiedNote}>
+              <Ionicons name="mail-unread-outline" size={16} color={colors.announcementWarning} />
+              <Text style={styles.unverifiedNoteText}>
+                Email sin verificar: no ha abierto el correo de confirmación o de
+                {' '}«Configurar contraseña». Comprueba que el email está bien escrito y
+                {' '}pídele que use «¿Olvidaste tu contraseña?» y mire en spam.
+              </Text>
             </View>
           )}
           <View style={styles.infoRow}>
@@ -161,6 +176,28 @@ const styles = StyleSheet.create({
   },
   managerBadge: {
     backgroundColor: colors.accent,
+  },
+  unverifiedBadge: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.announcementWarning,
+  },
+  unverifiedBadgeText: {
+    color: colors.announcementWarning,
+  },
+  unverifiedNote: {
+    flexDirection: 'row',
+    gap: 8,
+    backgroundColor: colors.announcementWarning + '14',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+  },
+  unverifiedNoteText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.text,
   },
   badgeText: {
     fontSize: 11,

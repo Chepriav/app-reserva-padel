@@ -7,7 +7,10 @@ import { USER_SORT_OPTIONS } from '../../hooks/useUserListFilter';
 /**
  * Search box + sort chips for the admin user list
  */
-export function UserListFilters({ query, onChangeQuery, sortBy, sortDirection, onChangeSort, shown, total }) {
+export function UserListFilters({
+  query, onChangeQuery, sortBy, sortDirection, onChangeSort, shown, total,
+  unverifiedCount = 0, onlyUnverified = false, onToggleUnverified,
+}) {
   return (
     <View style={styles.container}>
       <View style={styles.searchBox}>
@@ -32,6 +35,25 @@ export function UserListFilters({ query, onChangeQuery, sortBy, sortDirection, o
           </TouchableOpacity>
         )}
       </View>
+
+      {unverifiedCount > 0 && (
+        <TouchableOpacity
+          style={[styles.unverifiedChip, onlyUnverified && styles.unverifiedChipActive]}
+          onPress={onToggleUnverified}
+          accessibilityRole="button"
+          accessibilityState={{ selected: onlyUnverified }}
+        >
+          <Ionicons
+            name="mail-unread-outline"
+            size={15}
+            color={onlyUnverified ? '#fff' : colors.announcementWarning}
+          />
+          <Text style={[styles.unverifiedText, onlyUnverified && styles.unverifiedTextActive]}>
+            {onlyUnverified ? 'Mostrando sin verificar' : 'Sin verificar'} ({unverifiedCount})
+          </Text>
+          {onlyUnverified && <Ionicons name="close" size={15} color="#fff" />}
+        </TouchableOpacity>
+      )}
 
       <ScrollView
         horizontal
@@ -128,6 +150,30 @@ const styles = StyleSheet.create({
   chipTextActive: {
     color: '#fff',
     fontWeight: '600',
+  },
+  unverifiedChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.announcementWarning,
+    backgroundColor: colors.surface,
+  },
+  unverifiedChipActive: {
+    backgroundColor: colors.announcementWarning,
+  },
+  unverifiedText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.announcementWarning,
+  },
+  unverifiedTextActive: {
+    color: '#fff',
   },
   count: {
     marginTop: 6,
