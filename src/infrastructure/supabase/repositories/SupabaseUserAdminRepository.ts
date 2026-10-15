@@ -8,6 +8,19 @@ import { toDomain, approvalStatusToDb } from '../mappers/userMapper';
 import { cleanupUserRelations } from '../helpers/userCleanupHelper';
 
 export class SupabaseUserAdminRepository implements UserAdminRepository {
+  async findUnverifiedUserIds(): Promise<Result<string[]>> {
+    try {
+      // Admin-only RPC: email verification lives in auth.users
+      const { data, error } = await supabase.rpc('get_unverified_user_ids');
+      if (error) {
+        return fail(new InfrastructureError('Error fetching unverified users', error));
+      }
+      return ok(((data as unknown[]) || []).map(String));
+    } catch (err) {
+      return fail(new InfrastructureError('Error fetching unverified users', err));
+    }
+  }
+
   async findPendingUsers(): Promise<Result<User[]>> {
     try {
       const { data, error } = await supabase

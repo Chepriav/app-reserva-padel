@@ -110,7 +110,10 @@ export function UsersContent({
   onDelete,
   onImportUsers,
 }) {
-  const { query, setQuery, sortBy, sortDirection, setSortBy, visibleUsers } = useUserListFilter(users);
+  const {
+    query, setQuery, sortBy, sortDirection, setSortBy, visibleUsers,
+    onlyUnverified, unverifiedCount, toggleOnlyUnverified,
+  } = useUserListFilter(users);
 
   return (
     <>
@@ -127,6 +130,9 @@ export function UsersContent({
           sortBy={sortBy}
           sortDirection={sortDirection}
           onChangeSort={setSortBy}
+          unverifiedCount={unverifiedCount}
+          onlyUnverified={onlyUnverified}
+          onToggleUnverified={toggleOnlyUnverified}
           shown={visibleUsers.length}
           total={users.length}
         />

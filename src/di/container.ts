@@ -24,6 +24,7 @@ import { RecordUserAccess } from '@domain/useCases/RecordUserAccess';
 import { GetCommunityUsers } from '@domain/useCases/GetCommunityUsers';
 import { GetPendingUsers } from '@domain/useCases/GetPendingUsers';
 import { GetAllApprovedUsers } from '@domain/useCases/GetAllApprovedUsers';
+import { GetUnverifiedUserIds } from '@domain/useCases/GetUnverifiedUserIds';
 import { ApproveUser } from '@domain/useCases/ApproveUser';
 import { RejectUser } from '@domain/useCases/RejectUser';
 import { ToggleAdminRole } from '@domain/useCases/ToggleAdminRole';
@@ -120,6 +121,7 @@ export const getCommunityUsers = new GetCommunityUsers(userRepository);
 // Admin user management use cases
 export const getPendingUsers = new GetPendingUsers(userAdminRepository);
 export const getAllApprovedUsers = new GetAllApprovedUsers(userAdminRepository);
+export const getUnverifiedUserIds = new GetUnverifiedUserIds(userAdminRepository);
 export const approveUser = new ApproveUser(userAdminRepository);
 export const rejectUser = new RejectUser(userAdminRepository);
 export const toggleAdminRole = new ToggleAdminRole(userAdminRepository);

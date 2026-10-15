@@ -40,6 +40,13 @@ describe('filterAndSortUsers', () => {
   test('last access ascending: oldest first, never recorded still last', () => {
     expect(ids(filterAndSortUsers(users, '', 'lastAccess', 'asc'))).toEqual(['1', '3', '2']);
   });
+  test('only unverified', () => {
+    const list = users.map((u) => ({ ...u, emailVerified: u.id !== '2' }));
+    expect(ids(filterAndSortUsers(list, '', 'name', 'asc', true))).toEqual(['2']);
+    expect(filterAndSortUsers(list, 'jose', 'name', 'asc', true)).toEqual([]);
+    // unknown status (undefined) is never treated as unverified
+    expect(filterAndSortUsers(users, '', 'name', 'asc', true)).toEqual([]);
+  });
   test('normalizeText handles null', () => expect(normalizeText(null)).toBe(''));
 });
 

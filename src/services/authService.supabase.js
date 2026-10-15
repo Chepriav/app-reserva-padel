@@ -19,6 +19,7 @@ import {
   getCommunityUsers,
   getPendingUsers,
   getAllApprovedUsers,
+  getUnverifiedUserIds,
   approveUser,
   rejectUser,
   toggleAdminRole,
@@ -209,6 +210,12 @@ export const authService = {
   /** Fire-and-forget: updates the user's last access (Admin → Usuarios). */
   async recordAccess() {
     await recordUserAccess.execute();
+  },
+
+  /** Admin: ids of users who haven't verified their email (empty if unavailable). */
+  async getUnverifiedUserIds() {
+    const result = await getUnverifiedUserIds.execute();
+    return result.success ? { success: true, data: result.value } : { success: false, data: [] };
   },
 
   async getAllUsers() {

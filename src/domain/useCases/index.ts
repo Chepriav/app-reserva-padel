@@ -14,6 +14,7 @@ export { RecordUserAccess } from './RecordUserAccess';
 export { GetCommunityUsers } from './GetCommunityUsers';
 export { GetPendingUsers } from './GetPendingUsers';
 export { GetAllApprovedUsers } from './GetAllApprovedUsers';
+export { GetUnverifiedUserIds } from './GetUnverifiedUserIds';
 export { ApproveUser } from './ApproveUser';
 export { RejectUser } from './RejectUser';
 export { ToggleAdminRole } from './ToggleAdminRole';

@@ -32,13 +32,19 @@ const COMPARATORS = {
 export const DEFAULT_SORT_DIRECTION = { name: 'asc', apartment: 'asc', email: 'asc', lastAccess: 'desc' };
 
 /** Pure helper (testable): filters by name/apartment/email and sorts. */
-export function filterAndSortUsers(users, query, sortBy, direction = DEFAULT_SORT_DIRECTION[sortBy] ?? 'asc') {
+export function filterAndSortUsers(
+  users,
+  query,
+  sortBy,
+  direction = DEFAULT_SORT_DIRECTION[sortBy] ?? 'asc',
+  onlyUnverified = false,
+) {
   const q = normalizeText(query);
-  const filtered = q
-    ? users.filter((u) =>
-        [u.name, u.apartment, u.email].some((field) => normalizeText(field).includes(q)),
-      )
-    : users;
+  const filtered = users.filter(
+    (u) =>
+      (!onlyUnverified || u.emailVerified === false) &&
+      (!q || [u.name, u.apartment, u.email].some((field) => normalizeText(field).includes(q))),
+  );
   const key = COMPARATORS[sortBy] ? sortBy : 'name';
   const sign = direction === 'desc' ? -1 : 1;
   return [...filtered].sort((a, b) => {
@@ -57,6 +63,8 @@ export function useUserListFilter(users) {
   const [query, setQuery] = useState('');
   const [sortBy, setSortByState] = useState('name');
   const [sortDirection, setSortDirection] = useState('asc');
+  const [onlyUnverified, setOnlyUnverified] = useState(false);
+  const unverifiedCount = useMemo(() => users.filter((u) => u.emailVerified === false).length, [users]);
 
   const setSortBy = (key) => {
     if (key === sortBy) {
@@ -68,9 +76,13 @@ export function useUserListFilter(users) {
   };
 
   const visibleUsers = useMemo(
-    () => filterAndSortUsers(users, query, sortBy, sortDirection),
-    [users, query, sortBy, sortDirection],
+    () => filterAndSortUsers(users, query, sortBy, sortDirection, onlyUnverified && unverifiedCount > 0),
+    [users, query, sortBy, sortDirection, onlyUnverified, unverifiedCount],
   );
 
-  return { query, setQuery, sortBy, sortDirection, setSortBy, visibleUsers };
+  return {
+    query, setQuery, sortBy, sortDirection, setSortBy, visibleUsers,
+    onlyUnverified, unverifiedCount,
+    toggleOnlyUnverified: () => setOnlyUnverified((v) => !v),
+  };
 }
