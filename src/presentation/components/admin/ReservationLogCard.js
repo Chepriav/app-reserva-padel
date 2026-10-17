@@ -66,7 +66,7 @@ export function ReservationLogCard({ reservation }) {
         <View style={[styles.badge, { backgroundColor: statusColor }]}>
           <Text style={styles.badgeText}>{statusLabel}</Text>
         </View>
-        <Text style={styles.priority}>{priorityLabel}</Text>
+        {priority === 'provisional' && <Text style={styles.priority}>{priorityLabel}</Text>}
       </View>
 
       <Text style={styles.userName}>{userName}</Text>
@@ -98,11 +98,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderLeftWidth: 3,
     borderLeftColor: colors.accent,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    elevation: 1,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   row: {
     flexDirection: 'row',

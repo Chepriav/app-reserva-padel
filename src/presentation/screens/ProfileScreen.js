@@ -143,29 +143,36 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        <TouchableOpacity
-          style={[styles.notificationButton, notifications.enablingNotifications && styles.buttonDisabled]}
-          onPress={notifications.handleEnableNotifications}
-          disabled={notifications.enablingNotifications}
-        >
-          {notifications.enablingNotifications ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Ionicons name="notifications-outline" size={18} color="#fff" />
-              <Text style={styles.notificationButtonText}>Activar notificaciones</Text>
+        <View style={styles.notificationsCard}>
+          <View style={styles.notificationsStatus}>
+            <Ionicons name="notifications-outline" size={22} color={colors.secondary} />
+            <View style={styles.notificationsStatusText}>
+              <Text style={styles.notificationsTitle}>Notificaciones</Text>
+              <Text style={styles.notificationsSubtitle}>Avisos de reservas y partidas</Text>
             </View>
-          )}
-        </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={[styles.enableButton, notifications.enablingNotifications && styles.buttonDisabled]}
+            onPress={notifications.handleEnableNotifications}
+            disabled={notifications.enablingNotifications}
+          >
+            {notifications.enablingNotifications ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.enableButtonText}>Activar</Text>
+            )}
+          </TouchableOpacity>
+        </View>
       ))}
 
       <TouchableOpacity style={styles.logoutButton} onPress={actions.handleLogout}>
+        <Ionicons name="log-out-outline" size={20} color={colors.text} />
         <Text style={styles.logoutButtonText}>Cerrar sesión</Text>
       </TouchableOpacity>
 
       {/* Danger zone */}
       <View style={styles.dangerSection}>
-        <Text style={styles.dangerSectionTitle}>Zona de peligro</Text>
+        <Text style={styles.dangerSectionTitle}>Eliminar cuenta</Text>
         <View style={styles.dangerCard}>
           <Text style={styles.dangerText}>
             Eliminar tu cuenta borrará permanentemente todos tus datos y reservas.
@@ -176,7 +183,7 @@ export default function ProfileScreen() {
             disabled={actions.deleting}
           >
             {actions.deleting ? (
-              <ActivityIndicator color="#fff" size="small" />
+              <ActivityIndicator color={colors.error} size="small" />
             ) : (
               <Text style={styles.deleteAccountButtonText}>Eliminar mi cuenta</Text>
             )}
@@ -184,7 +191,6 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <Text style={styles.footer}>Desarrollado con React Native y Expo</Text>
 
       <ApartmentChangeModal
         requestModal={apartment.requestModal}
@@ -215,12 +221,11 @@ const styles = StyleSheet.create({
   saveButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   cancelButton: { marginTop: 12, padding: 16, alignItems: 'center' },
   cancelButtonText: { color: colors.textSecondary, fontSize: 16, fontWeight: '500' },
-  notificationButton: {
-    backgroundColor: colors.primary, borderRadius: 12, padding: 16,
-    margin: 16, marginBottom: 0, alignItems: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4,
+  enableButton: {
+    backgroundColor: colors.primary, borderRadius: 8,
+    paddingVertical: 8, paddingHorizontal: 12, minWidth: 92, alignItems: 'center',
   },
-  notificationButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  enableButtonText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   notificationsCard: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: colors.surface, borderRadius: 12, padding: 14,
@@ -238,23 +243,25 @@ const styles = StyleSheet.create({
   },
   testButtonText: { color: colors.primary, fontSize: 14, fontWeight: '600' },
   logoutButton: {
-    backgroundColor: colors.error, borderRadius: 12, padding: 16,
-    margin: 16, marginTop: 8, alignItems: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4,
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8,
+    backgroundColor: colors.surface, borderRadius: 12, paddingVertical: 14,
+    margin: 16, marginBottom: 0, borderWidth: 1, borderColor: colors.border,
   },
-  logoutButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  dangerSection: { marginHorizontal: 16, marginTop: 24 },
-  dangerSectionTitle: { fontSize: 16, fontWeight: '600', color: colors.error, marginBottom: 12 },
+  logoutButtonText: { color: colors.text, fontSize: 15, fontWeight: '600' },
+  dangerSection: { marginHorizontal: 16, marginTop: 28, marginBottom: 32 },
+  dangerSectionTitle: {
+    fontSize: 12, fontWeight: '700', color: colors.textSecondary, marginBottom: 8,
+    textTransform: 'uppercase', letterSpacing: 0.6,
+  },
   dangerCard: {
-    backgroundColor: colors.surface, borderRadius: 12, padding: 16,
-    borderWidth: 1, borderColor: colors.error + '40',
+    backgroundColor: colors.surface, borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: colors.border,
   },
-  dangerText: { fontSize: 14, color: colors.textSecondary, marginBottom: 16, lineHeight: 20 },
+  dangerText: { fontSize: 13, color: colors.textSecondary, marginBottom: 12, lineHeight: 19 },
   deleteAccountButton: {
-    backgroundColor: colors.error, borderRadius: 8, paddingVertical: 12,
-    paddingHorizontal: 16, alignItems: 'center', minHeight: 44, justifyContent: 'center',
+    borderRadius: 8, paddingVertical: 10, borderWidth: 1, borderColor: colors.error,
+    paddingHorizontal: 16, alignItems: 'center', minHeight: 42, justifyContent: 'center',
   },
-  deleteAccountButtonDisabled: { backgroundColor: colors.error + '80' },
-  deleteAccountButtonText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  footer: { textAlign: 'center', fontSize: 12, color: colors.textSecondary, paddingVertical: 20 },
+  deleteAccountButtonDisabled: { opacity: 0.5 },
+  deleteAccountButtonText: { color: colors.error, fontSize: 14, fontWeight: '600' },
 });

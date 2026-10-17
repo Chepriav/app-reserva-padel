@@ -126,19 +126,19 @@ export function TimeSlotChip({
 
       {estaSelected && (
         <View style={styles.checkMark}>
-          <Text style={styles.checkMarkText}>✓</Text>
+          <Ionicons name="checkmark" size={12} color={colors.accent} />
         </View>
       )}
 
       {isSelectedForBlock && (
         <View style={styles.checkMarkBlock}>
-          <Text style={styles.checkMarkText}>✓</Text>
+          <Ionicons name="checkmark" size={12} color={colors.accent} />
         </View>
       )}
 
       {isSelectedForUnblock && (
         <View style={styles.checkMarkUnblock}>
-          <Text style={styles.checkMarkText}>✓</Text>
+          <Ionicons name="checkmark" size={12} color={colors.accent} />
         </View>
       )}
     </TouchableOpacity>

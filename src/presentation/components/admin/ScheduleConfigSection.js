@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../../constants/colors';
 import { useAlert } from '../../hooks/useAlert';
 import { CustomAlert } from '../CustomAlert';
@@ -52,7 +53,7 @@ export function ScheduleConfigSection({ userId }) {
         })}
       >
         <View style={[styles.checkbox, config.useDifferentiatedSchedules && styles.checkboxChecked]}>
-          {config.useDifferentiatedSchedules && <Text style={styles.checkboxIcon}>✓</Text>}
+          {config.useDifferentiatedSchedules && <Ionicons name="checkmark" size={16} color="#fff" />}
         </View>
         <Text style={styles.checkboxLabel}>
           Usar horarios diferentes entre semana y fin de semana
@@ -163,7 +164,7 @@ export function ScheduleConfigSection({ userId }) {
         onPress={() => setBreakEnabled(!breakEnabled)}
       >
         <View style={[styles.checkbox, breakEnabled && styles.checkboxChecked]}>
-          {breakEnabled && <Text style={styles.checkboxIcon}>✓</Text>}
+          {breakEnabled && <Ionicons name="checkmark" size={16} color="#fff" />}
         </View>
         <Text style={styles.checkboxLabel}>Habilitar pausa</Text>
       </TouchableOpacity>
@@ -215,7 +216,7 @@ export function ScheduleConfigSection({ userId }) {
             onPress={() => setWeekendBreakEnabled(!weekendBreakEnabled)}
           >
             <View style={[styles.checkbox, weekendBreakEnabled && styles.checkboxChecked]}>
-              {weekendBreakEnabled && <Text style={styles.checkboxIcon}>✓</Text>}
+              {weekendBreakEnabled && <Ionicons name="checkmark" size={16} color="#fff" />}
             </View>
             <Text style={styles.checkboxLabel}>Habilitar pausa de fin de semana</Text>
           </TouchableOpacity>

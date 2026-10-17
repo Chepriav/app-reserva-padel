@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Linking, Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from './src/presentation/context/AuthContext';
 import { ReservationsProvider } from './src/presentation/context/ReservationsContext';
@@ -135,15 +136,21 @@ export default function App() {
   return (
     <AuthProvider>
       <ReservationsProvider>
+        <View style={styles.backdrop}>
         <View style={styles.container}>
           {/* Banner de email confirmado */}
           {emailConfirmed && (
             <View style={styles.confirmBanner}>
+              <Ionicons name="checkmark-circle" size={20} color="#fff" style={styles.bannerIcon} />
               <Text style={styles.confirmText}>
-                ✓ Email confirmado. Tu cuenta está pendiente de aprobación del administrador.
+                Email confirmado. Tu cuenta está pendiente de aprobación del administrador.
               </Text>
-              <TouchableOpacity onPress={() => setEmailConfirmed(false)}>
-                <Text style={styles.confirmClose}>✕</Text>
+              <TouchableOpacity
+                onPress={() => setEmailConfirmed(false)}
+                accessibilityLabel="Cerrar aviso"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="close" size={20} color="#fff" style={styles.confirmClose} />
               </TouchableOpacity>
             </View>
           )}
@@ -158,15 +165,30 @@ export default function App() {
           )}
           <AppNavigator onReady={handleNavigationReady} initialRecoveryFlow={initialRecoveryFlow} />
         </View>
+        </View>
         <StatusBar style="auto" />
       </ReservationsProvider>
     </AuthProvider>
   );
 }
 
+// On wide screens (PC/tablet) the app is a centred column, like a native app
+const APP_MAX_WIDTH = 640;
+
 const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: Platform.OS === 'web' ? '#e8edf3' : colors.background,
+  },
   container: {
     flex: 1,
+    width: '100%',
+    maxWidth: APP_MAX_WIDTH,
+    alignSelf: 'center',
+    backgroundColor: colors.background,
+    ...(Platform.OS === 'web' && {
+      boxShadow: '0 0 0 1px rgba(15, 23, 42, 0.06), 0 8px 32px rgba(15, 23, 42, 0.08)',
+    }),
   },
   confirmBanner: {
     backgroundColor: colors.secondary,
@@ -176,6 +198,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     zIndex: 1000,
+  },
+  bannerIcon: {
+    marginRight: 10,
   },
   confirmText: {
     color: '#fff',

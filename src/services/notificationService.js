@@ -199,7 +199,7 @@ export const notificationService = {
 
     await Promise.allSettled(
       targetIds.map((userId) =>
-        pushDelivery.sendToUser(userId, `📢 ${title}`, body, {
+        pushDelivery.sendToUser(userId, `Nuevo aviso: ${title}`, body, {
           type: 'nuevo_anuncio',
           announcementId,
         }),

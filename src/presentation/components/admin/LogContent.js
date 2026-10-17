@@ -34,11 +34,6 @@ const escapeHtml = (value) => String(value)
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#39;');
 
-const PRIORITY_ES = {
-  guaranteed: 'Garantizada (G)',
-  provisional: 'Provisional (P)',
-};
-
 /**
  * Generates a printable HTML page for the reservations log.
  */
@@ -67,7 +62,6 @@ function buildRegistrosHtml(reservations) {
         <td>${r.startTime ? escapeHtml(formatTime(r.startTime)) : '—'}–${r.endTime ? escapeHtml(formatTime(r.endTime)) : '—'}</td>
         <td>${escapeHtml(r.courtName ?? '—')}</td>
         <td style="color:${statusColor};font-weight:600">${escapeHtml(STATUS_ES[r.status] ?? r.status)}</td>
-        <td>${escapeHtml(PRIORITY_ES[r.priority] ?? r.priority ?? '—')}</td>
         <td>${createdAt}</td>
       </tr>`;
   }).join('');
@@ -100,7 +94,6 @@ function buildRegistrosHtml(reservations) {
         <th>Horario</th>
         <th>Pista</th>
         <th>Estado</th>
-        <th>Prioridad</th>
         <th>Fecha reserva</th>
       </tr>
     </thead>

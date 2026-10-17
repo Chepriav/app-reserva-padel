@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../../constants/colors';
 import { getSkillLevelLabel } from '../../../constants/config';
 
@@ -49,10 +50,10 @@ function RequestRow({ request, onAccept, onReject }) {
       </View>
       <View style={styles.buttons}>
         <TouchableOpacity style={styles.acceptButton} onPress={onAccept}>
-          <Text style={styles.acceptButtonText}>✓</Text>
+          <Ionicons name="checkmark" size={18} color="#fff" accessibilityLabel="Aceptar" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.rejectButton} onPress={onReject}>
-          <Text style={styles.rejectButtonText}>✕</Text>
+          <Ionicons name="close" size={18} color="#fff" accessibilityLabel="Rechazar" />
         </TouchableOpacity>
       </View>
     </View>

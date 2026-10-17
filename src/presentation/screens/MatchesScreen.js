@@ -6,14 +6,15 @@ import {
   TouchableOpacity,
   ScrollView,
   RefreshControl,
-  ActivityIndicator,
   Platform,
 } from 'react-native';
+import { CardListSkeleton } from '../components/Skeleton';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { useReservations } from '../context/ReservationsContext';
 import { colors } from '../../constants/colors';
 import { CustomAlert } from '../components/CustomAlert';
+import { TabBar } from '../components/TabBar';
 import { MatchCard, CreateMatchModal, AddPlayerModal } from '../components/matches';
 import {
   useMatches,
@@ -72,24 +73,14 @@ export default function MatchesScreen() {
   return (
     <View style={styles.container}>
       {/* Tabs */}
-      <View style={styles.tabs}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'disponibles' && styles.activeTab]}
-          onPress={() => setActiveTab('disponibles')}
-        >
-          <Text style={[styles.tabText, activeTab === 'disponibles' && styles.tabTextActivo]}>
-            Buscan jugadores
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'mis_partidas' && styles.activeTab]}
-          onPress={() => setActiveTab('mis_partidas')}
-        >
-          <Text style={[styles.tabText, activeTab === 'mis_partidas' && styles.tabTextActivo]}>
-            Mis partidas
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <TabBar
+        tabs={[
+          { key: 'disponibles', label: 'Buscan jugadores' },
+          { key: 'mis_partidas', label: 'Mis partidas' },
+        ]}
+        activeKey={activeTab}
+        onChange={setActiveTab}
+      />
 
       {/* Match list */}
       <ScrollView
@@ -98,9 +89,7 @@ export default function MatchesScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
       >
         {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
+          <CardListSkeleton />
         ) : matches.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
@@ -170,16 +159,6 @@ export default function MatchesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  tabs: {
-    flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  tab: { flex: 1, paddingVertical: 14, alignItems: 'center' },
-  activeTab: { borderBottomWidth: 2, borderBottomColor: colors.primary },
-  tabText: { fontSize: 15, color: colors.textSecondary },
-  tabTextActivo: { color: colors.primary, fontWeight: '600' },
   lista: { flex: 1 },
   listaContent: { padding: 12, paddingBottom: 96 },
   loadingContainer: { padding: 40, alignItems: 'center' },

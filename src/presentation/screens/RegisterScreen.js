@@ -139,9 +139,8 @@ export default function RegisterScreen({ navigation }) {
         showsVerticalScrollIndicator={true}
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Registro de vecino</Text>
           <Text style={styles.subtitle}>
-            Completa tus datos para solicitar acceso
+            Completa tus datos para solicitar acceso. Un administrador revisará tu solicitud.
           </Text>
         </View>
 
