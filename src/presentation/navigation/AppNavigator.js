@@ -119,7 +119,7 @@ export default function AppNavigator({ onReady, initialRecoveryFlow = false }) {
               name="Registro"
               component={RegisterScreen}
               options={{
-                title: 'Registro de Vecino',
+                title: 'Crear cuenta',
                 cardStyle: { flex: 1 },
               }}
             />

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
+  Image,
   View,
   Text,
   TextInput,
@@ -137,8 +138,11 @@ export default function LoginScreen({ navigation, route }) {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
+          {Platform.OS === 'web' && (
+            <Image source={{ uri: '/icon-192.png' }} style={styles.logo} accessibilityLabel="" />
+          )}
           <Text style={styles.title}>Reserva Pádel</Text>
-          <Text style={styles.subtitle}>Urbanización</Text>
+          <Text style={styles.subtitle}>Urbanización · Inicia sesión para reservar</Text>
         </View>
 
         <View style={styles.form}>

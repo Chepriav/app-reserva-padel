@@ -32,7 +32,7 @@ export class ExpoLocalScheduler implements LocalSchedulerPort {
           const { webPushService } = await import('../../../services/webPushService');
           const delayMs = matchDayDate.getTime() - now.getTime();
           results.matchDayId = webPushService.scheduleNotification(
-            '🎾 ¡Hoy es Match Day!',
+            'Hoy tienes partida',
             `Tienes partida a las ${timeFormateada}${courtText}`,
             delayMs,
             { type: 'partida_match_day', matchId: matchId },
@@ -45,7 +45,7 @@ export class ExpoLocalScheduler implements LocalSchedulerPort {
           const Notifications = await import('expo-notifications');
           results.matchDayId = await Notifications.scheduleNotificationAsync({
             content: {
-              title: '🎾 ¡Hoy es Match Day!',
+              title: 'Hoy tienes partida',
               body: `Tienes partida a las ${timeFormateada}${courtText}`,
               data: { type: 'partida_match_day', matchId: matchId },
               sound: true,

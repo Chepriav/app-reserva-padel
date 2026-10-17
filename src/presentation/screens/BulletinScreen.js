@@ -21,6 +21,8 @@ import {
 } from '../components/bulletin';
 import { CreateAnnouncementModal } from '../components/admin';
 import { CustomAlert } from '../components/CustomAlert';
+import { TabBar } from '../components/TabBar';
+import { CardListSkeleton } from '../components/Skeleton';
 
 export default function BulletinScreen() {
   const { user } = useAuth();
@@ -176,35 +178,14 @@ export default function BulletinScreen() {
           )}
         </View>
 
-        <View style={styles.tabs}>
-          <TouchableOpacity
-            style={[styles.tab, tabActivo === 'anuncios' && styles.tabActivo]}
-            onPress={() => setTabActivo('anuncios')}
-          >
-            <Text style={[styles.tabText, tabActivo === 'anuncios' && styles.tabTextActivo]}>
-              Anuncios
-            </Text>
-            {unreadAnnouncementsCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unreadAnnouncementsCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.tab, tabActivo === 'notificaciones' && styles.tabActivo]}
-            onPress={() => setTabActivo('notificaciones')}
-          >
-            <Text style={[styles.tabText, tabActivo === 'notificaciones' && styles.tabTextActivo]}>
-              Notificaciones
-            </Text>
-            {unreadNotifCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unreadNotifCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
+        <TabBar
+          tabs={[
+            { key: 'anuncios', label: 'Anuncios', alert: unreadAnnouncementsCount },
+            { key: 'notificaciones', label: 'Notificaciones', alert: unreadNotifCount },
+          ]}
+          activeKey={tabActivo}
+          onChange={setTabActivo}
+        />
 
         {tabActivo === 'notificaciones' ? (
           <FlatList
@@ -221,7 +202,8 @@ export default function BulletinScreen() {
               />
             }
             ListEmptyComponent={
-              !loadingNotif && <EmptyState type="notificaciones" />
+              loadingNotif ? <View style={styles.skeletonWrap}><CardListSkeleton /></View>
+                : <EmptyState type="notificaciones" />
             }
           />
         ) : (
@@ -242,7 +224,8 @@ export default function BulletinScreen() {
               />
             }
             ListEmptyComponent={
-              !loadingAnnouncements && <EmptyState type="anuncios" />
+              loadingAnnouncements ? <View style={styles.skeletonWrap}><CardListSkeleton /></View>
+                : <EmptyState type="anuncios" />
             }
           />
         )}

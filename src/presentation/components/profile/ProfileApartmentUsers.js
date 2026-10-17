@@ -10,7 +10,7 @@ export function ProfileApartmentUsers({ user, apartmentUsers, loadingUsers }) {
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>
-        Tu vivienda ({isApartmentValid(user.apartment) ? formatApartment(user.apartment) : user.apartment})
+        Tu vivienda · {isApartmentValid(user.apartment) ? formatApartment(user.apartment) : user.apartment}
       </Text>
       <View style={styles.infoCard}>
         {loadingUsers ? (
@@ -55,14 +55,16 @@ export function ProfileApartmentUsers({ user, apartmentUsers, loadingUsers }) {
 }
 
 const styles = StyleSheet.create({
-  section: { padding: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '600', color: colors.text, marginBottom: 12 },
-  infoCard: {
-    backgroundColor: colors.surface, borderRadius: 12, padding: 16,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1, shadowRadius: 8, elevation: 4,
+  section: { paddingHorizontal: 16, paddingTop: 20 },
+  sectionTitle: {
+    fontSize: 12, fontWeight: '700', color: colors.textSecondary, marginBottom: 8, marginLeft: 4,
+    textTransform: 'uppercase', letterSpacing: 0.6,
   },
-  separator: { height: 1, backgroundColor: colors.border },
+  infoCard: {
+    backgroundColor: colors.surface, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 4,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  separator: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
   loadingContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 20, gap: 10 },
   loadingText: { color: colors.textSecondary, fontSize: 14 },
   noUsersText: { color: colors.textSecondary, fontSize: 14, textAlign: 'center', padding: 20 },

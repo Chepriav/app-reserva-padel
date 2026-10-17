@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { colors } from '../../../constants/colors';
+import { TabBar } from '../TabBar';
 
 /**
  * Header del panel de administración
@@ -35,49 +36,15 @@ export function AdminTabs({
   usersCount,
 }) {
   return (
-    <View style={styles.tabsContainer}>
-      <TouchableOpacity
-        style={[styles.tab, activeTab === 'requests' && styles.tabActive]}
-        onPress={() => onTabChange('requests')}
-      >
-        <Text
-          style={[
-            styles.tabText,
-            activeTab === 'requests' && styles.tabTextActive,
-          ]}
-        >
-          Solicitudes ({requestsCount})
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.tab, activeTab === 'users' && styles.tabActive]}
-        onPress={() => onTabChange('users')}
-      >
-        <Text
-          style={[
-            styles.tabText,
-            activeTab === 'users' && styles.tabTextActive,
-          ]}
-        >
-          Usuarios ({usersCount})
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.tab, activeTab === 'configuration' && styles.tabActive]}
-        onPress={() => onTabChange('configuration')}
-      >
-        <Text
-          style={[
-            styles.tabText,
-            activeTab === 'configuration' && styles.tabTextActive,
-          ]}
-        >
-          Ajustes
-        </Text>
-      </TouchableOpacity>
-    </View>
+    <TabBar
+      tabs={[
+        { key: 'requests', label: 'Solicitudes', alert: requestsCount },
+        { key: 'users', label: 'Usuarios', count: usersCount },
+        { key: 'configuration', label: 'Ajustes' },
+      ]}
+      activeKey={activeTab}
+      onChange={onTabChange}
+    />
   );
 }
 
@@ -112,33 +79,6 @@ const styles = StyleSheet.create({
   logBtnText: {
     color: '#fff',
     fontSize: 13,
-    fontWeight: '600',
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    paddingHorizontal: 8,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 2,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  tabActive: {
-    borderBottomColor: colors.accent,
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.textSecondary,
-  },
-  tabTextActive: {
-    color: colors.accent,
     fontWeight: '600',
   },
 });

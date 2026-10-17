@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { SlotGridSkeleton } from '../Skeleton';
 import { colors } from '../../../constants/colors';
 import { formatReadableDate, hasSlotEnded } from '../../../utils/dateHelpers';
 import { getGapBefore } from '../../../utils/scheduleGaps';
@@ -17,6 +18,9 @@ function BreakSeparator({ gap }) {
     </View>
   );
 }
+
+// Slots that already ended today are hidden: what's bookable shows first
+const upcomingSlots = (slots, date) => slots.filter((s) => !hasSlotEnded(date, s.endTime));
 
 /**
  * Schedule grid for day view
@@ -37,9 +41,14 @@ export function DayScheduleGrid({
     return <Text style={styles.emptyText}>No hay horarios disponibles</Text>;
   }
 
+  const visible = upcomingSlots(timeSlots, date);
+  if (visible.length === 0) {
+    return <Text style={styles.emptyText}>Por hoy ya no quedan horarios. Elige otro día.</Text>;
+  }
+
   return (
     <View style={styles.slotsGrid}>
-      {timeSlots.map((timeSlot, index) => {
+      {visible.map((timeSlot, index) => {
         const estaSelected = selectedSlots.some(b =>
           b.date === date && b.startTime === timeSlot.startTime
         );
@@ -60,10 +69,10 @@ export function DayScheduleGrid({
           (isPast && !blockoutMode) ||
           (!blockoutMode && !isBlocked && (isOtherGuaranteed || isMyApartment));
 
-        const gap = getGapBefore(timeSlots, index);
+        const gap = getGapBefore(visible, index);
 
         return (
-          <React.Fragment key={index}>
+          <React.Fragment key={timeSlot.startTime}>
             {gap && <BreakSeparator gap={gap} />}
             <TimeSlotChip
               timeSlot={timeSlot}
@@ -109,7 +118,8 @@ export function WeekScheduleGrid({
   return (
     <>
       {dates.map((date) => {
-        const timeSlotsDay = timeSlotsSemanales[date];
+        const timeSlotsDay = upcomingSlots(timeSlotsSemanales[date], date);
+        if (timeSlotsDay.length === 0) return null;
         const countDisponibles = timeSlotsDay.filter(h =>
           (h.available || h.isDisplaceable) && !h.blocked
         ).length;
@@ -152,7 +162,7 @@ export function WeekScheduleGrid({
                 const gap = getGapBefore(timeSlotsDay, index);
 
                 return (
-                  <React.Fragment key={index}>
+                  <React.Fragment key={timeSlot.startTime}>
                     {gap && <BreakSeparator gap={gap} />}
                     <TimeSlotChip
                       timeSlot={timeSlot}
@@ -195,7 +205,7 @@ export function ScheduleContainer({
   onTimeSlotPress,
 }) {
   if (loading) {
-    return <ActivityIndicator size="large" color={colors.primary} />;
+    return <SlotGridSkeleton />;
   }
 
   if (viewActual === 'dia') {
@@ -269,11 +279,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   dayHeader: {
     flexDirection: 'row',

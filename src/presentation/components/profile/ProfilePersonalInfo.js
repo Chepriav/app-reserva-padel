@@ -20,7 +20,7 @@ export function ProfilePersonalInfo({
 }) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Información Personal</Text>
+      <Text style={styles.sectionTitle}>Información personal</Text>
       <View style={styles.infoCard}>
         {/* Nombre */}
         <View style={styles.infoRow}>
@@ -150,18 +150,20 @@ export function ProfilePersonalInfo({
 }
 
 const styles = StyleSheet.create({
-  section: { padding: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '600', color: colors.text, marginBottom: 12 },
+  section: { paddingHorizontal: 16, paddingTop: 20 },
+  sectionTitle: {
+    fontSize: 12, fontWeight: '700', color: colors.textSecondary, marginBottom: 8, marginLeft: 4,
+    textTransform: 'uppercase', letterSpacing: 0.6,
+  },
   infoCard: {
-    backgroundColor: colors.surface, borderRadius: 12, padding: 16,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1, shadowRadius: 8, elevation: 4,
+    backgroundColor: colors.surface, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 4,
+    borderWidth: 1, borderColor: colors.border,
   },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12 },
   infoRowVertical: { paddingVertical: 12 },
-  infoLabel: { fontSize: 16, color: colors.textSecondary },
-  infoValue: { fontSize: 16, fontWeight: '600', color: colors.text },
-  separator: { height: 1, backgroundColor: colors.border },
+  infoLabel: { fontSize: 15, color: colors.textSecondary },
+  infoValue: { fontSize: 15, fontWeight: '600', color: colors.text },
+  separator: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
   infoInput: {
     flex: 1, minWidth: 0, marginLeft: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 6,
     padding: 8, fontSize: 16, color: colors.text, backgroundColor: colors.background, textAlign: 'right',

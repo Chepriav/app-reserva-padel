@@ -67,7 +67,7 @@ export class SupabaseMatchNotifier implements MatchNotifier {
     matchId: string,
     isClass: boolean,
   ): Promise<Result<void>> {
-    const title = isClass ? '📚 ¡Grupo cerrado!' : '🎾 ¡Partida completa!';
+    const title = isClass ? 'Grupo cerrado' : 'Partida completa';
     const body = isClass
       ? `La clase de ${creatorName} está confirmada. ¡Nos vemos en la pista!`
       : `La partida de ${creatorName} ya tiene 4 jugadores. ¡A jugar!`;
@@ -105,8 +105,7 @@ export class SupabaseMatchNotifier implements MatchNotifier {
     reason: string,
   ): Promise<Result<void>> {
     const typeLabel = isClass ? 'clase' : 'partida';
-    const emoji = isClass ? '📚' : '🎾';
-    const title = `${emoji} ${typeLabel.charAt(0).toUpperCase() + typeLabel.slice(1)} cancelada`;
+    const title = `${typeLabel.charAt(0).toUpperCase() + typeLabel.slice(1)} cancelada`;
     const body =
       reason === 'reserva_desplazada'
         ? `La reserva de la ${typeLabel} de ${creatorName} ha sido desplazada por otra vivienda.`

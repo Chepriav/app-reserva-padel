@@ -14,24 +14,8 @@ export const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 15,
   },
   markTodasText: { fontSize: 13, color: '#fff', fontWeight: '500' },
-  tabs: {
-    flexDirection: 'row', backgroundColor: colors.primary,
-    paddingHorizontal: 16, paddingBottom: 12, gap: 8,
-  },
-  tab: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 10, borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.15)', gap: 6,
-  },
-  tabActivo: { backgroundColor: '#fff' },
-  tabText: { fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.8)' },
-  tabTextActivo: { color: colors.primary },
-  badge: {
-    minWidth: 20, height: 20, borderRadius: 10, backgroundColor: colors.badgeRojo,
-    justifyContent: 'center', alignItems: 'center', paddingHorizontal: 6,
-  },
-  badgeText: { fontSize: 11, fontWeight: '700', color: '#fff' },
   listContent: { flexGrow: 1, paddingVertical: 10 },
+  skeletonWrap: { paddingHorizontal: 12 },
   floatingButton: {
     position: 'absolute',
     bottom: Platform.OS === 'web' ? 20 : 30,

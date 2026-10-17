@@ -1,19 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
-  Text,
   ScrollView,
-  TouchableOpacity,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useReservations } from '../context/ReservationsContext';
 import { useAuth } from '../context/AuthContext';
-import { formatDateReadable, formatTime, hoursUntil } from '../../utils/dateHelpers';
+import { formatDateReadable, formatTime } from '../../utils/dateHelpers';
 import { puedeCancel } from '../../utils/validators';
 import { CustomAlert } from '../components/CustomAlert';
+import { TabBar } from '../components/TabBar';
+import { ReservationCard } from '../components/reservations/ReservationCard';
+import { EmptyState } from '../components/EmptyState';
 import { styles } from './ReservationsScreenStyles';
 
-export default function ReservationsScreen() {
+export default function ReservationsScreen({ navigation }) {
   const {
     getUpcomingReservations: getReservationsUpcoming,
     getPastReservations: getReservationsPast,
@@ -116,161 +117,27 @@ export default function ReservationsScreen() {
     });
   };
 
-  const renderReservation = (reservation) => {
-    const isPast = tabActiva === 'pasadas';
-    const puedeCancelarla =
-      reservation.status === 'confirmed' && !isPast;
-
-    // Calcular si está protegida (< 24h)
-    const hoursRemaining = hoursUntil(reservation.date, reservation.startTime);
-    const estaProtegida = hoursRemaining < 24;
-
-    // Determinar tipo de prioridad a mostrar
-    const isGuaranteed = reservation.priority === 'guaranteed' || estaProtegida;
-    const isProvisional = reservation.priority === 'provisional' && !estaProtegida;
-
-    // Reserva pasada disfrutada (confirmada que ya pasó)
-    const isDisfrutada = isPast && reservation.status === 'confirmed';
-
-    // Verificar si la reserva fue hecha por otro usuario de la vivienda
-    const isOfOtroUser = reservation.userId !== user?.id;
-
-    return (
-      <View
-        key={reservation.id}
-        style={styles.reservationCard}
-      >
-        <View style={styles.reservationHeader}>
-          <Text style={styles.courtName}>{reservation.courtName}</Text>
-          <View style={styles.badgesContainer}>
-            {/* Badge de prioridad - solo para reservas confirmadas próximas */}
-            {reservation.status === 'confirmed' && !isPast && (
-              <View
-                style={[
-                  styles.priorityBadge,
-                  isGuaranteed && styles.guaranteedPriority,
-                  isProvisional && styles.provisionalPriority,
-                ]}
-              >
-                <Text style={styles.priorityText}>
-                  {isGuaranteed ? 'Garantizada' : 'Provisional'}
-                </Text>
-              </View>
-            )}
-            {/* Badge para reserva disfrutada */}
-            {isDisfrutada && (
-              <View style={styles.statusDisfrutada}>
-                <Text style={styles.statusText}>Disfrutada</Text>
-              </View>
-            )}
-            {/* Badge de estado - no mostrar para disfrutadas */}
-            {!isDisfrutada && (
-              <View
-                style={[
-                  styles.statusBadge,
-                  reservation.status === 'confirmed' && styles.statusConfirmada,
-                  reservation.status === 'cancelled' && styles.statusCancelled,
-                  reservation.status === 'completed' && styles.statusCompletada,
-                ]}
-              >
-                <Text style={styles.statusText}>
-                  {reservation.status === 'confirmed' && 'Confirmada'}
-                  {reservation.status === 'cancelled' && 'Cancelada'}
-                  {reservation.status === 'completed' && 'Completada'}
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        <View style={styles.reservationInfo}>
-          <Text style={styles.date}>
-            {formatDateReadable(reservation.date)}
-          </Text>
-          <Text style={styles.timeSlot}>
-            {formatTime(reservation.startTime)} - {formatTime(reservation.endTime)}
-          </Text>
-
-          {/* Mostrar quién hizo la reserva si es de otro usuario */}
-          {isOfOtroUser && (
-            <Text style={styles.reservedBy}>
-              Reservada por: {reservation.userName}
-            </Text>
-          )}
-
-          {/* Aviso para reservas provisionales */}
-          {isProvisional && reservation.status === 'confirmed' && !isPast && (
-            <View style={styles.noticeProvisional}>
-              <Text style={styles.noticeProvisionalText}>
-                Esta reserva puede ser desplazada si otra vivienda necesita este horario como su primera reserva.
-                Se convertirá en garantizada en {Math.round(hoursRemaining - 24)} horas.
-              </Text>
-            </View>
-          )}
-
-          {reservation.players.length > 0 && (
-            <View style={styles.playersContainer}>
-              <Text style={styles.playersLabel}>Otros jugadores:</Text>
-              {reservation.players.map((player, index) => (
-                <Text key={index} style={styles.playerName}>
-                  • {player}
-                </Text>
-              ))}
-            </View>
-          )}
-        </View>
-
-        {puedeCancelarla && (
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={() => handleCancel(reservation)}
-            accessibilityRole="button"
-          >
-            <Text style={styles.cancelButtonText}>Cancelar reserva</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    );
-  };
+  const renderReservation = (reservation) => (
+    <ReservationCard
+      key={reservation.id}
+      reservation={reservation}
+      isPast={tabActiva === 'pasadas'}
+      currentUserId={user?.id}
+      onCancel={handleCancel}
+    />
+  );
 
   return (
     <View style={styles.container}>
       {/* Tabs */}
-      <View style={styles.tabsContainer}>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            tabActiva === 'proximas' && styles.tabActive,
-          ]}
-          onPress={() => setTabActiva('proximas')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              tabActiva === 'proximas' && styles.tabTextActive,
-            ]}
-          >
-            Próximas ({reservationsUpcoming.length})
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            tabActiva === 'pasadas' && styles.tabActive,
-          ]}
-          onPress={() => setTabActiva('pasadas')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              tabActiva === 'pasadas' && styles.tabTextActive,
-            ]}
-          >
-            Pasadas ({reservationsPast.length})
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <TabBar
+        tabs={[
+          { key: 'proximas', label: 'Próximas', count: reservationsUpcoming.length },
+          { key: 'pasadas', label: 'Pasadas', count: reservationsPast.length },
+        ]}
+        activeKey={tabActiva}
+        onChange={setTabActiva}
+      />
 
       {/* Contenido */}
       <ScrollView style={styles.content}>
@@ -278,19 +145,22 @@ export default function ReservationsScreen() {
           reservationsUpcoming.length > 0 ? (
             reservationsUpcoming.map(renderReservation)
           ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No hay reservas próximas</Text>
-              <Text style={styles.emptySubtext}>
-                Tu vivienda no tiene reservas activas.{'\n'}Ve a Inicio para hacer una reserva.
-              </Text>
-            </View>
+            <EmptyState
+              icon="calendar-outline"
+              title="Sin reservas próximas"
+              text="Tu vivienda no tiene ninguna reserva activa."
+              actionLabel="Reservar pista"
+              onAction={() => navigation?.navigate('Inicio')}
+            />
           )
         ) : reservationsPast.length > 0 ? (
           reservationsPast.map(renderReservation)
         ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No hay reservas pasadas</Text>
-          </View>
+          <EmptyState
+            icon="time-outline"
+            title="Sin reservas pasadas"
+            text="Aquí verás las reservas de los últimos dos meses."
+          />
         )}
       </ScrollView>
 

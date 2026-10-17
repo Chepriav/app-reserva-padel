@@ -52,11 +52,8 @@ const styles = StyleSheet.create({
     marginBottom: 0,
     borderRadius: 12,
     padding: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   viewButton: {
     flex: 1,
