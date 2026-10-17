@@ -35,7 +35,7 @@ export function useProfileNotifications(user, showAlert) {
         showAlert('Notificaciones no activadas', result.error || 'No se pudieron activar las notificaciones');
       }
     } catch {
-      showAlert('Error', 'Error al activar notificaciones');
+      showAlert('No se pudieron activar', 'Inténtalo de nuevo en unos segundos.');
     }
 
     setEnablingNotifications(false);

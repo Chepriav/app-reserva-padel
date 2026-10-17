@@ -70,7 +70,7 @@ function buildRegistrosHtml(reservations) {
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Registros de Reservas</title>
+  <title>Registro de reservas</title>
   <style>
     body { font-family: Arial, sans-serif; font-size: 12px; color: #1a202c; margin: 24px; }
     h1 { font-size: 18px; margin-bottom: 4px; }

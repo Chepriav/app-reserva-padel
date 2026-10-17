@@ -120,7 +120,7 @@ export function useBlockouts({ selectedCourt, userId, showAlerta, onReloadSchedu
         );
       }
     } else {
-      showAlerta('Error', 'No se pudo bloquear ningún horario.\n\n' + errores.join('\n'));
+      showAlerta('No se pudo bloquear', 'No se pudo bloquear ningún horario.\n\n' + errores.join('\n'));
     }
 
     onReloadSchedules();
@@ -156,7 +156,7 @@ export function useBlockouts({ selectedCourt, userId, showAlerta, onReloadSchedu
         );
       }
     } else {
-      showAlerta('Error', 'No se pudo desbloquear ningún horario.\n\n' + errores.join('\n'));
+      showAlerta('No se pudo desbloquear', 'No se pudo desbloquear ningún horario.\n\n' + errores.join('\n'));
     }
 
     onReloadSchedules();

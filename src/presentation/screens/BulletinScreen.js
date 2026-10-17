@@ -98,7 +98,7 @@ export default function BulletinScreen() {
       showToast('Mensaje publicado');
       loadAnnouncements();
     } else {
-      showAlert('Error', result.error || 'No se pudo crear el mensaje');
+      showAlert('No se pudo publicar', result.error || 'No se pudo crear el mensaje');
     }
   };
 
@@ -115,7 +115,7 @@ export default function BulletinScreen() {
         if (result.success) {
           showToast('Mensaje eliminado');
         } else {
-          showAlert('Error', result.error || 'No se pudo eliminar el mensaje');
+          showAlert('No se pudo eliminar', result.error || 'No se pudo eliminar el mensaje');
         }
       },
     });
@@ -124,7 +124,7 @@ export default function BulletinScreen() {
   const handleDeleteNotification = async (id) => {
     const result = await deleteNotification(id);
     if (!result.success) {
-      showAlert('Error', 'No se pudo eliminar la notificación');
+      showAlert('No se pudo eliminar', 'No se pudo eliminar la notificación');
     }
   };
 
@@ -138,7 +138,7 @@ export default function BulletinScreen() {
       onConfirm: async () => {
         const result = await markAllAsRead();
         if (!result.success) {
-          showAlert('Error', 'No se pudieron marcar las notificaciones');
+          showAlert('No se pudo marcar como leídas', 'No se pudieron marcar las notificaciones');
         }
       },
     });

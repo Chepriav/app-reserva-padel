@@ -1,4 +1,5 @@
 import { useMatchSimpleActions } from './useMatchSimpleActions';
+import { showToast } from '../components/Toast';
 
 /**
  * Aggregates all MatchesScreen action handlers.
@@ -100,7 +101,7 @@ export function useMatchHandlers({
 
     const isWithReservation = type === 'con_reserva' || type === 'with_reservation';
     if (isWithReservation && !selectedReservation) {
-      showAlert('Error', `Selecciona una reserva para vincular la ${isClass ? 'clase' : 'partida'}`);
+      showAlert('Falta la reserva', `Elige la reserva a la que va unida la ${isClass ? 'clase' : 'partida'}.`);
       return;
     }
 
@@ -130,9 +131,9 @@ export function useMatchHandlers({
       createModal.setSaving(false);
       if (result.success) {
         createModal.close(); setMatchEditing(null);
-        showAlert(isClass ? 'Clase actualizada' : 'Partida actualizada', 'Los cambios se han guardado correctamente');
+        showToast(isClass ? 'Clase actualizada' : 'Partida actualizada');
       } else {
-        showAlert('Error', result.error);
+        showAlert('No se pudo guardar', result.error);
       }
       return;
     }
@@ -163,12 +164,12 @@ export function useMatchHandlers({
       const total = 1 + createModal.players.length;
       const isComplete = total >= (isClass ? maxParticipants : 4);
       if (isClass) {
-        showAlert(isComplete ? 'Clase completa' : 'Clase creada', isComplete ? `Clase creada con ${total} alumnos. ¡Lista!` : 'Tu clase ha sido publicada.');
+        showToast(isComplete ? `Clase publicada y completa (${total} alumnos)` : 'Clase publicada');
       } else {
-        showAlert(isComplete ? 'Partida completa' : 'Partida creada', isComplete ? 'Partida creada con 4 jugadores. ¡A jugar!' : 'Tu solicitud de partida ha sido publicada.');
+        showToast(isComplete ? 'Partida publicada y completa' : 'Partida publicada');
       }
     } else {
-      showAlert('Error', result.error);
+      showAlert('No se pudo publicar', result.error);
     }
   };
 
@@ -201,17 +202,17 @@ export function useMatchHandlers({
         }));
         loadMatches();
       } else {
-        showAlert('Error', result.error);
+        showAlert('No se pudo añadir', result.error);
       }
     } else if (!addPlayerModal.addCommunityUser(selectedUser)) {
-      showAlert('Partida completa', 'Ya tienes 3 jugadores añadidos (4 con el creador)');
+      showAlert('Partida completa', 'Ya hay 4 jugadores contando contigo.');
     }
   };
 
   const handleAddExternal = async () => {
     const { externalName, externalLevel } = addPlayerModal.modalState;
     if (!externalName?.trim()) {
-      showAlert('Error', 'Introduce el nombre del jugador');
+      showAlert('Falta el nombre', 'Escribe el nombre del jugador.');
       return;
     }
     if (isMatchEditing) {
@@ -233,11 +234,11 @@ export function useMatchHandlers({
         }));
         loadMatches();
       } else {
-        showAlert('Error', result.error);
+        showAlert('No se pudo añadir', result.error);
       }
     } else {
       const result = addPlayerModal.addExternalPlayer();
-      if (!result.success) showAlert('Error', result.error);
+      if (!result.success) showAlert('No se pudo añadir', result.error);
     }
   };
 
@@ -254,7 +255,7 @@ export function useMatchHandlers({
           }));
           loadMatches();
         } else {
-          showAlert('Error', result.error);
+          showAlert('No se pudo quitar', result.error);
         }
       }
     } else {

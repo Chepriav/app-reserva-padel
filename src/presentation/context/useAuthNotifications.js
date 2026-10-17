@@ -18,8 +18,8 @@ export function useAuthNotifications({ isAuthenticated, user, setNotificationMes
     switch (notificationType) {
       case 'vivienda_change':
         message = notificationData.approved
-          ? { type: 'success', title: 'Cambio de vivienda aprobado', text: 'Tu solicitud de cambio de vivienda ha sido aprobada.' }
-          : { type: 'error', title: 'Cambio de vivienda rechazado', text: 'Tu solicitud de cambio de vivienda ha sido rechazada.' };
+          ? { type: 'success', title: 'Cambio de vivienda aprobado', text: 'El administrador ha aprobado tu cambio de vivienda.' }
+          : { type: 'error', title: 'Cambio de vivienda rechazado', text: 'El administrador ha rechazado tu cambio de vivienda.' };
         setNotificationMessage(message);
         navigateFromNotification('Perfil');
         break;
@@ -31,7 +31,7 @@ export function useAuthNotifications({ isAuthenticated, user, setNotificationMes
         break;
 
       case 'reservation_displacement':
-        message = { type: 'warning', title: 'Reserva desplazada', text: 'Una de tus reservas ha sido desplazada por otra vivienda.' };
+        message = { type: 'warning', title: 'Reserva desplazada', text: 'Otra vivienda ha ocupado el horario de tu reserva provisional. Puedes reservar otro.' };
         setNotificationMessage(message);
         navigateFromNotification('Mis Reservas');
         break;
@@ -61,7 +61,7 @@ export function useAuthNotifications({ isAuthenticated, user, setNotificationMes
         break;
 
       case 'partida_cancelada':
-        message = { type: 'warning', title: 'Partida cancelada', text: 'Una partida en la que estabas apuntado ha sido cancelada.' };
+        message = { type: 'warning', title: 'Partida cancelada', text: 'El organizador ha cancelado una partida en la que estabas apuntado.' };
         setNotificationMessage(message);
         navigateFromNotification('Partidas');
         break;

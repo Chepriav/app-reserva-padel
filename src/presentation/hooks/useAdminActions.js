@@ -20,7 +20,7 @@ export function useAdminActions({
   // Approve pending user
   const handleApprove = useCallback((user) => {
     showConfirmation({
-      title: 'Aprobar Usuario',
+      title: 'Aprobar usuario',
       message: `¿Aprobar el registro de ${user.name}?\n\nVivienda: ${user.apartment}\nEmail: ${user.email}`,
       onConfirm: async () => {
         const result = await authService.approveUser(user.id);
@@ -28,7 +28,7 @@ export function useAdminActions({
           removePendingUser(user.id);
           showToast(`${user.name} aprobado`);
         } else {
-          showAlert('Error', result.error);
+          showAlert('No se pudo aprobar', result.error);
         }
       },
     });
@@ -37,7 +37,7 @@ export function useAdminActions({
   // Reject pending user
   const handleReject = useCallback((user) => {
     showConfirmation({
-      title: 'Rechazar Usuario',
+      title: 'Rechazar usuario',
       message: `¿Rechazar el registro de ${user.name}?\n\nVivienda: ${user.apartment}\nEmail: ${user.email}`,
       destructive: true,
       confirmText: 'Rechazar',
@@ -47,7 +47,7 @@ export function useAdminActions({
           removePendingUser(user.id);
           showToast('Solicitud rechazada');
         } else {
-          showAlert('Error', result.error);
+          showAlert('No se pudo rechazar', result.error);
         }
       },
     });
@@ -73,7 +73,7 @@ export function useAdminActions({
     }
 
     showConfirmation({
-      title: newRole ? 'Hacer Administrador' : 'Quitar Administrador',
+      title: newRole ? 'Hacer administrador' : 'Quitar administrador',
       message: `¿Deseas ${actionText} ${user.name}?`,
       onConfirm: async () => {
         const result = await authService.toggleAdminRole(user.id, newRole);
@@ -81,7 +81,7 @@ export function useAdminActions({
           updateUser(user.id, { isAdmin: newRole });
           showToast(newRole ? `${user.name} ahora es administrador` : `${user.name} ya no es administrador`);
         } else {
-          showAlert('Error', result.error);
+          showAlert('No se pudo cambiar el rol', result.error);
         }
       },
     });
@@ -102,7 +102,7 @@ export function useAdminActions({
     }
 
     showConfirmation({
-      title: 'Eliminar Usuario',
+      title: 'Eliminar usuario',
       message: `¿Estás seguro de eliminar a ${user.name}?\n\nEsta acción no se puede deshacer.`,
       destructive: true,
       confirmText: 'Eliminar',
@@ -112,7 +112,7 @@ export function useAdminActions({
           removeUser(user.id);
           showToast(`${user.name} eliminado`);
         } else {
-          showAlert('Error', result.error);
+          showAlert('No se pudo eliminar', result.error);
         }
       },
     });
@@ -121,24 +121,20 @@ export function useAdminActions({
   // Approve apartment change
   const handleApproveApartmentChange = useCallback((user) => {
     showConfirmation({
-      title: 'Aprobar Cambio de Vivienda',
+      title: 'Aprobar cambio de vivienda',
       message: `¿Aprobar el cambio de vivienda de ${user.name}?\n\nActual: ${formatApartment(user.apartment)}\nNueva: ${formatApartment(user.requestedApartment)}`,
       onConfirm: async () => {
         const result = await authService.approveApartmentChange(user.id);
         if (result.success) {
           removeChangeRequest(user.id);
-          showToast('Cambio de vivienda aprobado');
+          showToast(`${user.name} ahora está en ${formatApartment(user.requestedApartment)}`);
           await notificationService.notifyApartmentChange(
             user.id,
             true,
             formatApartment(user.requestedApartment)
           );
-          showAlert(
-            'Cambio Aprobado',
-            `La vivienda de ${user.name} ha sido cambiada a ${formatApartment(user.requestedApartment)}`
-          );
         } else {
-          showAlert('Error', result.error);
+          showAlert('No se pudo aprobar el cambio', result.error);
         }
       },
     });
@@ -147,7 +143,7 @@ export function useAdminActions({
   // Reject apartment change
   const handleRejectApartmentChange = useCallback((user) => {
     showConfirmation({
-      title: 'Rechazar Cambio de Vivienda',
+      title: 'Rechazar cambio de vivienda',
       message: `¿Rechazar la solicitud de cambio de vivienda de ${user.name}?\n\nSolicita: ${formatApartment(user.requestedApartment)}`,
       destructive: true,
       confirmText: 'Rechazar',
@@ -158,7 +154,7 @@ export function useAdminActions({
           showToast('Cambio de vivienda rechazado');
           await notificationService.notifyApartmentChange(user.id, false, null);
         } else {
-          showAlert('Error', result.error);
+          showAlert('No se pudo rechazar el cambio', result.error);
         }
       },
     });
@@ -183,7 +179,7 @@ export function useAdminActions({
       showToast(`Vivienda de ${user.name} cambiada a ${formatApartment(newApartment)}`);
       return { success: true };
     } else {
-      showAlert('Error', result.error || 'Error al actualizar la vivienda');
+      showAlert('No se pudo cambiar la vivienda', result.error || 'Inténtalo de nuevo en unos segundos.');
       return { success: false };
     }
   }, [showAlert, updateUser]);

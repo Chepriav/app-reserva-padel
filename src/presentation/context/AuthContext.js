@@ -150,7 +150,7 @@ export const AuthProvider = ({ children }) => {
         needsEmailConfirmation: response.needsEmailConfirmation ?? false,
       };
     } catch {
-      return { success: false, error: 'Error al iniciar sesión' };
+      return { success: false, error: 'Inténtalo de nuevo en unos segundos.' };
     }
   };
 
@@ -158,7 +158,7 @@ export const AuthProvider = ({ children }) => {
     try {
       return await authService.resendConfirmationEmail(email);
     } catch {
-      return { success: false, error: 'Error al reenviar el email de confirmación' };
+      return { success: false, error: 'Inténtalo de nuevo en unos segundos.' };
     }
   };
 
@@ -197,7 +197,7 @@ export const AuthProvider = ({ children }) => {
       }
       return { success: false, error: response.error };
     } catch {
-      return { success: false, error: 'Error al registrarse' };
+      return { success: false, error: 'Inténtalo de nuevo en unos segundos.' };
     }
   };
 
@@ -210,7 +210,7 @@ export const AuthProvider = ({ children }) => {
       }
       return { success: false, error: response.error };
     } catch {
-      return { success: false, error: 'Error al actualizar perfil' };
+      return { success: false, error: 'Inténtalo de nuevo en unos segundos.' };
     }
   };
 
@@ -219,7 +219,7 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.resetPassword(email);
       return response;
     } catch {
-      return { success: false, error: 'Error al enviar correo de recuperación' };
+      return { success: false, error: 'Inténtalo de nuevo en unos segundos.' };
     }
   };
 

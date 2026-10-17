@@ -63,27 +63,27 @@ export function useScheduleConfig(userId, showAlert) {
   const handleSave = async () => {
     if (config.useDifferentiatedSchedules) {
       if (!config.weekdayOpeningTime || !config.weekdayClosingTime) {
-        showAlert('Error', 'Debes especificar horarios de lunes a viernes');
+        showAlert('Revisa los horarios', 'Debes especificar horarios de lunes a viernes');
         return;
       }
       if (!config.weekendOpeningTime || !config.weekendClosingTime) {
-        showAlert('Error', 'Debes especificar horarios de fin de semana');
+        showAlert('Revisa los horarios', 'Debes especificar horarios de fin de semana');
         return;
       }
     } else {
       if (!config.openingTime || !config.closingTime) {
-        showAlert('Error', 'Debes especificar hora de apertura y cierre');
+        showAlert('Revisa los horarios', 'Debes especificar hora de apertura y cierre');
         return;
       }
     }
 
     if (breakEnabled && (!config.breakStart || !config.breakEnd)) {
-      showAlert('Error', 'Debes especificar hora de inicio y fin de la pausa');
+      showAlert('Revisa la pausa', 'Debes especificar hora de inicio y fin de la pausa');
       return;
     }
 
     if (weekendBreakEnabled && config.useDifferentiatedSchedules && (!config.weekendBreakStart || !config.weekendBreakEnd)) {
-      showAlert('Error', 'Debes especificar hora de inicio y fin de la pausa de fin de semana');
+      showAlert('Revisa la pausa', 'Debes especificar hora de inicio y fin de la pausa de fin de semana');
       return;
     }
 
@@ -109,11 +109,11 @@ export function useScheduleConfig(userId, showAlert) {
         showToast('Horarios guardados');
         await loadConfig();
       } else {
-        showAlert('Error', result.error || 'Error al guardar configuración');
+        showAlert('No se pudo guardar', result.error || 'Inténtalo de nuevo en unos segundos.');
       }
-    } catch (error) {
+    } catch {
       setSaving(false);
-      showAlert('Error', 'Error inesperado al guardar: ' + error.message);
+      showAlert('No se pudo guardar', 'Inténtalo de nuevo en unos segundos.');
     }
   };
 

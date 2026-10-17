@@ -114,7 +114,7 @@ export const ReservationsProvider = ({ children }) => {
       }
       return { success: false, error: response.error };
     } catch {
-      return { success: false, error: 'Error al obtener disponibilidad' };
+      return { success: false, error: 'Inténtalo de nuevo en unos segundos.' };
     }
   };
 
@@ -140,7 +140,7 @@ export const ReservationsProvider = ({ children }) => {
       }
       return { success: false, error: response.error };
     } catch {
-      return { success: false, error: 'Error al crear reserva' };
+      return { success: false, error: 'Inténtalo de nuevo en unos segundos.' };
     }
   };
 
@@ -159,7 +159,7 @@ export const ReservationsProvider = ({ children }) => {
       }
       return { success: false, error: response.error };
     } catch {
-      return { success: false, error: 'Error al cancelar reserva' };
+      return { success: false, error: 'Inténtalo de nuevo en unos segundos.' };
     }
   };
 
@@ -171,7 +171,7 @@ export const ReservationsProvider = ({ children }) => {
       }
       return { success: false, error: response.error };
     } catch {
-      return { success: false, error: 'Error al obtener reservas' };
+      return { success: false, error: 'Inténtalo de nuevo en unos segundos.' };
     }
   };
 

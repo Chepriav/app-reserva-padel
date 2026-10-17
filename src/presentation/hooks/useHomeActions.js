@@ -118,12 +118,12 @@ export function useHomeActions({
     }
 
     if (!user) {
-      showAlerta('Error', 'Debes iniciar sesión para hacer una reserva');
+      showAlerta('Inicia sesión', 'Debes iniciar sesión para hacer una reserva');
       return;
     }
 
     if (!courtSelected) {
-      showAlerta('Error', 'Selecciona una pista primero');
+      showAlerta('Elige una pista', 'Selecciona una pista primero');
       return;
     }
 
@@ -158,14 +158,14 @@ export function useHomeActions({
     const durationText = durationMinutes === 30 ? '30 minutos' :
                           durationMinutes === 60 ? '1 hora' : '1.5 horas';
 
-    let title = 'Confirmar Reserva';
+    let title = 'Confirmar reserva';
     let message = `¿Reservar ${courtSelected.name} el ${formatDateReadable(date)} de ${startTime} a ${endTime}?\n\nDuración: ${durationText} (${selectedSlots.length} bloques)`;
 
     if (hasDisplacements) {
       const apartmentsDisplaced = [...new Set(displaceableSlots.map(b => b.apartmentDisplaced).filter(Boolean))];
       const hoursDisplaced = displaceableSlots.map(b => b.startTime).join(', ');
 
-      title = 'Desplazar y Reservar';
+      title = 'Desplazar y reservar';
       message = `¿Reservar ${courtSelected.name} el ${formatDateReadable(date)} de ${startTime} a ${endTime}?\n\n`;
       message += `Atención: se cancelarán las reservas provisionales de:\n`;
       message += `• Vivienda(s): ${apartmentsDisplaced.join(', ')}\n`;
@@ -179,7 +179,7 @@ export function useHomeActions({
       buttons: [
         { text: 'Cancelar', style: 'cancel', onPress: () => {} },
         {
-          text: hasDisplacements ? 'Desplazar y Reservar' : 'Confirmar',
+          text: hasDisplacements ? 'Desplazar y reservar' : 'Confirmar',
           style: hasDisplacements ? 'destructive' : 'default',
           onPress: async () => {
             setReservando(true);
@@ -197,7 +197,7 @@ export function useHomeActions({
               if (hasDisplacements) {
                 showAlerta(
                   'Reserva confirmada',
-                  'Tu reserva garantizada se ha creado correctamente.\nLas reservas provisionales anteriores han sido desplazadas.',
+                  'Tu reserva está hecha. La reserva provisional que había en ese horario ha quedado anulada y su vivienda recibirá un aviso.',
                 );
               } else {
                 showToast(`Reserva confirmada: ${formatShortDate(date)}, ${startTime}–${endTime}`);
@@ -208,7 +208,7 @@ export function useHomeActions({
               }
               recargarTimeSlots();
             } else {
-              showAlerta('Error', result.error);
+              showAlerta('No se pudo reservar', result.error);
             }
           },
         },

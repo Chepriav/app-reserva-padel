@@ -57,7 +57,7 @@ export function useUserImport() {
 
       return {
         success: false,
-        error: error.message || 'Error al importar usuarios',
+        error: error.message || 'Inténtalo de nuevo en unos segundos.',
         results: { success: [], errors: [] },
       };
     }
