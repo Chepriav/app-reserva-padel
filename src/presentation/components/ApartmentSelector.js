@@ -59,11 +59,11 @@ export function ApartmentSelector({
   const getModalTitle = () => {
     switch (modalType) {
       case 'staircase':
-        return 'Selecciona Escalera';
+        return 'Selecciona escalera';
       case 'floor':
-        return 'Selecciona Piso';
+        return 'Selecciona piso';
       case 'door':
-        return 'Selecciona Puerta';
+        return 'Selecciona puerta';
       default:
         return '';
     }

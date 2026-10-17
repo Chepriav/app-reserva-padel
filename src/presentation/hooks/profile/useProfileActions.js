@@ -12,17 +12,17 @@ export function useProfileActions(user, logout, showAlert) {
         await logout();
       } else {
         setDeleting(false);
-        showAlert('Error', result.error || 'No se pudo eliminar la cuenta');
+        showAlert('No se pudo eliminar la cuenta', result.error || 'No se pudo eliminar la cuenta');
       }
     } catch {
       setDeleting(false);
-      showAlert('Error', 'Error inesperado al eliminar la cuenta');
+      showAlert('No se pudo eliminar la cuenta', 'Inténtalo de nuevo en unos segundos.');
     }
   };
 
   const handleDeleteAccount = () => {
     showAlert(
-      'Eliminar Cuenta',
+      'Eliminar cuenta',
       '¿Estás seguro de que quieres eliminar tu cuenta? Esta acción es irreversible y se eliminarán todos tus datos.',
       [
         { text: 'Cancelar', style: 'cancel', onPress: () => {} },
@@ -31,11 +31,11 @@ export function useProfileActions(user, logout, showAlert) {
           style: 'destructive',
           onPress: () => {
             showAlert(
-              'Confirmar Eliminación',
-              '¿Realmente deseas eliminar tu cuenta? Esta acción NO se puede deshacer.',
+              'Eliminar cuenta definitivamente',
+              '¿Realmente deseas eliminar tu cuenta? Esta acción no se puede deshacer.',
               [
                 { text: 'Cancelar', style: 'cancel', onPress: () => {} },
-                { text: 'Sí, Eliminar', style: 'destructive', onPress: executeDeleteAccount },
+                { text: 'Sí, eliminar', style: 'destructive', onPress: executeDeleteAccount },
               ]
             );
           },
@@ -46,17 +46,17 @@ export function useProfileActions(user, logout, showAlert) {
 
   const handleLogout = () => {
     showAlert(
-      'Cerrar Sesión',
+      'Cerrar sesión',
       '¿Estás seguro de que quieres cerrar sesión?',
       [
         { text: 'Cancelar', style: 'cancel', onPress: () => {} },
         {
-          text: 'Cerrar Sesión',
+          text: 'Cerrar sesión',
           style: 'destructive',
           onPress: async () => {
             const result = await logout();
             if (!result.success) {
-              showAlert('Error', result.error || 'No se pudo cerrar sesión');
+              showAlert('No se pudo cerrar sesión', result.error || 'No se pudo cerrar sesión');
             }
           },
         },

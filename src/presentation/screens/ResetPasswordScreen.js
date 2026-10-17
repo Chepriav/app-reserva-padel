@@ -107,8 +107,8 @@ export default function ResetPasswordScreen({ navigation }) {
     if (!password || !confirmPassword) {
       setAlertConfig({
         visible: true,
-        title: 'Error',
-        message: 'Por favor completa todos los campos',
+        title: 'Faltan datos',
+        message: 'Rellena todos los campos.',
         buttons: [{ text: 'OK', onPress: () => {} }],
       });
       return;
@@ -117,7 +117,7 @@ export default function ResetPasswordScreen({ navigation }) {
     if (password.length < 6) {
       setAlertConfig({
         visible: true,
-        title: 'Error',
+        title: 'Contraseña demasiado corta',
         message: 'La contraseña debe tener al menos 6 caracteres',
         buttons: [{ text: 'OK', onPress: () => {} }],
       });
@@ -127,8 +127,8 @@ export default function ResetPasswordScreen({ navigation }) {
     if (password !== confirmPassword) {
       setAlertConfig({
         visible: true,
-        title: 'Error',
-        message: 'Las contraseñas no coinciden',
+        title: 'Las contraseñas no coinciden',
+        message: 'Escribe la misma contraseña en los dos campos.',
         buttons: [{ text: 'OK', onPress: () => {} }],
       });
       return;
@@ -145,7 +145,7 @@ export default function ResetPasswordScreen({ navigation }) {
       setAlertConfig({
         visible: true,
         title: 'Contraseña actualizada',
-        message: 'Tu contraseña ha sido actualizada correctamente.',
+        message: 'Ya puedes entrar con tu nueva contraseña.',
         buttons: [
           {
             text: 'Continuar',
@@ -167,7 +167,7 @@ export default function ResetPasswordScreen({ navigation }) {
     } else {
       setAlertConfig({
         visible: true,
-        title: 'Error',
+        title: 'No se pudo cambiar la contraseña',
         message: result.error,
         buttons: [{ text: 'OK', onPress: () => {} }],
       });
@@ -210,7 +210,7 @@ export default function ResetPasswordScreen({ navigation }) {
     >
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Text style={styles.title}>Restablecer Contraseña</Text>
+          <Text style={styles.title}>Restablecer contraseña</Text>
           <Text style={styles.subtitle}>Introduce una nueva contraseña</Text>
         </View>
 

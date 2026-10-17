@@ -76,7 +76,7 @@ export const canMakeReservation = (user, newReservation, currentReservations) =>
       valid: false,
       valido: false,
       error: RESERVATION_LIMITS.maxActiveReservations === 1
-        ? 'Tu vivienda ya tiene una reserva activa. Cancélala en «Mis Reservas» si quieres cambiarla.'
+        ? 'Tu vivienda ya tiene una reserva activa. Cancélala en «Mis reservas» si quieres cambiarla.'
         : `Tu vivienda ya tiene ${RESERVATION_LIMITS.maxActiveReservations} reservas activas.`,
     };
   }

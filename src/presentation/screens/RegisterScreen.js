@@ -42,8 +42,8 @@ export default function RegisterScreen({ navigation }) {
     if (password !== confirmPassword) {
       setAlertConfig({
         visible: true,
-        title: 'Error',
-        message: 'Las contraseñas no coinciden',
+        title: 'Las contraseñas no coinciden',
+        message: 'Escribe la misma contraseña en los dos campos.',
         buttons: [{ text: 'OK', onPress: () => {} }],
       });
       return;
@@ -98,7 +98,7 @@ export default function RegisterScreen({ navigation }) {
     if (result.success) {
       setAlertConfig({
         visible: true,
-        title: 'Registro Exitoso',
+        title: 'Solicitud enviada',
         message: result.message || 'Tu cuenta está pendiente de aprobación por un administrador. Te notificaremos cuando sea aprobada.',
         buttons: [
           {
@@ -123,7 +123,7 @@ export default function RegisterScreen({ navigation }) {
     } else {
       setAlertConfig({
         visible: true,
-        title: 'Error',
+        title: 'No se pudo completar el registro',
         message: result.error,
         buttons: [{ text: 'OK', onPress: () => {} }],
       });
@@ -215,7 +215,7 @@ export default function RegisterScreen({ navigation }) {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Confirmar Contraseña *</Text>
+            <Text style={styles.label}>Confirmar contraseña *</Text>
             <View style={styles.passwordContainer}>
               <TextInput
                 placeholderTextColor={colors.textSecondary}

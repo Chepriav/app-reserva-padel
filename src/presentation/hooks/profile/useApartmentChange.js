@@ -32,7 +32,7 @@ export function useApartmentChange(user, updateProfile, showAlert) {
 
     const newApartment = combineApartment(staircase, floor, door);
     if (newApartment === user?.apartment) {
-      showAlert('Error', 'La vivienda seleccionada es igual a tu vivienda actual');
+      showAlert('Elige otra vivienda', 'La vivienda seleccionada es igual a tu vivienda actual');
       return;
     }
 
@@ -45,18 +45,18 @@ export function useApartmentChange(user, updateProfile, showAlert) {
       showToast(`Solicitud de cambio a ${formatApartment(newApartment)} enviada. Un administrador la revisará.`);
     } else {
       setRequestModal((prev) => ({ ...prev, saving: false }));
-      showAlert('Error', result.error || 'Error al enviar solicitud');
+      showAlert('No se pudo enviar la solicitud', result.error || 'Inténtalo de nuevo en unos segundos.');
     }
   };
 
   const handleCancelRequest = () => {
     showAlert(
-      'Cancelar Solicitud',
+      'Cancelar solicitud',
       '¿Estás seguro de que quieres cancelar tu solicitud de cambio de vivienda?',
       [
         { text: 'No', style: 'cancel', onPress: () => {} },
         {
-          text: 'Sí, Cancelar',
+          text: 'Sí, cancelar',
           style: 'destructive',
           onPress: async () => {
             setCancelingRequest(true);
@@ -65,7 +65,7 @@ export function useApartmentChange(user, updateProfile, showAlert) {
               await updateProfile({ requestedApartment: null });
               showToast('Solicitud de cambio cancelada');
             } else {
-              showAlert('Error', result.error || 'Error al cancelar solicitud');
+              showAlert('No se pudo cancelar la solicitud', result.error || 'Inténtalo de nuevo en unos segundos.');
             }
             setCancelingRequest(false);
           },

@@ -73,6 +73,7 @@ export default function TabNavigator() {
         name="Mis Reservas"
         component={ReservationsScreen}
         options={{
+          title: 'Mis reservas',
           tabBarIcon: ({ color, size, focused }) => (
             <TabIcon name="calendar" color={color} size={size} focused={focused} />
           ),

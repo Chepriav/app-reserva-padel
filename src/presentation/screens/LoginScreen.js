@@ -49,8 +49,8 @@ export default function LoginScreen({ navigation, route }) {
     if (!email || !password) {
       setAlertConfig({
         visible: true,
-        title: 'Error',
-        message: 'Por favor completa todos los campos',
+        title: 'Faltan datos',
+        message: 'Escribe tu email y tu contraseña.',
         buttons: [{ text: 'OK', onPress: () => {} }],
       });
       return;
@@ -74,7 +74,7 @@ export default function LoginScreen({ navigation, route }) {
       } else {
         setAlertConfig({
           visible: true,
-          title: 'Error',
+          title: 'No se pudo iniciar sesión',
           message: result.error,
           buttons: [{ text: 'OK', onPress: () => {} }],
         });
@@ -88,7 +88,7 @@ export default function LoginScreen({ navigation, route }) {
     setLoading(false);
     setAlertConfig({
       visible: true,
-      title: result.success ? 'Email enviado' : 'Error',
+      title: result.success ? 'Email enviado' : 'No se pudo reenviar',
       message: result.success ? result.message : result.error,
       buttons: [{ text: 'OK', onPress: () => {} }],
     });
@@ -98,8 +98,8 @@ export default function LoginScreen({ navigation, route }) {
     if (!resetEmail) {
       setAlertConfig({
         visible: true,
-        title: 'Error',
-        message: 'Por favor ingresa tu email',
+        title: 'Falta el email',
+        message: 'Escribe tu email para enviarte el enlace.',
         buttons: [{ text: 'OK', onPress: () => {} }],
       });
       return;
@@ -114,14 +114,14 @@ export default function LoginScreen({ navigation, route }) {
       setResetEmail('');
       setAlertConfig({
         visible: true,
-        title: 'Correo Enviado',
+        title: 'Correo enviado',
         message: result.message,
         buttons: [{ text: 'OK', onPress: () => {} }],
       });
     } else {
       setAlertConfig({
         visible: true,
-        title: 'Error',
+        title: 'No se pudo enviar el correo',
         message: result.error,
         buttons: [{ text: 'OK', onPress: () => {} }],
       });
@@ -195,7 +195,7 @@ export default function LoginScreen({ navigation, route }) {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>Iniciar Sesión</Text>
+              <Text style={styles.buttonText}>Iniciar sesión</Text>
             )}
           </TouchableOpacity>
 
@@ -231,7 +231,7 @@ export default function LoginScreen({ navigation, route }) {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Recuperar Contraseña</Text>
+            <Text style={styles.modalTitle}>Recuperar contraseña</Text>
             <Text style={styles.modalSubtitle}>
               Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña
             </Text>

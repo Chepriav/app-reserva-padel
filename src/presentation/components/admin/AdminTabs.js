@@ -38,8 +38,8 @@ export function AdminTabs({
   return (
     <TabBar
       tabs={[
-        { key: 'requests', label: 'Solicitudes', alert: requestsCount },
         { key: 'users', label: 'Usuarios', count: usersCount },
+        { key: 'requests', label: 'Solicitudes', alert: requestsCount },
         { key: 'configuration', label: 'Ajustes' },
       ]}
       activeKey={activeTab}

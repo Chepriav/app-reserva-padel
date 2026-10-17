@@ -4,7 +4,7 @@
  * Delegates to domain use cases while maintaining the legacy API.
  * Consumers (AuthContext, screens, hooks) need zero changes.
  */
-import { translateError } from './errorMessages';
+import { translateError, isNetworkError, NETWORK_ERROR_MESSAGE } from './errorMessages';
 import {
   loginUser,
   registerUser,
@@ -53,16 +53,16 @@ const ERROR_MESSAGES = {
   // Admin approval
   'Registration request was rejected': 'Tu solicitud de registro fue rechazada. Contacta con el administrador',
   'Account is pending admin approval': 'Tu cuenta está pendiente de aprobación por un administrador',
-  default: 'Ha ocurrido un error inesperado. Inténtalo de nuevo',
+  default: 'Algo ha fallado. Inténtalo de nuevo en unos segundos.',
 };
 
 const ERROR_BY_CODE = {
   EMAIL_ALREADY_REGISTERED:
     'Este email ya está dado de alta. Si no recuerdas la contraseña, puedes recuperarla.',
   USER_NOT_FOUND:
-    'No se encontró tu perfil de usuario. Puede que tu cuenta no esté configurada correctamente. Contacta con el administrador',
+    'No encontramos tu ficha de vecino. Avisa a un administrador para que la revise.',
   INFRASTRUCTURE_ERROR:
-    'Error de conexión al verificar tu cuenta. Comprueba tu conexión a internet e inténtalo de nuevo',
+    'No se ha podido comprobar tu cuenta. Comprueba tu conexión e inténtalo de nuevo.',
 };
 
 // Emails are case-insensitive: avoid "Ana@x.com " vs "ana@x.com" mismatches
@@ -70,6 +70,7 @@ const normalizeEmail = (email) => (email || '').trim().toLowerCase();
 
 const getErrorMessage = (error, defaultMessage) => {
   if (!error) return defaultMessage || ERROR_MESSAGES.default;
+  if (isNetworkError(error)) return NETWORK_ERROR_MESSAGE;
 
   // Code-based match (domain errors)
   if (error.code && ERROR_BY_CODE[error.code]) return ERROR_BY_CODE[error.code];

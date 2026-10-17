@@ -119,7 +119,7 @@ export default function HomeScreen({ navigation }) {
       const notif = notificationsPending[0];
       setNotificationMostrada(true);
       showAlertaPersonalizada({
-        title: 'Reserva Desplazada',
+        title: 'Reserva desplazada',
         message: `Tu reserva provisional del ${formatDateReadable(notif.reservationDate)} a las ${notif.startTime} en ${notif.courtName} fue desplazada por otra vivienda.\n\nPuedes hacer una nueva reserva cuando quieras.`,
         buttons: [{
           text: 'Entendido',

@@ -12,7 +12,7 @@ export function useMatchSimpleActions({ user, actions, showAlert }) {
         style: 'destructive',
         onPress: async () => {
           const result = await actions.cancelMatch(match.id);
-          if (!result.success) showAlert('Error', result.error);
+          if (!result.success) showAlert('No se pudo cancelar la partida', result.error);
         },
       },
     ]);
@@ -35,7 +35,7 @@ export function useMatchSimpleActions({ user, actions, showAlert }) {
             if (result.success) {
               showToast('Solicitud enviada. El organizador debe aceptarla.');
             } else {
-              showAlert('Error', result.error);
+              showAlert('No se pudo enviar la solicitud', result.error);
             }
           },
         },
@@ -51,7 +51,7 @@ export function useMatchSimpleActions({ user, actions, showAlert }) {
         style: 'destructive',
         onPress: async () => {
           const result = await actions.cancelRequest(match.id);
-          if (!result.success) showAlert('Error', result.error);
+          if (!result.success) showAlert('No se pudo cancelar la solicitud', result.error);
         },
       },
     ]);
@@ -65,7 +65,7 @@ export function useMatchSimpleActions({ user, actions, showAlert }) {
         style: 'destructive',
         onPress: async () => {
           const result = await actions.leaveMatch(match.id);
-          if (!result.success) showAlert('Error', result.error);
+          if (!result.success) showAlert('No se pudo desapuntar', result.error);
         },
       },
     ]);
@@ -76,14 +76,14 @@ export function useMatchSimpleActions({ user, actions, showAlert }) {
     if (result.success) {
       showToast('Jugador añadido a la partida');
     } else {
-      showAlert('Error', result.error);
+      showAlert('No se pudo aceptar', result.error);
     }
   };
 
   const handleRejectRequest = async (playerId, match) => {
     const result = await actions.rejectRequest(playerId, match.id);
     if (!result?.success) {
-      showAlert('Error', result?.error || 'No se pudo rechazar la solicitud');
+      showAlert('No se pudo rechazar', result?.error || 'No se pudo rechazar la solicitud');
     }
   };
 
@@ -100,7 +100,7 @@ export function useMatchSimpleActions({ user, actions, showAlert }) {
             if (result.success) {
               showToast('Inscripciones cerradas');
             } else {
-              showAlert('Error', result.error);
+              showAlert('No se pudo cerrar la clase', result.error);
             }
           },
         },

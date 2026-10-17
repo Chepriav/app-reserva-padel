@@ -86,7 +86,7 @@ export default function ReservationsScreen({ navigation }) {
 
     setAlertConfig({
       visible: true,
-      title: 'Cancelar Reserva',
+      title: 'Cancelar reserva',
       message: `¿Estás seguro de cancelar tu reserva del ${formatDateReadable(
         reservation.date
       )} a las ${formatTime(reservation.startTime)}?`,
@@ -102,7 +102,7 @@ export default function ReservationsScreen({ navigation }) {
             } else {
               setAlertConfig({
                 visible: true,
-                title: 'Error',
+                title: 'No se pudo cancelar',
                 message: result.error,
                 buttons: [{ text: 'OK', onPress: () => {} }],
               });

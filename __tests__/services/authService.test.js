@@ -145,7 +145,7 @@ describe('authService.login', () => {
     const result = await authService.login('ana@test.com', 'pass123');
 
     expect(result.success).toBe(false);
-    expect(result.error).toContain('perfil de usuario');
+    expect(result.error).toContain('ficha de vecino');
   });
 });
 

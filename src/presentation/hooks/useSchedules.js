@@ -33,7 +33,7 @@ export function useSchedules({
         setSchedules(result.data);
       } else {
         showAlerta(
-          'Error al cargar horarios',
+          'Inténtalo de nuevo en unos segundos.',
           result.error || 'No se pudieron cargar los horarios.'
         );
         setSchedules([]);
@@ -83,7 +83,7 @@ export function useSchedules({
       setLoadingSchedules(false);
     } catch {
       setLoadingSchedules(false);
-      showAlerta('Error', 'No se pudieron cargar los horarios de la semana');
+      showAlerta('No se pudieron cargar los horarios', 'No se pudieron cargar los horarios de la semana');
       setWeeklySchedules({});
     }
   }, [selectedCourt, selectedDate, getAvailability, showAlerta]);

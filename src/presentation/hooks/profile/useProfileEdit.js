@@ -63,7 +63,7 @@ export function useProfileEdit(user, updateProfile, showAlert) {
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      showAlert('Permiso Requerido', 'Necesitamos acceso a tu galería para cambiar la foto de perfil');
+      showAlert('Permiso necesario', 'Necesitamos acceso a tu galería para cambiar la foto de perfil');
       return;
     }
 
@@ -99,7 +99,7 @@ export function useProfileEdit(user, updateProfile, showAlert) {
 
   const handleDeleteImage = () => {
     showAlert(
-      'Eliminar Foto',
+      'Eliminar foto',
       '¿Estás seguro de que quieres eliminar tu foto de perfil?',
       [
         { text: 'Cancelar', style: 'cancel', onPress: () => {} },
@@ -139,7 +139,7 @@ export function useProfileEdit(user, updateProfile, showAlert) {
       setShowLevelPicker(false);
       showToast('Perfil actualizado');
     } else {
-      showAlert('Error', result.error || 'No se pudo actualizar el perfil');
+      showAlert('No se pudo guardar', result.error || 'No se pudo actualizar el perfil');
     }
   };
 

@@ -26,7 +26,7 @@ import {
 
 export default function AdminScreen() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('requests');
+  const [activeTab, setActiveTab] = useState('users');
   const [showLog, setShowLog] = useState(false);
 
   // Hook de registros (lazy: solo carga cuando se abre la vista)
