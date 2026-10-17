@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { reservationsService } from '../../services/reservationsService.supabase';
+import { showToast } from '../components/Toast';
 
 /**
  * Hook to manage schedule blockouts (admin only)
@@ -110,10 +111,14 @@ export function useBlockouts({ selectedCourt, userId, showAlerta, onReloadSchedu
     setSlotsToBlock([]);
 
     if (exitosos > 0) {
-      const message = exitosos === slotsToBlock.length
-        ? `Se han bloqueado ${exitosos} horario${exitosos > 1 ? 's' : ''}.`
-        : `Se bloquearon ${exitosos} de ${slotsToBlock.length} horarios.${errores.length > 0 ? '\n\nErrores:\n' + errores.join('\n') : ''}`;
-      showAlerta('Horarios bloqueados', message);
+      if (exitosos === slotsToBlock.length) {
+        showToast(`${exitosos} horario${exitosos > 1 ? 's' : ''} bloqueado${exitosos > 1 ? 's' : ''}`);
+      } else {
+        showAlerta(
+          'Horarios bloqueados',
+          `Se bloquearon ${exitosos} de ${slotsToBlock.length} horarios.\n\nErrores:\n${errores.join('\n')}`,
+        );
+      }
     } else {
       showAlerta('Error', 'No se pudo bloquear ningún horario.\n\n' + errores.join('\n'));
     }
@@ -142,10 +147,14 @@ export function useBlockouts({ selectedCourt, userId, showAlerta, onReloadSchedu
     setSlotsToUnblock([]);
 
     if (exitosos > 0) {
-      const message = exitosos === slotsToUnblock.length
-        ? `Se han desbloqueado ${exitosos} horario${exitosos > 1 ? 's' : ''}.`
-        : `Se desbloquearon ${exitosos} de ${slotsToUnblock.length} horarios.${errores.length > 0 ? '\n\nErrores:\n' + errores.join('\n') : ''}`;
-      showAlerta('Horarios desbloqueados', message);
+      if (exitosos === slotsToUnblock.length) {
+        showToast(`${exitosos} horario${exitosos > 1 ? 's' : ''} desbloqueado${exitosos > 1 ? 's' : ''}`);
+      } else {
+        showAlerta(
+          'Horarios desbloqueados',
+          `Se desbloquearon ${exitosos} de ${slotsToUnblock.length} horarios.\n\nErrores:\n${errores.join('\n')}`,
+        );
+      }
     } else {
       showAlerta('Error', 'No se pudo desbloquear ningún horario.\n\n' + errores.join('\n'));
     }

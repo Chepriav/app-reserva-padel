@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { scheduleConfigService } from '../../services/scheduleConfigService';
+import { showToast } from '../components/Toast';
 
 /**
  * Manages schedule configuration state, loading, and saving.
@@ -105,7 +106,7 @@ export function useScheduleConfig(userId, showAlert) {
       setSaving(false);
 
       if (result.success) {
-        showAlert('Éxito', 'Configuración guardada correctamente');
+        showToast('Horarios guardados');
         await loadConfig();
       } else {
         showAlert('Error', result.error || 'Error al guardar configuración');

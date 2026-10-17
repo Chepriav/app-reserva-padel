@@ -23,6 +23,7 @@ import { CreateAnnouncementModal } from '../components/admin';
 import { CustomAlert } from '../components/CustomAlert';
 import { TabBar } from '../components/TabBar';
 import { CardListSkeleton } from '../components/Skeleton';
+import { showToast } from '../components/Toast';
 
 export default function BulletinScreen() {
   const { user } = useAuth();
@@ -94,7 +95,7 @@ export default function BulletinScreen() {
     const result = await createAnnouncement(announcementData);
     if (result.success) {
       setCreateModalVisible(false);
-      showAlert('Éxito', 'Mensaje creado correctamente');
+      showToast('Mensaje publicado');
       loadAnnouncements();
     } else {
       showAlert('Error', result.error || 'No se pudo crear el mensaje');
@@ -112,7 +113,7 @@ export default function BulletinScreen() {
       onConfirm: async () => {
         const result = await deleteAnnouncement(announcementId);
         if (result.success) {
-          showAlert('Éxito', 'Mensaje eliminado correctamente');
+          showToast('Mensaje eliminado');
         } else {
           showAlert('Error', result.error || 'No se pudo eliminar el mensaje');
         }

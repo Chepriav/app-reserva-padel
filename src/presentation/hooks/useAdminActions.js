@@ -3,6 +3,7 @@ import { authService } from '../../services/authService.supabase';
 import { notificationService } from '../../services/notificationService';
 import { formatApartment, combineApartment } from '../../constants/config';
 import { validateApartmentComponentes } from '../../utils/validators';
+import { showToast } from '../components/Toast';
 
 /**
  * Hook for admin actions (approve, reject, toggle admin, etc.)
@@ -25,6 +26,7 @@ export function useAdminActions({
         const result = await authService.approveUser(user.id);
         if (result.success) {
           removePendingUser(user.id);
+          showToast(`${user.name} aprobado`);
         } else {
           showAlert('Error', result.error);
         }
@@ -43,6 +45,7 @@ export function useAdminActions({
         const result = await authService.rejectUser(user.id);
         if (result.success) {
           removePendingUser(user.id);
+          showToast('Solicitud rechazada');
         } else {
           showAlert('Error', result.error);
         }
@@ -76,6 +79,7 @@ export function useAdminActions({
         const result = await authService.toggleAdminRole(user.id, newRole);
         if (result.success) {
           updateUser(user.id, { isAdmin: newRole });
+          showToast(newRole ? `${user.name} ahora es administrador` : `${user.name} ya no es administrador`);
         } else {
           showAlert('Error', result.error);
         }
@@ -106,6 +110,7 @@ export function useAdminActions({
         const result = await authService.deleteUser(user.id);
         if (result.success) {
           removeUser(user.id);
+          showToast(`${user.name} eliminado`);
         } else {
           showAlert('Error', result.error);
         }
@@ -122,6 +127,7 @@ export function useAdminActions({
         const result = await authService.approveApartmentChange(user.id);
         if (result.success) {
           removeChangeRequest(user.id);
+          showToast('Cambio de vivienda aprobado');
           await notificationService.notifyApartmentChange(
             user.id,
             true,
@@ -149,6 +155,7 @@ export function useAdminActions({
         const result = await authService.rejectApartmentChange(user.id);
         if (result.success) {
           removeChangeRequest(user.id);
+          showToast('Cambio de vivienda rechazado');
           await notificationService.notifyApartmentChange(user.id, false, null);
         } else {
           showAlert('Error', result.error);
@@ -173,10 +180,7 @@ export function useAdminActions({
 
     if (result.success) {
       updateUser(user.id, { apartment: newApartment });
-      showAlert(
-        'Vivienda actualizada',
-        `La vivienda de ${user.name} ha sido cambiada a ${formatApartment(newApartment)}`
-      );
+      showToast(`Vivienda de ${user.name} cambiada a ${formatApartment(newApartment)}`);
       return { success: true };
     } else {
       showAlert('Error', result.error || 'Error al actualizar la vivienda');

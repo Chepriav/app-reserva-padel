@@ -59,3 +59,22 @@ describe('formatLastAccess', () => {
   test('older: date', () => expect(formatLastAccess(new Date(2026, 7, 2, 12).toISOString(), now)).toBe('2 ago 2026'));
   test('invalid', () => expect(formatLastAccess('xx', now)).toBe('Sin registrar'));
 });
+
+describe('pickNextReservation', () => {
+  const { pickNextReservation } = require('../src/utils/nextReservation');
+  const now = new Date(2026, 9, 17, 12, 0);
+  const r = (id, date, startTime, endTime, status = 'confirmed') => ({ id, date, startTime, endTime, status });
+  test('earliest not finished, skipping cancelled and past', () => {
+    const list = [
+      r('past', '2026-10-17', '09:00', '10:00'),
+      r('cancel', '2026-10-17', '18:00', '19:00', 'cancelled'),
+      r('later', '2026-10-20', '10:00', '11:00'),
+      r('soon', '2026-10-18', '18:00', '19:30'),
+    ];
+    expect(pickNextReservation(list, now).id).toBe('soon');
+  });
+  test('a reservation being played now counts', () => {
+    expect(pickNextReservation([r('now', '2026-10-17', '11:30', '13:00')], now).id).toBe('now');
+  });
+  test('none', () => expect(pickNextReservation([], now)).toBeNull());
+});

@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { parseApartment, combineApartment } from '../../../constants/config';
 import { validateProfile, validateApartmentComponentes } from '../../../utils/validators';
 import { resizeImageWeb } from '../../../utils/resizeImageWeb';
+import { showToast } from '../../components/Toast';
 
 let ImageManipulator;
 if (Platform.OS !== 'web') {
@@ -136,7 +137,7 @@ export function useProfileEdit(user, updateProfile, showAlert) {
     if (result.success) {
       setEditMode(false);
       setShowLevelPicker(false);
-      showAlert('Perfil Actualizado', 'Tus cambios han sido guardados exitosamente');
+      showToast('Perfil actualizado');
     } else {
       showAlert('Error', result.error || 'No se pudo actualizar el perfil');
     }

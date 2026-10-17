@@ -1,3 +1,5 @@
+import { showToast } from '../components/Toast';
+
 /**
  * Simple match action handlers that show a confirmation dialog then call an action.
  */
@@ -31,7 +33,7 @@ export function useMatchSimpleActions({ user, actions, showAlert }) {
           onPress: async () => {
             const result = await actions.requestToJoin(match.id, user);
             if (result.success) {
-              showAlert('Solicitud enviada', 'Tu solicitud ha sido enviada. El creador debe aceptarla.');
+              showToast('Solicitud enviada. El organizador debe aceptarla.');
             } else {
               showAlert('Error', result.error);
             }
@@ -72,7 +74,7 @@ export function useMatchSimpleActions({ user, actions, showAlert }) {
   const handleAcceptRequest = async (playerId, match) => {
     const result = await actions.acceptRequest(playerId, match.id);
     if (result.success) {
-      showAlert('Solicitud aceptada', 'El jugador ha sido añadido a la partida');
+      showToast('Jugador añadido a la partida');
     } else {
       showAlert('Error', result.error);
     }
@@ -96,7 +98,7 @@ export function useMatchSimpleActions({ user, actions, showAlert }) {
           onPress: async () => {
             const result = await actions.closeClass(match.id);
             if (result.success) {
-              showAlert('Clase cerrada', 'Las inscripciones han sido cerradas');
+              showToast('Inscripciones cerradas');
             } else {
               showAlert('Error', result.error);
             }

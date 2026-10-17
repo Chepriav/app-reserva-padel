@@ -13,6 +13,7 @@ import { TabBar } from '../components/TabBar';
 import { ReservationCard } from '../components/reservations/ReservationCard';
 import { EmptyState } from '../components/EmptyState';
 import { styles } from './ReservationsScreenStyles';
+import { showToast } from '../components/Toast';
 
 export default function ReservationsScreen({ navigation }) {
   const {
@@ -97,12 +98,7 @@ export default function ReservationsScreen({ navigation }) {
           onPress: async () => {
             const result = await cancelReservation(reservation.id);
             if (result.success) {
-              setAlertConfig({
-                visible: true,
-                title: 'Cancelada',
-                message: 'Tu reserva ha sido cancelada',
-                buttons: [{ text: 'OK', onPress: () => {} }],
-              });
+              showToast('Reserva cancelada');
             } else {
               setAlertConfig({
                 visible: true,

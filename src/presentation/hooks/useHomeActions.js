@@ -1,9 +1,11 @@
 import { useState, useCallback } from 'react';
 import {
   formatDateReadable,
+  formatShortDate,
   isDateValida,
   slotFinished,
 } from '../../utils/dateHelpers';
+import { showToast } from '../components/Toast';
 import { puedeReservar } from '../../utils/validators';
 
 /**
@@ -192,10 +194,14 @@ export function useHomeActions({
             setReservando(false);
 
             if (result.success) {
-              const successMessage = hasDisplacements
-                ? 'Tu reserva garantizada se ha creado correctamente.\nLas reservas provisionales anteriores han sido desplazadas.'
-                : 'Tu reserva se ha creado correctamente';
-              showAlerta('¡Reserva confirmada!', successMessage);
+              if (hasDisplacements) {
+                showAlerta(
+                  'Reserva confirmada',
+                  'Tu reserva garantizada se ha creado correctamente.\nLas reservas provisionales anteriores han sido desplazadas.',
+                );
+              } else {
+                showToast(`Reserva confirmada: ${formatShortDate(date)}, ${startTime}–${endTime}`);
+              }
               limpiarSelection();
               if (date !== dateSelected) {
                 setDateSelected(date);
