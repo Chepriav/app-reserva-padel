@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { PressableScale } from '../Motion';
 import { colors } from '../../../constants/colors';
 import { hasSlotEnded } from '../../../utils/dateHelpers';
 import { Ionicons } from '@expo/vector-icons';
@@ -80,7 +81,7 @@ export function TimeSlotChip({
   ];
 
   return (
-    <TouchableOpacity
+    <PressableScale
       style={[
         styles.slotChip,
         isPast && styles.slotChipPast,
@@ -141,7 +142,7 @@ export function TimeSlotChip({
           <Ionicons name="checkmark" size={12} color={colors.accent} />
         </View>
       )}
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 

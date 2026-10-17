@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { Animated, View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../../constants/colors';
 import { formatLastAccess } from '../../../utils/formatLastAccess';
+import { FadeIn, useToggleAnimation } from '../Motion';
 
 /**
  * Collapsible user row for Admin → Usuarios.
@@ -18,6 +19,8 @@ export function UserCard({
   onDelete,
 }) {
   const [expanded, setExpanded] = useState(false);
+  const open = useToggleAnimation(expanded);
+  const chevronRotation = open.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
   const isMyAccount = user.id === currentUserId;
   const canDelete = !isMyAccount && !user.isManager;
 
@@ -57,15 +60,13 @@ export function UserCard({
           )}
         </View>
         <Text style={styles.apartment}>{user.apartment}</Text>
-        <Ionicons
-          name={expanded ? 'chevron-up' : 'chevron-down'}
-          size={18}
-          color={colors.textSecondary}
-        />
+        <Animated.View style={{ transform: [{ rotate: chevronRotation }] }}>
+          <Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
+        </Animated.View>
       </TouchableOpacity>
 
       {expanded && (
-        <View style={styles.details}>
+        <FadeIn offset={-6} duration={200} style={styles.details}>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Email</Text>
             <Text style={styles.infoValue} selectable numberOfLines={1}>{user.email}</Text>
@@ -123,7 +124,7 @@ export function UserCard({
               </TouchableOpacity>
             )}
           </View>
-        </View>
+        </FadeIn>
       )}
     </View>
   );

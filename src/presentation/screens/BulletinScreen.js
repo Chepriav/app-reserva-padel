@@ -23,6 +23,7 @@ import { CreateAnnouncementModal } from '../components/admin';
 import { CustomAlert } from '../components/CustomAlert';
 import { TabBar } from '../components/TabBar';
 import { CardListSkeleton } from '../components/Skeleton';
+import { FadeIn } from '../components/Motion';
 import { showToast } from '../components/Toast';
 
 export default function BulletinScreen() {
@@ -188,6 +189,7 @@ export default function BulletinScreen() {
           onChange={setTabActivo}
         />
 
+        <FadeIn key={tabActivo} style={styles.tabContent}>
         {tabActivo === 'notificaciones' ? (
           <FlatList
             data={notifications}
@@ -230,6 +232,7 @@ export default function BulletinScreen() {
             }
           />
         )}
+        </FadeIn>
 
         <AnnouncementModal
           announcement={selectedAnnouncement}

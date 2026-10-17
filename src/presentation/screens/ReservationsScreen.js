@@ -14,6 +14,7 @@ import { ReservationCard } from '../components/reservations/ReservationCard';
 import { EmptyState } from '../components/EmptyState';
 import { styles } from './ReservationsScreenStyles';
 import { showToast } from '../components/Toast';
+import { FadeIn } from '../components/Motion';
 
 export default function ReservationsScreen({ navigation }) {
   const {
@@ -137,6 +138,7 @@ export default function ReservationsScreen({ navigation }) {
 
       {/* Contenido */}
       <ScrollView style={styles.content}>
+        <FadeIn key={tabActiva}>
         {tabActiva === 'proximas' ? (
           reservationsUpcoming.length > 0 ? (
             reservationsUpcoming.map(renderReservation)
@@ -158,6 +160,7 @@ export default function ReservationsScreen({ navigation }) {
             text="Aquí verás las reservas de los últimos dos meses."
           />
         )}
+        </FadeIn>
       </ScrollView>
 
       {/* CustomAlert component */}

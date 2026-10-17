@@ -11,6 +11,7 @@ import { useUserImport } from '../hooks/useUserImport';
 import { useReservationsLog } from '../hooks/useReservationsLog';
 import { colors } from '../../constants/colors';
 import { CustomAlert } from '../components/CustomAlert';
+import { FadeIn } from '../components/Motion';
 import {
   EditApartmentModal,
   AdminHeader,
@@ -204,7 +205,7 @@ export default function AdminScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {renderContent()}
+        <FadeIn key={activeTab}>{renderContent()}</FadeIn>
       </ScrollView>
 
       {/* Modal editar vivienda */}

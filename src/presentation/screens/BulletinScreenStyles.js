@@ -14,6 +14,7 @@ export const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 15,
   },
   markTodasText: { fontSize: 13, color: '#fff', fontWeight: '500' },
+  tabContent: { flex: 1 },
   listContent: { flexGrow: 1, paddingVertical: 10 },
   skeletonWrap: { paddingHorizontal: 12 },
   floatingButton: {
