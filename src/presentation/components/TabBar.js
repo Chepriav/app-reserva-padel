@@ -1,6 +1,10 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { colors } from '../../constants/colors';
+import { prefersReducedMotion } from './Motion';
+
+const BAR_PADDING = 8;
+const INDICATOR_INSET = 12;
 
 /**
  * Shared top tabs (Mis Reservas, Partidas, Tablón, Admin).
@@ -9,8 +13,35 @@ import { colors } from '../../constants/colors';
  *   - alert: red number pill (e.g. unread / pending)
  */
 export function TabBar({ tabs, activeKey, onChange, style }) {
+  const [barWidth, setBarWidth] = useState(0);
+  const activeIndex = Math.max(0, tabs.findIndex((tab) => tab.key === activeKey));
+  const tabWidth = barWidth ? (barWidth - BAR_PADDING * 2) / tabs.length : 0;
+  const targetX = BAR_PADDING + activeIndex * tabWidth + INDICATOR_INSET;
+
+  // Sliding underline: jumps into place on first layout, glides afterwards
+  const indicatorX = useRef(new Animated.Value(0)).current;
+  const placed = useRef(false);
+  useEffect(() => {
+    if (!tabWidth) return;
+    if (!placed.current || prefersReducedMotion()) {
+      indicatorX.setValue(targetX);
+      placed.current = true;
+      return;
+    }
+    Animated.spring(indicatorX, {
+      toValue: targetX,
+      speed: 18,
+      bounciness: 4,
+      useNativeDriver: Platform.OS !== 'web',
+    }).start();
+  }, [indicatorX, targetX, tabWidth]);
+
   return (
-    <View style={[styles.bar, style]} accessibilityRole="tablist">
+    <View
+      style={[styles.bar, style]}
+      accessibilityRole="tablist"
+      onLayout={(e) => setBarWidth(e.nativeEvent.layout.width)}
+    >
       {tabs.map((tab) => {
         const active = tab.key === activeKey;
         const pill = tab.alert > 0 ? tab.alert : tab.count;
@@ -51,10 +82,20 @@ export function TabBar({ tabs, activeKey, onChange, style }) {
                 </View>
               )}
             </View>
-            <View style={[styles.indicator, active && styles.indicatorActive]} />
+            {/* Static underline only until the bar has been measured */}
+            <View style={[styles.indicator, active && !tabWidth && styles.indicatorActive]} />
           </TouchableOpacity>
         );
       })}
+      {tabWidth > 0 && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.slidingIndicator,
+            { width: tabWidth - INDICATOR_INSET * 2, transform: [{ translateX: indicatorX }] },
+          ]}
+        />
+      )}
     </View>
   );
 }
@@ -65,7 +106,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
-    paddingHorizontal: 8,
+    paddingHorizontal: BAR_PADDING,
   },
   tab: {
     flex: 1,
@@ -118,12 +159,21 @@ const styles = StyleSheet.create({
   indicator: {
     height: 3,
     alignSelf: 'stretch',
-    marginHorizontal: 12,
+    marginHorizontal: INDICATOR_INSET,
     borderTopLeftRadius: 3,
     borderTopRightRadius: 3,
     backgroundColor: 'transparent',
   },
   indicatorActive: {
+    backgroundColor: colors.primary,
+  },
+  slidingIndicator: {
+    position: 'absolute',
+    left: 0,
+    bottom: 0,
+    height: 3,
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3,
     backgroundColor: colors.primary,
   },
 });

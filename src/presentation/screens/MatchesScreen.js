@@ -15,6 +15,7 @@ import { useReservations } from '../context/ReservationsContext';
 import { colors } from '../../constants/colors';
 import { CustomAlert } from '../components/CustomAlert';
 import { TabBar } from '../components/TabBar';
+import { FadeIn } from '../components/Motion';
 import { MatchCard, CreateMatchModal, AddPlayerModal } from '../components/matches';
 import {
   useMatches,
@@ -88,6 +89,7 @@ export default function MatchesScreen() {
         contentContainerStyle={styles.listaContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
       >
+        <FadeIn key={`${activeTab}-${loading}`}>
         {loading ? (
           <CardListSkeleton />
         ) : matches.length === 0 ? (
@@ -113,6 +115,7 @@ export default function MatchesScreen() {
             />
           ))
         )}
+        </FadeIn>
       </ScrollView>
 
       {/* Create button */}

@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Animated,
   Modal,
   View,
   Text,
@@ -7,8 +8,15 @@ import {
   StyleSheet,
 } from 'react-native';
 import { colors } from '../../constants/colors';
+import { useToggleAnimation } from './Motion';
 
 export const CustomAlert = ({ visible, title, message, buttons, onDismiss }) => {
+  const appear = useToggleAnimation(visible, 220);
+  const boxMotion = {
+    opacity: appear,
+    transform: [{ scale: appear.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1] }) }],
+  };
+
   return (
     <Modal
       visible={visible}
@@ -17,7 +25,7 @@ export const CustomAlert = ({ visible, title, message, buttons, onDismiss }) => 
       onRequestClose={onDismiss}
     >
       <View style={styles.overlay}>
-        <View style={styles.alertBox}>
+        <Animated.View style={[styles.alertBox, boxMotion]}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.message}>{message}</Text>
 
@@ -54,7 +62,7 @@ export const CustomAlert = ({ visible, title, message, buttons, onDismiss }) => 
               </TouchableOpacity>
             ))}
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
