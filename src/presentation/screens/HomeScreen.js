@@ -19,6 +19,8 @@ import {
 // Componentes
 import {
   HomeHeader,
+  NextReservationCard,
+  pickNextReservation,
   ViewSelector,
   DateSelector,
   CourtSelector,
@@ -145,6 +147,14 @@ export default function HomeScreen({ navigation }) {
           blockoutMode={blockoutsHook.blockoutMode}
           onModoBlockoutChange={blockoutsHook.setBlockoutMode}
         />
+
+        {!blockoutsHook.blockoutMode && (
+          <NextReservationCard
+            reservation={pickNextReservation(reservations)}
+            onOpen={() => navigation.navigate('Mis Reservas')}
+            onFindPlayers={() => navigation.navigate('Partidas')}
+          />
+        )}
 
         <ViewSelector
           viewActual={viewActual}

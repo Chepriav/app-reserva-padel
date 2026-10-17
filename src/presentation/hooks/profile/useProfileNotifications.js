@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Platform } from 'react-native';
 import { notificationService } from '../../../services/notificationService';
 import { webPushService } from '../../../services/webPushService';
+import { showToast } from '../../components/Toast';
 
 export function useProfileNotifications(user, showAlert) {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -46,7 +47,7 @@ export function useProfileNotifications(user, showAlert) {
     const result = await webPushService.sendTest(user.id);
     setSendingTest(false);
     if (result.success) {
-      showAlert('Prueba enviada', result.message);
+      showToast(result.message);
     } else {
       showAlert('No se pudo enviar', result.error);
     }

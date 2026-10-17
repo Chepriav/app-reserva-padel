@@ -1,5 +1,6 @@
 // New English exports
 export { HomeHeader } from './HomeHeader';
+export { NextReservationCard, pickNextReservation } from './NextReservationCard';
 export { ViewSelector } from './ViewSelector';
 export { DateSelector } from './DateSelector';
 export { CourtSelector } from './CourtSelector';

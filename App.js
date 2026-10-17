@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Linking, Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { ToastHost } from './src/presentation/components/Toast';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from './src/presentation/context/AuthContext';
 import { ReservationsProvider } from './src/presentation/context/ReservationsContext';
@@ -164,6 +165,7 @@ export default function App() {
             </View>
           )}
           <AppNavigator onReady={handleNavigationReady} initialRecoveryFlow={initialRecoveryFlow} />
+          <ToastHost />
         </View>
         </View>
         <StatusBar style="auto" />

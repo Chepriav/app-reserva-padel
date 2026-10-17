@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { combineApartment, formatApartment } from '../../../constants/config';
 import { validateApartmentComponentes } from '../../../utils/validators';
 import { authService } from '../../../services/authService.supabase';
+import { showToast } from '../../components/Toast';
 
 export function useApartmentChange(user, updateProfile, showAlert) {
   const [requestModal, setRequestModal] = useState({
@@ -41,7 +42,7 @@ export function useApartmentChange(user, updateProfile, showAlert) {
     if (result.success) {
       closeRequestModal();
       await updateProfile({ requestedApartment: newApartment });
-      showAlert('Solicitud Enviada', `Tu solicitud de cambio a ${formatApartment(newApartment)} ha sido enviada. Un administrador la revisará pronto.`);
+      showToast(`Solicitud de cambio a ${formatApartment(newApartment)} enviada. Un administrador la revisará.`);
     } else {
       setRequestModal((prev) => ({ ...prev, saving: false }));
       showAlert('Error', result.error || 'Error al enviar solicitud');
@@ -62,7 +63,7 @@ export function useApartmentChange(user, updateProfile, showAlert) {
             const result = await authService.cancelApartmentRequest(user.id);
             if (result.success) {
               await updateProfile({ requestedApartment: null });
-              showAlert('Solicitud Cancelada', 'Tu solicitud de cambio de vivienda ha sido cancelada.');
+              showToast('Solicitud de cambio cancelada');
             } else {
               showAlert('Error', result.error || 'Error al cancelar solicitud');
             }
