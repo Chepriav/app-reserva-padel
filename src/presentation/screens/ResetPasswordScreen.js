@@ -15,6 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import { authService } from '../../services/authService.supabase';
 import { supabase } from '../../services/supabaseConfig';
 import { CustomAlert } from '../components/CustomAlert';
+import { ResetLinkContinue, ResetLinkExpired } from '../components/auth/ResetLinkViews';
 import { setRecoveryFlow } from '../navigation/AppNavigator';
 
 export default function ResetPasswordScreen({ navigation }) {
@@ -25,6 +26,16 @@ export default function ResetPasswordScreen({ navigation }) {
   const [checkingSession, setCheckingSession] = useState(true);
   const [sessionValid, setSessionValid] = useState(false);
   const finishedRef = useRef(false);
+  // token_hash links are single-use, and mail scanners (common on work
+  // accounts) open them before the person does. Spend the token only when
+  // the person taps "Continuar", so an automatic visit can't burn it.
+  const pendingLinkRef = useRef(
+    Platform.OS === 'web' && typeof window !== 'undefined' && /[?&]token_hash=/.test(window.location.href)
+      ? window.location.href
+      : null
+  );
+  const [awaitingTap, setAwaitingTap] = useState(!!pendingLinkRef.current);
+  const [verifying, setVerifying] = useState(false);
   const [alertConfig, setAlertConfig] = useState({
     visible: false,
     title: '',
@@ -33,6 +44,7 @@ export default function ResetPasswordScreen({ navigation }) {
   });
 
   useEffect(() => {
+    if (awaitingTap || finishedRef.current) return undefined;
     let isMounted = true;
     let authListener = null;
     let timeoutId = null;
@@ -101,7 +113,23 @@ export default function ResetPasswordScreen({ navigation }) {
         clearTimeout(timeoutId);
       }
     };
-  }, []);
+  }, [awaitingTap]);
+
+  const handleContinue = async () => {
+    setVerifying(true);
+    const result = await authService.handlePasswordRecoveryUrl(pendingLinkRef.current);
+    pendingLinkRef.current = null;
+    const path = result.error ? '/' : '/reset-password';
+    window.history.replaceState({}, document.title, window.location.origin + path);
+    if (result.error) {
+      finishedRef.current = true;
+      setRecoveryFlow(false);
+      setSessionValid(false);
+      setCheckingSession(false);
+    }
+    setVerifying(false);
+    setAwaitingTap(false);
+  };
 
   const handleUpdatePassword = async () => {
     if (!password || !confirmPassword) {
@@ -174,6 +202,10 @@ export default function ResetPasswordScreen({ navigation }) {
     }
   };
 
+  if (awaitingTap) {
+    return <ResetLinkContinue verifying={verifying} onContinue={handleContinue} />;
+  }
+
   if (checkingSession) {
     return (
       <View style={styles.loadingContainer}>
@@ -185,21 +217,12 @@ export default function ResetPasswordScreen({ navigation }) {
 
   if (!sessionValid) {
     return (
-      <View style={styles.invalidContainer}>
-        <Text style={styles.invalidTitle}>Enlace no valido</Text>
-        <Text style={styles.invalidText}>
-          El enlace de recuperación ha expirado o no es válido. Solicita uno nuevo desde la pantalla de inicio.
-        </Text>
-        <TouchableOpacity
-          style={styles.invalidButton}
-          onPress={() => {
-            setRecoveryFlow(false);
-            navigation.navigate(isAuthenticated ? 'Main' : 'Login');
-          }}
-        >
-          <Text style={styles.invalidButtonText}>Volver al inicio</Text>
-        </TouchableOpacity>
-      </View>
+      <ResetLinkExpired
+        onBack={() => {
+          setRecoveryFlow(false);
+          navigation.navigate(isAuthenticated ? 'Main' : 'Login');
+        }}
+      />
     );
   }
 

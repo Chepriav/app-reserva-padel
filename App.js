@@ -78,6 +78,10 @@ export default function App() {
         setRecoveryFlow(true);
         setInitialRecoveryFlow(true);
 
+        // Single-use token_hash links are spent in ResetPasswordScreen only
+        // after the person taps "Continuar" (see there)
+        if (Platform.OS === 'web' && /[?&]token_hash=/.test(url)) return;
+
         const result = await authService.handlePasswordRecoveryUrl(url);
 
         // Clean URL after processing
