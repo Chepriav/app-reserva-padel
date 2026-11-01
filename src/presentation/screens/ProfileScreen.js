@@ -15,6 +15,7 @@ import { ProfileHeader } from '../components/profile/ProfileHeader';
 import { ProfilePersonalInfo } from '../components/profile/ProfilePersonalInfo';
 import { ProfileApartmentUsers } from '../components/profile/ProfileApartmentUsers';
 import { ApartmentChangeModal } from '../components/profile/ApartmentChangeModal';
+import { AuthorSignature } from '../components/AuthorSignature';
 import { useProfileEdit } from '../hooks/profile/useProfileEdit';
 import { useProfileNotifications } from '../hooks/profile/useProfileNotifications';
 import { useApartmentChange } from '../hooks/profile/useApartmentChange';
@@ -191,6 +192,7 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      <AuthorSignature />
 
       <ApartmentChangeModal
         requestModal={apartment.requestModal}
@@ -248,7 +250,7 @@ const styles = StyleSheet.create({
     margin: 16, marginBottom: 0, borderWidth: 1, borderColor: colors.border,
   },
   logoutButtonText: { color: colors.text, fontSize: 15, fontWeight: '600' },
-  dangerSection: { marginHorizontal: 16, marginTop: 28, marginBottom: 32 },
+  dangerSection: { marginHorizontal: 16, marginTop: 28, marginBottom: 24 },
   dangerSectionTitle: {
     fontSize: 12, fontWeight: '700', color: colors.textSecondary, marginBottom: 8,
     textTransform: 'uppercase', letterSpacing: 0.6,
