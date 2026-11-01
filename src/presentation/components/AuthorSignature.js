@@ -2,11 +2,22 @@ import React, { useState } from 'react';
 import { Animated, Linking, Modal, Pressable, Text, TouchableOpacity, View, StyleSheet } from 'react-native';
 import { colors } from '../../constants/colors';
 import { useToggleAnimation } from './Motion';
-import { PROJECT_MAILTO } from '../../utils/projectContact';
+import { Ionicons } from '@expo/vector-icons';
+import { CONTACT_EMAIL, PROJECT_MAILTO } from '../../utils/projectContact';
 
-// Author credit and contact for commissions (requested by Charly, Nov 2026)
+// Author credit and contact for commissions (requested by Carlos, Nov 2026)
+const AUTHOR_NAME = 'Carlos Hernández';
+
 function openContact() {
   Linking.openURL(PROJECT_MAILTO).catch(() => {});
+}
+
+function Monogram({ size = 36 }) {
+  return (
+    <View style={[styles.monogram, { width: size, height: size, borderRadius: size * 0.24 }]}>
+      <Text style={[styles.monogramText, { fontSize: size * 0.4 }]}>CH</Text>
+    </View>
+  );
 }
 
 /**
@@ -24,19 +35,18 @@ export function AuthorSignature() {
         onPress={() => setShowCard(true)}
         activeOpacity={0.6}
         accessibilityRole="button"
-        accessibilityLabel="Diseño y desarrollo: Charly. Ver contacto"
+        accessibilityLabel={`Diseño y desarrollo: ${AUTHOR_NAME}. Ver contacto`}
       >
-        <View style={styles.monogram}>
-          <Text style={styles.monogramText}>C</Text>
-        </View>
+        <Monogram />
         <View>
           <Text style={styles.kicker}>Diseño y desarrollo</Text>
-          <Text style={styles.name}>Charly</Text>
+          <Text style={styles.name}>{AUTHOR_NAME}</Text>
         </View>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={openContact} accessibilityRole="link" hitSlop={8}>
+      <TouchableOpacity style={styles.linkRow} onPress={openContact} accessibilityRole="link" hitSlop={8}>
         <Text style={styles.link}>¿Tienes un proyecto en mente?</Text>
+        <Ionicons name="arrow-forward" size={14} color={colors.secondary} />
       </TouchableOpacity>
 
       <Modal visible={showCard} transparent animationType="fade" onRequestClose={() => setShowCard(false)}>
@@ -52,12 +62,27 @@ export function AuthorSignature() {
           >
             {/* Stop taps inside the card from closing it */}
             <Pressable>
-              <Text style={styles.kicker}>Hecho por Charly</Text>
+              <View style={styles.cardHeader}>
+                <Monogram size={44} />
+                <View style={styles.cardHeaderText}>
+                  <Text style={styles.cardName}>{AUTHOR_NAME}</Text>
+                  <Text style={styles.cardRole}>Diseño y desarrollo</Text>
+                </View>
+              </View>
+
+              <View style={styles.divider} />
+
               <Text style={styles.cardTitle}>¿Tienes algo en mente?</Text>
               <Text style={styles.cardText}>
                 Apps, webs, juegos, proyectos con inteligencia artificial o ese problema informático que se te
                 resiste. Cuéntame qué necesitas y lo vemos.
               </Text>
+
+              <View style={styles.emailRow}>
+                <Ionicons name="mail-outline" size={15} color={colors.textSecondary} />
+                <Text style={styles.emailText} selectable>{CONTACT_EMAIL}</Text>
+              </View>
+
               <View style={styles.cardActions}>
                 <TouchableOpacity style={styles.secondaryButton} onPress={() => setShowCard(false)}>
                   <Text style={styles.secondaryButtonText}>Cerrar</Text>
@@ -81,54 +106,56 @@ export function AuthorSignature() {
 const styles = StyleSheet.create({
   footer: {
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
     marginHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 32,
+    paddingTop: 24,
+    paddingBottom: 36,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
   },
   signature: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
     paddingVertical: 4,
   },
   monogram: {
-    width: 30,
-    height: 30,
-    borderRadius: 7,
-    borderWidth: 1.5,
-    borderColor: colors.primary,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   monogramText: {
-    fontSize: 15,
     fontWeight: '700',
-    color: colors.primary,
+    color: '#fff',
+    letterSpacing: 0.5,
   },
   kicker: {
     fontSize: 10,
     fontWeight: '600',
-    letterSpacing: 0.8,
+    letterSpacing: 1,
     textTransform: 'uppercase',
     color: colors.textSecondary,
   },
   name: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.text,
     letterSpacing: -0.2,
+    marginTop: 1,
+  },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   link: {
     fontSize: 13,
+    fontWeight: '600',
     color: colors.secondary,
-    textDecorationLine: 'underline',
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -140,17 +167,50 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 22,
   },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  cardHeaderText: {
+    flexShrink: 1,
+  },
+  cardName: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: colors.text,
+    letterSpacing: -0.2,
+  },
+  cardRole: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginVertical: 18,
+  },
   cardTitle: {
     fontSize: 19,
     fontWeight: '700',
     color: colors.text,
-    marginTop: 6,
   },
   cardText: {
     fontSize: 15,
     lineHeight: 22,
     color: colors.textSecondary,
     marginTop: 8,
+  },
+  emailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 16,
+  },
+  emailText: {
+    fontSize: 14,
+    color: colors.text,
   },
   cardActions: {
     flexDirection: 'row',
