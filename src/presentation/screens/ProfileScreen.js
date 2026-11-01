@@ -15,7 +15,7 @@ import { ProfileHeader } from '../components/profile/ProfileHeader';
 import { ProfilePersonalInfo } from '../components/profile/ProfilePersonalInfo';
 import { ProfileApartmentUsers } from '../components/profile/ProfileApartmentUsers';
 import { ApartmentChangeModal } from '../components/profile/ApartmentChangeModal';
-import { AuthorSignature } from '../components/AuthorSignature';
+import { AuthorSignature } from '../components/author';
 import { useProfileEdit } from '../hooks/profile/useProfileEdit';
 import { useProfileNotifications } from '../hooks/profile/useProfileNotifications';
 import { useApartmentChange } from '../hooks/profile/useApartmentChange';
