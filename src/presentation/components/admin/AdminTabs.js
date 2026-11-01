@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { colors } from '../../../constants/colors';
 import { TabBar } from '../TabBar';
+import { AuthorMark } from '../author';
 
 /**
  * Header del panel de administración
@@ -22,6 +23,7 @@ export function AdminHeader({ onShowLog, isLogView = false }) {
           <Text style={styles.logBtnText}>Registros</Text>
         </TouchableOpacity>
       )}
+      <AuthorMark />
     </View>
   );
 }

@@ -1,11 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet, Switch, Platform } from 'react-native';
+import { View, Text, StyleSheet, Switch, Platform, useWindowDimensions } from 'react-native';
 import { colors } from '../../../constants/colors';
+import { AuthorMark } from '../author';
 
 /**
  * Cabecera de HomeScreen con saludo y switch de modo bloqueo
  */
 export function HomeHeader({ userName, isAdmin, blockoutMode, onModoBlockoutChange }) {
+  // On narrow phones the admin switch leaves no room for the author mark
+  const { width } = useWindowDimensions();
+  const showAuthorMark = !(isAdmin && width < 360);
+
   return (
     <View style={[styles.header, blockoutMode && styles.headerModoBlockout]}>
       <View style={styles.headerContent}>
@@ -29,6 +34,7 @@ export function HomeHeader({ userName, isAdmin, blockoutMode, onModoBlockoutChan
             />
           </View>
         )}
+        {showAuthorMark && <AuthorMark />}
       </View>
     </View>
   );

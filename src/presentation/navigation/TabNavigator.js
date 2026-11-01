@@ -11,6 +11,7 @@ import AdminScreen from '../screens/AdminScreen';
 import { colors } from '../../constants/colors';
 import { useAuth } from '../context/AuthContext';
 import { useBulletinCounter, useAdminPendingCount } from '../hooks';
+import { AuthorMark } from '../components/author';
 
 const Tab = createBottomTabNavigator();
 
@@ -57,6 +58,7 @@ export default function TabNavigator() {
           fontWeight: '700',
           fontSize: 20,
         },
+        headerRight: () => <AuthorMark style={{ marginRight: 16 }} />,
       }}
     >
       <Tab.Screen
