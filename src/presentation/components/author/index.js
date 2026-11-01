@@ -1,3 +1,3 @@
 export { AuthorSignature } from './AuthorSignature';
-export { AuthorMark } from './AuthorMark';
+export { AuthorStrip } from './AuthorStrip';
 export { AuthorCard } from './AuthorCard';

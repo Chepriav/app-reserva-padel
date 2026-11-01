@@ -128,7 +128,7 @@ Ver `docs/patterns.md` para ejemplos y anti-patrones.
 
 ## Firma del autor
 
-Al final de Perfil hay una firma discreta («Diseño y desarrollo · Carlos Hernández», monograma «CH») con enlace `mailto:` a chepriapps@gmail.com para encargos; al pulsar la firma se abre un bloque «¿Tienes algo en mente?». Además, un minilogo «CH» en la esquina derecha de la cabecera azul de cada pantalla abre el mismo bloque. Lo pidió Carlos (Charly) en noviembre de 2026. Componentes: `src/presentation/components/author/` (`AuthorSignature`, `AuthorMark`, `AuthorCard`); enlace en `src/utils/projectContact.js`. Debe seguir siendo discreto: nunca en el flujo de reservar ni en ventanas que salten solas.
+Al final de Perfil hay una firma discreta («Diseño y desarrollo · Carlos Hernández», monograma «CH») con enlace `mailto:` a chepriapps@gmail.com para encargos; al pulsar la firma se abre un bloque «¿Tienes algo en mente?». Además, una línea pequeña «Diseño y desarrollo · Carlos Hernández» encima de la barra de pestañas (todas las pantallas principales) abre el mismo bloque. Se descartó un minilogo «CH» en la cabecera porque parecía el avatar del usuario. Lo pidió Carlos (Charly) en noviembre de 2026. Componentes: `src/presentation/components/author/` (`AuthorSignature`, `AuthorStrip`, `AuthorCard`); enlace en `src/utils/projectContact.js`. Debe seguir siendo discreto: nunca en el flujo de reservar ni en ventanas que salten solas.
 
 ## Variables de Entorno
 

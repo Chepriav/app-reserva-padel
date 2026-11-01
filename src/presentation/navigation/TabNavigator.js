@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createBottomTabNavigator, BottomTabBar } from '@react-navigation/bottom-tabs';
 import { Platform, View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/HomeScreen';
@@ -11,7 +11,7 @@ import AdminScreen from '../screens/AdminScreen';
 import { colors } from '../../constants/colors';
 import { useAuth } from '../context/AuthContext';
 import { useBulletinCounter, useAdminPendingCount } from '../hooks';
-import { AuthorMark } from '../components/author';
+import { AuthorStrip } from '../components/author';
 
 const Tab = createBottomTabNavigator();
 
@@ -37,6 +37,12 @@ export default function TabNavigator() {
 
   return (
     <Tab.Navigator
+      tabBar={(props) => (
+        <View>
+          <AuthorStrip />
+          <BottomTabBar {...props} />
+        </View>
+      )}
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
@@ -58,7 +64,6 @@ export default function TabNavigator() {
           fontWeight: '700',
           fontSize: 20,
         },
-        headerRight: () => <AuthorMark style={{ marginRight: 16 }} />,
       }}
     >
       <Tab.Screen

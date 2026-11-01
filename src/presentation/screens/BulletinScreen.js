@@ -24,7 +24,6 @@ import { CustomAlert } from '../components/CustomAlert';
 import { TabBar } from '../components/TabBar';
 import { CardListSkeleton } from '../components/Skeleton';
 import { FadeIn } from '../components/Motion';
-import { AuthorMark } from '../components/author';
 import { showToast } from '../components/Toast';
 
 export default function BulletinScreen() {
@@ -171,17 +170,14 @@ export default function BulletinScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Tablón</Text>
-          <View style={styles.headerActions}>
-            {tabActivo === 'notificaciones' && unreadNotifCount > 0 && (
-              <TouchableOpacity
-                style={styles.markTodasButton}
-                onPress={handleMarkAllAsRead}
-              >
-                <Text style={styles.markTodasText}>Marcar leídas</Text>
-              </TouchableOpacity>
-            )}
-            <AuthorMark />
-          </View>
+          {tabActivo === 'notificaciones' && unreadNotifCount > 0 && (
+            <TouchableOpacity
+              style={styles.markTodasButton}
+              onPress={handleMarkAllAsRead}
+            >
+              <Text style={styles.markTodasText}>Marcar leídas</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <TabBar

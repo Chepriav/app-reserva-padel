@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Image, Platform, StyleSheet } from 'react-native';
 import { colors } from '../../../constants/colors';
 import { Ionicons } from '@expo/vector-icons';
-import { AuthorMark } from '../author';
 
 export function ProfileHeader({ user, editMode, profilePhoto, imageError, onImageError, onPickImage, onDeleteImage, onEditPress }) {
   const initials = user?.name
@@ -54,13 +53,11 @@ export function ProfileHeader({ user, editMode, profilePhoto, imageError, onImag
           </TouchableOpacity>
         )}
       </View>
-      <AuthorMark style={styles.authorMark} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  authorMark: { alignSelf: 'flex-start' },
   header: {
     backgroundColor: colors.primary,
     flexDirection: 'row',
