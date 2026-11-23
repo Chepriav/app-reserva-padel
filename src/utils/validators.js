@@ -10,7 +10,8 @@ export const validateEmail = (email) => {
 // Validate phone number (flexible format)
 export const validatePhone = (phone) => {
   // Accepts 9+ digit numbers
-  const digitsOnly = phone.replace(/\s/g, '').replace(/\+/g, '').replace(/-/g, '');
+  // Ignore spaces, +, dashes, dots and parentheses: "(+34) 600.123.456"
+  const digitsOnly = (phone || '').replace(/[\s+\-.()]/g, '');
   return digitsOnly.length >= 9 && /^\d+$/.test(digitsOnly);
 };
 
