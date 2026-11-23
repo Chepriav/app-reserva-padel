@@ -178,7 +178,6 @@ export const authService = {
     return {
       success: true,
       data: { id: result.value.id },
-      message: 'Registro exitoso. Tu cuenta está pendiente de aprobación por un administrador',
     };
   },
 
