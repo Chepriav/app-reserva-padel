@@ -37,6 +37,8 @@ describe('validatePhone', () => {
     expect(validatePhone('+34612345678')).toBe(true);
     expect(validatePhone('612 345 678')).toBe(true);
     expect(validatePhone('612-345-678')).toBe(true);
+    expect(validatePhone('612.345.678')).toBe(true);
+    expect(validatePhone('(+34) 612 345 678')).toBe(true);
   });
 
   test('rechaza teléfonos inválidos', () => {
