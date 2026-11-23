@@ -98,11 +98,15 @@ export default function RegisterScreen({ navigation }) {
     if (result.success) {
       setAlertConfig({
         visible: true,
-        title: 'Solicitud enviada',
-        message: result.message || 'Tu cuenta está pendiente de aprobación por un administrador. Te notificaremos cuando sea aprobada.',
+        title: 'Revisa tu correo',
+        message:
+          `Te hemos enviado un correo a ${email.trim().toLowerCase()}. ` +
+          'Abre el enlace que contiene para confirmar tu cuenta: sin ese paso no podrás entrar en la app.\n\n' +
+          'Si no lo ves en unos minutos, mira en la carpeta de spam o correo no deseado.\n\n' +
+          'Después, un administrador revisará tu solicitud y te avisaremos cuando esté aprobada.',
         buttons: [
           {
-            text: 'OK',
+            text: 'Entendido',
             onPress: () => navigation.goBack(),
           },
         ],
@@ -257,6 +261,9 @@ export default function RegisterScreen({ navigation }) {
             <Text style={styles.infoTitle}>ℹ️ Información importante:</Text>
             <Text style={styles.infoText}>
               • Todos los campos marcados con * son obligatorios
+            </Text>
+            <Text style={styles.infoText}>
+              • Te enviaremos un correo para confirmar tu cuenta (mira también en spam)
             </Text>
             <Text style={styles.infoText}>
               • Tu solicitud será revisada por un administrador
